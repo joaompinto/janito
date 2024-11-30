@@ -12,12 +12,13 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from threading import Event
 import time
 from janito.utils import generate_file_structure, format_tree, get_files_content  # Update import
+from janito.prompts import SYSTEM_PROMPT, build_info_prompt, build_change_prompt, build_general_prompt  # Add to imports
 
 # Install rich traceback handler
 install(show_locals=True)
 
 class ClaudeAPIAgent:
-    """Handles interaction with Claude API, including caching and message handling"""
+    """Handles interaction with Claude API, including message handling"""
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or os.getenv('ANTHROPIC_API_KEY')
         if not self.api_key:
@@ -26,10 +27,10 @@ class ClaudeAPIAgent:
         self.conversation_history = []
         self.debug = False
         self.stop_progress = Event()
-        self.system_message = """You are a helpful coding assistant.
-Your role is to analyze software available in a workspace and provide clear technical guidance.
-Format code explanations using markdown and appropriate syntax highlighting.
-Focus on providing accurate and actionable information related to the files container on the workspace."""
+        self.system_message = "You are Janito, an AI assistant focused on Python software development."
+        self.last_prompt = None
+        self.last_full_message = None
+        self.last_response = None
 
     def _get_files_content(self) -> str:
         return get_files_content(Path().absolute())
@@ -47,9 +48,17 @@ Focus on providing accurate and actionable information related to the files cont
                 progress.update(task)
                 time.sleep(0.1)
 
-    def send_message(self, message: str) -> str:
+    def send_message(self, message: str, system_prompt: str = None) -> str:
+        """Send message to Claude API and return response"""
         try:
-            # Start progress indicator in background thread
+            # Store the full message including system prompt
+            self.last_full_message = f"""=== SYSTEM PROMPT ===
+{system_prompt or self.system_message}
+
+=== USER MESSAGE ===
+{message}"""
+            
+            # Start progress indicator
             self.stop_progress.clear()
             progress_thread = threading.Thread(
                 target=self._show_progress,
@@ -58,38 +67,16 @@ Focus on providing accurate and actionable information related to the files cont
             progress_thread.start()
             
             try:
-                tree = generate_file_structure(Path().absolute())
-                workspace_status = "\n".join(format_tree(tree)) if tree else "No Python files found."
-                files_content = self._get_files_content()
-                
-                user_message = f"""=== WORKSPACE STRUCTURE ===
-{workspace_status}
-
-=== FILES CONTENT ===
-{files_content}
-
-=== USER REQUEST ===
-{message}"""
-                
-                if self.debug:
-                    print("\n[Debug] Sending request to Claude:")
-                    print("=" * 80)
-                    print("[System prompt]:")
-                    print(self.system_message)
-                    print("-" * 40)
-                    print("[User message]:")
-                    print(user_message)
-                    print("=" * 80)
-                
                 response = self.client.messages.create(
                     model="claude-3-sonnet-20240229",
                     system=self.system_message,
                     max_tokens=4096,
                     messages=[
-                        {"role": "user", "content": user_message}
+                        {"role": "user", "content": message}
                     ]
                 )
                 response_text = response.content[0].text
+                self.last_response = response_text  # Add this line
             finally:
                 self.stop_progress.set()
                 progress_thread.join()
@@ -105,10 +92,11 @@ Focus on providing accurate and actionable information related to the files cont
             self.conversation_history.append({"role": "assistant", "content": response_text})
             
             return response_text
-        except Exception as e:
-            self.stop_progress.set()  # Ensure progress stops on error
-            return f"Error: {str(e)}"
             
+        except Exception as e:
+            self.stop_progress.set()
+            return f"Error: {str(e)}"
+
     def toggle_debug(self) -> str:
         """Toggle debug mode on/off"""
         self.debug = not self.debug
@@ -134,25 +122,8 @@ Focus on providing accurate and actionable information related to the files cont
         except Exception as e:
             return f"Error loading history: {str(e)}"
     
-    def clear_cache(self) -> str:
-        """Clear all cached responses"""
-        try:
-            for cache_file in self.cache_dir.glob(f"*{self.cache_ext}"):
-                cache_file.unlink()
-            return "Cache cleared"
-        except Exception as e:
-            return f"Error clearing cache: {str(e)}"
-
     def handle_info_request(self, request: str, workspace_status: str) -> str:
         """Handle information request without file modifications"""
         files_content = self._get_files_content()
-        
-        message = f"""Current files content:
-{files_content}
-
-Information request: {request}
-
-Please provide information based on the above project context.
-Focus on explaining and analyzing without suggesting any file modifications.
-"""
+        message = build_info_prompt(files_content, request)
         return self.send_message(message)

@@ -3,41 +3,53 @@ from typing import List, Dict
 import ast
 import re
 
-def generate_file_structure(base_path: Path, pattern: str = "*.py", exclude_patterns: List[str] = None) -> Dict:
+def generate_file_structure(base_path: Path, pattern: str = None, exclude_patterns: List[str] = None) -> Dict:
     """
     Generate a tree structure of files in the given directory.
     
     Args:
         base_path: Base directory to start from
-        pattern: File pattern to match (default: "*.py")
-        exclude_patterns: List of patterns to exclude (default: [".janito"])
+        pattern: File pattern to match (default: ["*.py", "*.txt", "*.md"])
+        exclude_patterns: List of patterns to exclude (default: [".janito", "__pycache__"])
         
     Returns:
         Dict representing the directory tree structure
     """
-    exclude_patterns = exclude_patterns or [".janito"]
+    exclude_patterns = exclude_patterns or [".janito", "__pycache__", ".git"]
+    patterns = pattern if pattern else ["*.py", "*.txt", "*.md"]
     tree = {}
     
     try:
-        for file in sorted(base_path.rglob(pattern)):
-            # Skip excluded patterns
-            if any(pat in file.parts for pat in exclude_patterns):
-                continue
-                
-            # Only include files under base_path
-            if base_path not in file.parents:
-                continue
-                
-            # Get relative path and build tree
-            rel_path = file.relative_to(base_path)
-            current = tree
-            
-            # Build tree structure
-            for part in rel_path.parts[:-1]:
-                if part not in current:
-                    current[part] = {}
-                current = current[part]
-            current[rel_path.parts[-1]] = None
+        base_path = base_path.resolve()
+        
+        # Handle multiple file patterns
+        for pattern in patterns:
+            for file in sorted(base_path.rglob(pattern)):
+                try:
+                    # Skip excluded patterns and directories
+                    if any(pat in str(file) for pat in exclude_patterns):
+                        continue
+                    
+                    # Skip if not under base_path
+                    try:
+                        file.relative_to(base_path)
+                    except ValueError:
+                        continue
+                    
+                    # Get relative path and build tree
+                    rel_path = file.relative_to(base_path)
+                    current = tree
+                    
+                    # Build tree structure
+                    for part in rel_path.parts[:-1]:
+                        if part not in current:
+                            current[part] = {}
+                        current = current[part]
+                    current[rel_path.parts[-1]] = None
+                    
+                except Exception as e:
+                    print(f"Error processing file {file}: {e}")
+                    continue
             
     except Exception as e:
         print(f"Error generating file structure: {e}")
@@ -46,25 +58,29 @@ def generate_file_structure(base_path: Path, pattern: str = "*.py", exclude_patt
     return tree
 
 def get_files_content(base_path: Path, exclude_patterns: List[str] = None) -> str:
-    """Get content of all Python, text, and markdown files in given directory"""
+    """Get content of Python, text and markdown files in given directory"""
     content = []
-    try:
-        exclude_patterns = exclude_patterns or [".janito"]
-        tree = generate_file_structure(base_path)
-        
-        # Walk through directory tree
-        for file in sorted(base_path.rglob("*.py")) + sorted(base_path.rglob("*.txt")) + sorted(base_path.rglob("*.md")):
-            try:
-                # Skip excluded patterns and files outside workspace
-                if any(pat in file.parts for pat in exclude_patterns) or base_path not in file.parents:
-                    continue
-                rel_path = file.relative_to(base_path)
-                content.append(f"### {rel_path} ###\n{file.read_text()}\n")
-            except Exception:
+    exclude_patterns = exclude_patterns or [".janito", "__pycache__", ".git"]
+    base_path = base_path.resolve()
+    
+    # Find all relevant files
+    patterns = ["*.py", "*.txt", "*.md"]
+    for pattern in patterns:
+        for file in sorted(base_path.rglob(pattern)):
+            # Skip excluded patterns and files outside workspace
+            if any(pat in str(file) for pat in exclude_patterns):
                 continue
-        return "\n".join(content)
-    except Exception as e:
-        return f"Error reading files: {e}"
+            
+            # Skip if not under base_path
+            try:
+                rel_path = file.relative_to(base_path)
+            except ValueError:
+                continue
+            
+            # Read file content
+            content.append(f"### {rel_path} ###\n{file.read_text()}\n")
+                
+    return "\n".join(content)
 
 def format_tree(tree: Dict, prefix: str = "", is_last: bool = True) -> List[str]:
     """
@@ -153,12 +169,14 @@ def connect_db():
 </fileChanges>
 
 Requirements:
-1. Use <block> tags with descriptive comments
+    Use <block> tags with descriptive comments
 2. Provide both <oldContent> and <newContent>
 3. If appending to the end of a file <oldContent> content must be empty
 4. When not appending <oldContent> MUST be present in the files
 5. Include enough context in <oldContent> to uniquely identify the section
 6. For new files, use operation="create" and only provide complete content
+7. CRITICAL: Preserve EXACT indentation from source files
+8. Whitespace and indentation in <oldContent> and <newContent> must match the files exactly
 """
     else:  # general
         return base_prompt + f"""

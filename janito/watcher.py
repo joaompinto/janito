@@ -4,7 +4,6 @@ import time
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import sys
-from janito.error import handle_error, error_handler, JanitoError
 
 """
 File watching system for Janito.
@@ -21,7 +20,6 @@ class PackageFileHandler(FileSystemEventHandler):
         self.watched_extensions = {'.py'}
         self.debounce_time = 1
         
-    @error_handler(exit_on_error=False)
     def on_modified(self, event):
         if event.is_directory:
             return
@@ -52,23 +50,20 @@ class FileWatcher:
         self.base_path = os.path.abspath(base_path)
         self.is_running = False  # Add state tracking
         
-    @error_handler(exit_on_error=False)
     def start(self):
         """Start watching for file changes"""
         try:
             if not self.is_running:
                 self.is_running = True
                 print("\nStarting file watcher:")
-                print(f"📂 Monitoring Janito package in: {self.base_path}")
-                print("🔍 Watching for Python file changes")
+                print(f"🔍 Monitoring Janito package in: {self.base_path}")
                 print("⚡ Auto-restart enabled for package modifications")
                 self.observer = Observer()
                 self.observer.schedule(self.handler, self.base_path, recursive=True)
                 self.observer.start()
         except Exception as e:
-            raise JanitoError("Failed to start file watcher", cause=e)
+            print(f"Failed to start file watcher: {e}")
         
-    @error_handler(exit_on_error=False)
     def stop(self):
         if self.observer and self.is_running:
             try:
@@ -80,6 +75,6 @@ class FileWatcher:
                 if "cannot join current thread" not in str(e):
                     print(f"Warning: Error stopping file watcher: {e}")
             except Exception as e:
-                raise JanitoError("Failed to stop file watcher", cause=e)
+                print(f"Failed to stop file watcher: {e}")
             finally:
                 self.observer = None

@@ -1,5 +1,5 @@
-anthropic
-rich
-watchdog
-prompt-toolkit
-typer
+anthropic>=0.9.3
+rich>=13.3.2
+watchdog>=2.3.1
+prompt-toolkit>=3.0.38
+typer>=0.7.0
