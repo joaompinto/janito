@@ -1,0 +1,8 @@
+
+[project]
+# ...existing project settings...
+dependencies = [
+    # ...existing dependencies...
+    "typer>=0.9.0",
+    "rich>=10.0.0",  # Required by Typer for rich formatting
+]
