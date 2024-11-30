@@ -33,9 +33,13 @@ from rich.syntax import Syntax
 from rich.text import Text
 import typer
 from typing import Optional
-from janito.error import handle_error, error_handler, JanitoError, APIError, ConfigError
 import readline  # Add to imports at top
 import signal   # Add to imports at top
+from rich.traceback import install
+from janito.utils import generate_file_structure, format_tree, get_files_content  # Add import at top
+
+# Install rich traceback handler
+install(show_locals=True)
 
 """
 Main module for Janito - Language-Driven Software Development Assistant.
@@ -93,140 +97,61 @@ class JanitoCommands:  # Renamed from ClaudeCommands
         try:
             self.api_key = api_key or os.getenv('ANTHROPIC_API_KEY')
             if not self.api_key:
-                raise ConfigError("ANTHROPIC_API_KEY environment variable is required")
+                raise ValueError("ANTHROPIC_API_KEY environment variable is required")
             self.client = anthropic.Client(api_key=self.api_key)
             self.conversation_history = []
-            self.cache_dir = Path.home() / '.janito' / 'cache'  # Changed from .claudesh
-            self.cache_dir.mkdir(parents=True, exist_ok=True)
-            self.debug = False
-            self.stop_progress = Event()
-            self.cache_ext = '.xml'  # Change cache extension
             self.history_dir = Path.home() / '.janito' / 'history'  # Add history directory
             self.history_dir.mkdir(parents=True, exist_ok=True)
+            self.debug = False
+            self.stop_progress = Event()
             self.change_handler = FileChangeHandler()  # Add file change handler
             self.console = Console()  # Add console for rich output
+            self.last_sent = None  # Add last sent message storage
+            self.last_response = None  # Add last response storage
+            self.system_message = """You are Janito, a Language-Driven Software Development Assistant.
+Your role is to help users understand and modify their Python codebase.
+For file changes, provide XML instructions using the <fileChanges> format.
+For information requests, provide clear explanations using markdown formatting.
+Always analyze the provided workspace context before responding."""
         except Exception as e:
-            raise ConfigError("Failed to initialize Janito", cause=e)
+            raise ValueError(f"Failed to initialize Janito: {e}")
         
     def _get_files_content(self) -> str:
-        content = []
-        try:
-            base_path = Path().absolute()
-            # Walk through directory tree
-            for file in sorted(base_path.rglob("*.py")):
-                try:
-                    # Skip cache directory and files outside workspace
-                    if '.janito' not in file.parts and base_path in file.parents:
-                        rel_path = file.relative_to(base_path)
-                        content.append(f"### {rel_path} ###\n{file.read_text()}\n")
-                except Exception:
-                    continue  # Skip files we can't read or process
-            return "\n".join(content)
-        except Exception as e:
-            return f"Error reading files: {e}"
-            
-    def _get_cache_key(self, message: str) -> str:
-        """Generate cache key from message content and files state"""
-        files_content = self._get_files_content()
-        combined = f"{message}\n{files_content}"
-        return sha256(combined.encode()).hexdigest()[:12]  # Shorter hash for readability
-        
-    def _get_from_cache(self, message: str, max_age_hours: int = 24) -> Optional[str]:
-        """Get response from cache if it exists and is not too old"""
-        cache_key = self._get_cache_key(message)
-        cache_file = self.cache_dir / f"{cache_key}{self.cache_ext}"
-        
-        if not cache_file.exists():
-            if self.debug:
-                print("\n[Debug] Cache miss - file not found")
-            return None
-            
-        try:
-            # Read and parse cache file directly
-            with open(cache_file) as f:
-                lines = f.readlines()
-                for line in lines:
-                    if '<response>' in line:
-                        response = re.search(r'<response>(.*?)</response>', line, re.DOTALL)
-                        if response:
-                            return response.group(1)
-            return None
-            
-        except Exception as e:
-            if self.debug:
-                print(f"\n[Debug] Cache error: {str(e)}")
-            return None
+        return get_files_content(Path().absolute())
 
-    def _save_to_cache(self, message: str, response: str):
-        """Save response and context to cache in simple format"""
-        cache_key = self._get_cache_key(message)
+    def _build_context(self, request: str, request_type: str = "general") -> str:
+        """Build context with workspace status and files content"""
+        workspace_status = self.get_workspace_status()
         files_content = self._get_files_content()
         
-        cache_content = f"""<cache>
-  <timestamp>{datetime.now().isoformat()}</timestamp>
-  <message>{message}</message>
-  <response>{response}</response>
-  <context>
-    <system_message>You are Janito, a language-driven Software Development Assistant. You help developers understand, modify, and improve their code through natural language interaction. Here are the Python files in the current workspace:</system_message>
-    <files_content>{files_content}</files_content>
-    <user_message>{message}</user_message>
-  </context>
-</cache>"""
-        
-        try:
-            cache_file = self.cache_dir / f"{cache_key}{self.cache_ext}"
-            cache_file.write_text(cache_content)
-            if self.debug:
-                print(f"\n[Debug] Saved response to cache: {cache_file}")
-        except Exception as e:
-            if self.debug:
-                print(f"\n[Debug] Cache save error: {str(e)}")
+        return f"""=== WORKSPACE STRUCTURE ===
+{workspace_status}
 
-    def _show_progress(self, description: str):
-        """Show progress spinner while waiting"""
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            transient=True
-        ) as progress:
-            task = progress.add_task("Processing request...", total=None)  # Updated message
-            while not self.stop_progress.is_set():
-                progress.update(task)
-                time.sleep(0.1)
+=== FILES CONTENT ===
+{files_content}
 
-    @error_handler(exit_on_error=False)
+=== {request_type.upper()} REQUEST ===
+{request}"""
+
     def send_message(self, message: str) -> str:
-        """Consolidated file content reading to avoid duplication"""
-        files_content = self._get_files_content()
-        system_message = "You are Janito, a language-driven Software Development Assistant. You help developers understand, modify, and improve their code through natural language interaction. Here are the Python files in the current workspace:\n\n"
-        
-        cached_response = self._get_from_cache(message)
-        if cached_response:
-            if self.debug:
-                print("\n[Debug] Cache hit! Using cached response")
-            return cached_response
-            
-        # Start progress indicator in background thread
-        # Start progress indicator in background thread
-        self.stop_progress.clear()
-        progress_thread = threading.Thread(
-            target=self._show_progress,
-            args=("Waiting for Claude's response...",)
-        )
-        progress_thread.start()
-        
         try:
-            user_message = f"User request:\n{message}"
-            context_message = system_message + files_content + user_message
+            workspace_status = self.get_workspace_status()
+            files_content = self._get_files_content()
             
+            user_message = f"""=== WORKSPACE STRUCTURE ===
+{workspace_status}
+
+=== FILES CONTENT ===
+{files_content}
+
+=== USER REQUEST ===
+{message}"""
+
             if self.debug:
                 print("\n[Debug] Sending request to Claude:")
                 print("=" * 80)
                 print("[System prompt]:")
-                print(system_message)
-                print("-" * 40)
-                print("[Files context]:")
-                print(files_content)
+                print(self.system_message)
                 print("-" * 40)
                 print("[User message]:")
                 print(user_message)
@@ -234,45 +159,31 @@ class JanitoCommands:  # Renamed from ClaudeCommands
             
             response = self.client.messages.create(
                 model="claude-3-sonnet-20240229",
+                system=self.system_message,
                 max_tokens=4096,
-                messages=[{"role": "user", "content": context_message}]
+                messages=[
+                    {"role": "user", "content": user_message}
+                ]
             )
             response_text = response.content[0].text
+            self.last_response = response_text
             
             # Update conversation history
             self.conversation_history.append({"role": "user", "content": message})
             self.conversation_history.append({"role": "assistant", "content": response_text})
             
-            # Cache the response
-            self._save_to_cache(message, response_text)
-            
             return response_text
             
         except anthropic.APIError as e:
-            raise APIError("Failed to communicate with Claude API", cause=e)
+            raise RuntimeError(f"Failed to communicate with Claude API: {e}")
         except Exception as e:
-            raise JanitoError("Failed to process message", cause=e)
-        finally:
-            self.stop_progress.set()
-            progress_thread.join()
+            raise RuntimeError(f"Failed to process message: {e}")
 
-    @error_handler(exit_on_error=False)
     def handle_file_change(self, request: str) -> str:
         """Handle file modification request starting with !"""
         try:
-            # Get current workspace status
-            workspace_status = self.get_workspace_status()
-            files_content = self._get_files_content()
-            
-            # Generate change prompt
-            prompt = self.change_handler.generate_changes_prompt(
-                workspace_status,
-                files_content,
-                request
-            )
-            
-            # Get response from Claude
-            response = self.send_message(prompt)
+            context = self._build_context(request, "change")
+            response = self.send_message(context)
             
             # Process the changes
             success = self.change_handler.process_changes(response)
@@ -283,9 +194,8 @@ class JanitoCommands:  # Renamed from ClaudeCommands
             return "File changes applied successfully."
             
         except Exception as e:
-            raise JanitoError("Failed to process file changes", cause=e)
+            raise RuntimeError(f"Failed to process file changes: {e}")
 
-    @error_handler(exit_on_error=False)
     def save_history(self, args) -> str:
         """Save conversation history to a file"""
         try:
@@ -299,9 +209,8 @@ class JanitoCommands:  # Renamed from ClaudeCommands
                 json.dump(self.conversation_history, f, indent=2)
             return f"History saved to {filepath}"
         except Exception as e:
-            raise JanitoError("Failed to save history", cause=e)
+            raise RuntimeError(f"Failed to save history: {e}")
 
-    @error_handler(exit_on_error=False)
     def load_history(self, args) -> str:
         """Load conversation history from a file"""
         try:
@@ -316,7 +225,7 @@ class JanitoCommands:  # Renamed from ClaudeCommands
                 self.conversation_history = json.load(f)
             return f"History loaded from {filepath}"
         except Exception as e:
-            raise JanitoError("Failed to load history", cause=e)
+            raise RuntimeError(f"Failed to load history: {e}")
 
     def clear_history(self) -> str:
         """Clear the conversation history"""
@@ -327,52 +236,17 @@ class JanitoCommands:  # Renamed from ClaudeCommands
         """Get a summary of Python files in current workspace"""
         try:
             base_path = Path().absolute()
-            tree = {}
-            found_files = False
+            tree = generate_file_structure(base_path)
             
-            # Build tree structure
-            for file in sorted(base_path.rglob("*.py")):
-                try:
-                    # Skip cache directory and files outside workspace
-                    if '.janito' not in file.parts and base_path in file.parents:
-                        found_files = True
-                        rel_path = file.relative_to(base_path)
-                        
-                        # Build tree structure
-                        current = tree
-                        for part in rel_path.parts[:-1]:
-                            if part not in current:
-                                current[part] = {}
-                            current = current[part]
-                        current[rel_path.parts[-1]] = None
-                except Exception:
-                    continue
-            
-            if not found_files:
+            if not tree:
                 return "No Python files found in the current workspace."
-            
-            # Generate tree text representation
-            def format_tree(node, prefix="", is_last=True) -> List[str]:
-                lines = []
-                for i, (name, subtree) in enumerate(node.items()):
-                    is_last_item = i == len(node) - 1
-                    connector = "└── " if is_last_item else "├── "
-                    
-                    if subtree is None:  # File
-                        lines.append(f"{prefix}{connector}{name}")
-                    else:  # Directory
-                        lines.append(f"{prefix}{connector}{name}/")
-                        next_prefix = prefix + ("    " if is_last_item else "│   ")
-                        lines.extend(format_tree(subtree, next_prefix))
-                return lines
-            
+                
             tree_lines = format_tree(tree)
             return "Python files in workspace:\n" + "\n".join(tree_lines)
             
         except Exception as e:
-            raise JanitoError("Failed to get workspace status", cause=e)
+            raise RuntimeError(f"Failed to get workspace status: {e}")
 
-    @error_handler(exit_on_error=False)
     def show_content(self) -> str:
         """Show directory structure and Python files in current workspace"""
         try:
@@ -382,32 +256,15 @@ class JanitoCommands:  # Renamed from ClaudeCommands
             print(status)
             return ""
         except Exception as e:
-            raise JanitoError("Failed to show workspace content", cause=e)
+            raise RuntimeError(f"Failed to show workspace content: {e}")
 
-    @error_handler(exit_on_error=False)
     def handle_info_request(self, request: str, workspace_status: str) -> str:
         """Handle information request ending with ?"""
         try:
-            # Get current files content
-            files_content = self._get_files_content()
-            
-            # Build the prompt for information request
-            prompt = f"""Current workspace status:
-{workspace_status}
-
-{files_content if files_content else ""}
-
-Information request: {request}
-
-Please analyze the current project context and provide information.
-Focus on explaining and understanding without suggesting any file modifications.
-Format your response using markdown for better readability.
-Use code blocks with language identifiers when showing code.
-Use headings, lists, and emphasis to organize information.
-"""
+            context = self._build_context(request, "info")
             
             # Get response from Claude
-            response = self.send_message(prompt)
+            response = self.send_message(context)
             
             # Render markdown
             md = Markdown(response)
@@ -415,7 +272,25 @@ Use headings, lists, and emphasis to organize information.
             return ""  # Return empty since we printed directly
             
         except Exception as e:
-            raise JanitoError("Failed to process information request", cause=e)
+            raise RuntimeError(f"Failed to process information request: {e}")
+
+    def get_last_response(self) -> str:
+        """Get the last sent and received message to/from Claude"""
+        if not self.last_response or not self.last_sent:
+            return "No previous conversation available."
+
+        # Format the output with background colors
+        sent = Text("\n=== Last Message Sent ===\n", style="black on yellow")
+        sent.append(self.last_sent, style="yellow")
+
+        received = Text("\n\n=== Last Response Received ===\n", style="black on green")
+        received.append(self.last_response, style="green")
+
+        return sent + received
+
+    def clear_cache(self) -> str:
+        """Command kept for compatibility but now just returns a message"""
+        return "Cache system has been removed"
 
 class JanitoConsole:
     """Interactive console for Janito with command handling and REPL"""
@@ -432,16 +307,16 @@ class JanitoConsole:
                 '.save': self.janito.save_history,
                 '.load': self.janito.load_history,
                 '.debug': lambda _: self.janito.toggle_debug(),
-                '.cache': lambda _: self.janito.clear_cache(),
                 '.content': lambda _: self.janito.show_content(),
+                '.last': lambda _: self.janito.get_last_response(),  # Add last command
                 '.help': lambda _: (
                     "Janito commands:\n"
                     ".clear   - Clear conversation history\n"
                     ".save    - Save history to file\n"
                     ".load    - Load history from file\n"
                     ".debug   - Toggle debug mode\n"
-                    ".cache   - Clear cached responses\n"
                     ".content - Show current workspace content\n"
+                    ".last    - Show last Claude response\n"
                     ".help    - Show this help"
                 )
             }
@@ -526,7 +401,7 @@ class JanitoConsole:
             '<ai>🤖 janito</ai> '
             '<sep>in</sep> '  # Added "in" separator
             '<path>{}</path> '
-            '<prompt>⫸</prompt> '.format(current_dir)
+            '<sep>></sep> '.format(current_dir)
         )
 
     def help(self, args):
@@ -545,8 +420,8 @@ class JanitoConsole:
             print("  .save    - Save history to file")
             print("  .load    - Load history from file")
             print("  .debug   - Toggle debug mode")
-            print("  .cache   - Clear response cache")
             print("  .content - Show current workspace content")
+            print("  .last    - Show last Claude response")
             print("\nInput formats:")
             print("  !request - Request file changes (e.g. '!add logging to utils.py')")
             print("  request? - Get information without changes")
@@ -557,7 +432,6 @@ class JanitoConsole:
         self.running = False
         self.cleanup_terminal()
 
-    @error_handler(exit_on_error=False)
     def run(self):
         """Main command loop"""
         try:
@@ -590,7 +464,7 @@ class JanitoConsole:
                         result = self.janito.send_message(command)
                         print(f"\n{result}")
                     else:
-                        raise JanitoError("Janito not initialized")
+                        raise RuntimeError("Janito not initialized")
                 except EOFError:
                     self.exit([])
                     break
@@ -642,7 +516,6 @@ class CLI:
                 print("\nTraceback:")
                 traceback.print_exc()
 
-    @error_handler(exit_on_error=True)
     def run(self, args=None):        
         """Run the CLI application"""
         try:
@@ -658,4 +531,3 @@ def run_cli():
     cli = CLI()
     cli.run()
 
-# Remove if __main__ block since we use __main__.py now

@@ -1,2 +1,5 @@
-# No additional requirements for this basic version
-prompt_toolkit>=3.0.0
+anthropic
+rich
+watchdog
+prompt-toolkit
+typer

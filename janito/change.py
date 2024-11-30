@@ -9,8 +9,7 @@ from rich.text import Text
 from dataclasses import dataclass
 from enum import Enum
 import tempfile
-from janito.error import handle_error, error_handler, JanitoError, FileOperationError
-# Remove ET import since we're using line-by-line parsing
+from janito.utils import build_context_prompt  # Add import
 
 """
 File modification system for Janito.
@@ -36,7 +35,7 @@ class XMLChange:
     """Simple container for parsed XML changes"""
     path: Path
     operation: str
-    blocks: List[XMLBlock] = None
+    blocks: List[XMLBlock] = None  # Fixed type annotation syntax
     content: str = ""
 
     def __post_init__(self):
@@ -127,45 +126,7 @@ class FileChangeHandler:
         self.console = Console()
 
     def generate_changes_prompt(self, dir_status: str, files_content: str, file_request: str) -> str:
-        return """Current directory status:
-{dir_status}
-
-{files_content}
-
-User request for file operation: {file_request}
-
-Please provide file changes in the following format:
-
-<fileChanges>
-<change path="example.py" operation="modify">
-<block description="Update database connection function">
-<oldContent>
-def connect_db():
-    return sqlite3.connect('database.db')
-</oldContent>
-<newContent>
-def connect_db():
-    try:
-        return sqlite3.connect('database.db')
-    except sqlite3.Error as error:
-        print('Failed to connect:', str(error))
-        raise
-</newContent>
-</block>
-</change>
-</fileChanges>
-
-Requirements:
-1. Use <block> tags with descriptive comments
-2. Provide both <oldContent> and <newContent> for changes
-3. Include enough context in <oldContent> to uniquely identify the section
-4. For new files, use operation="create" and only provide complete content
-5. For new blocks in existing files, omit <oldContent>
-""".format(
-            dir_status=dir_status,
-            files_content=files_content if files_content else "",
-            file_request=file_request
-        )
+        return build_context_prompt(files_content, dir_status, file_request, "change")
 
     def _parse_xml_response(self, response: str) -> List[XMLChange]:
         """Parse XML response line by line"""
@@ -178,61 +139,61 @@ Requirements:
         try:
             lines = response.splitlines()
             for line in lines:
-                line = line.strip()
+                # Remove strip() to preserve whitespace
                 if not line:
                     continue
 
-                # Match change start
-                if match := re.match(r'<change\s+path="([^"]+)"\s+operation="([^"]+)">', line):
+                # Match change start - strip only for matching
+                if match := re.match(r'<change\s+path="([^"]+)"\s+operation="([^"]+)">', line.strip()):
                     path, operation = match.groups()
                     current_change = XMLChange(Path(path), operation)
                     current_block = None
                     current_section = None
                 
-                # Match block start
-                elif match := re.match(r'<block\s+description="([^"]+)">', line):
+                # Match block start - strip only for matching
+                elif match := re.match(r'<block\s+description="([^"]+)">', line.strip()):
                     if current_change:
                         current_block = XMLBlock(description=match.group(1))
                         current_section = None
                 
-                # Match content sections
-                elif line == "<oldContent>":
+                # Match content sections - strip only for matching
+                elif line.strip() == "<oldContent>":
                     if current_block:
                         current_section = "old"
                         content_lines = []
-                elif line == "<newContent>":
+                elif line.strip() == "<newContent>":
                     if current_block:
                         current_section = "new"
                         content_lines = []
                 
-                # Match section ends
-                elif line == "</oldContent>":
+                # Match section ends - strip only for matching
+                elif line.strip() == "</oldContent>":
                     if current_block:
                         current_block.old_content = content_lines
                         content_lines = []
-                elif line == "</newContent>":
+                elif line.strip() == "</newContent>":
                     if current_block:
                         current_block.new_content = content_lines
                         content_lines = []
                 
-                # Match block end
-                elif line == "</block>":
+                # Match block end - strip only for matching
+                elif line.strip() == "</block>":
                     if current_change and current_block:
                         current_change.blocks.append(current_block)
                         current_block = None
                 
-                # Match change end
-                elif line == "</change>":
+                # Match change end - strip only for matching
+                elif line.strip() == "</change>":
                     if current_change:
                         changes.append(current_change)
                         current_change = None
                 
-                # Collect content lines
+                # Collect content lines without stripping
                 elif current_section and current_block:
                     content_lines.append(line)
                 
-                # Collect direct content for create operations
-                elif current_change and not current_block and not line.startswith("</"):
+                # Collect direct content for create operations without stripping
+                elif current_change and not current_block and not line.strip().startswith("</"):
                     current_change.content += line + "\n"
 
             return changes
@@ -241,7 +202,42 @@ Requirements:
             self.console.print(f"[red]Error parsing XML: {str(e)}[/]")
             return []
 
-    @error_handler(exit_on_error=False)
+    def _preview_changes(self, changes: List[XMLChange]) -> bool:
+        """Show preview of all changes and ask for confirmation"""
+        self.console.print("\n[cyan]Preview of changes to be applied:[/]")
+        self.console.print("=" * 80)
+
+        for change in changes:
+            if change.operation == 'create':
+                self.console.print(f"\n[green]CREATE NEW FILE: {change.path}[/]")
+                syntax = Syntax(change.content, "python", theme="monokai")
+                self.console.print(syntax)
+                continue
+
+            if not change.path.exists():
+                self.console.print(f"\n[red]SKIP: File not found - {change.path}[/]")
+                continue
+
+            self.console.print(f"\n[yellow]MODIFY FILE: {change.path}[/]")
+            for block in change.blocks:
+                self.console.print(f"\n[cyan]{block.description}[/]")
+                
+                if not block.old_content or (len(block.old_content) == 1 and not block.old_content[0].strip()):
+                    self.console.print("[green]Append to end of file:[/]")
+                    syntax = Syntax("\n".join(block.new_content), "python", theme="monokai")
+                    self.console.print(syntax)
+                else:
+                    self.console.print("[red]Remove:[/]")
+                    syntax = Syntax("\n".join(block.old_content), "python", theme="monokai")
+                    self.console.print(syntax)
+                    self.console.print("\n[green]Replace with:[/]")
+                    syntax = Syntax("\n".join(block.new_content), "python", theme="monokai")
+                    self.console.print(syntax)
+
+        self.console.print("\n" + "=" * 80)
+        response = input("\nApply these changes? [y/N] ").lower().strip()
+        return response == 'y'
+
     def process_changes(self, response: str) -> bool:
         try:
             # Extract content block using regex
@@ -258,6 +254,11 @@ Requirements:
             changes = self._parse_xml_response(xml_content)
             if not changes:
                 self.console.print("[red]No valid changes found after parsing[/]")
+                return False
+
+            # Preview changes and get user confirmation
+            if not self._preview_changes(changes):
+                self.console.print("[yellow]Changes cancelled by user[/]")
                 return False
 
             # Process each change
@@ -284,10 +285,19 @@ Requirements:
                 for block in change.blocks:
                     self.console.print(f"\n[cyan]Applying: {block.description}[/]")
 
+                    # Handle empty oldContent as append operation
+                    if not block.old_content or (len(block.old_content) == 1 and not block.old_content[0].strip()):
+                        self.console.print("[cyan]Appending content to end of file[/]")
+                        modified_content.extend(block.new_content)
+                        continue
+
                     # Find and replace the block
                     start_idx = self._find_block_start(modified_content, block.old_content)
                     if start_idx is None:
-                        self.console.print("[red]Could not find matching block in file[/]")
+                        self.console.print("[red]Could not find matching block in file:[/]")
+                        self.console.print("\n[yellow]Looking for:[/]")
+                        for line in block.old_content:
+                            self.console.print(f"[yellow]{line}[/]")
                         continue
 
                     # Replace the block
@@ -300,26 +310,43 @@ Requirements:
             return True
 
         except Exception as e:
-            raise FileOperationError("Failed to process file changes", cause=e)
+            self.console.print(f"[red]Failed to process file changes: {e}[/]")
+            return False
 
     def _find_block_start(self, content: List[str], block: List[str]) -> Optional[int]:
-        """Find the starting index of a block in the content"""
+        """Find the starting index of a block in the content, ignoring empty lines and whitespace"""
         if not block:
             return None
 
-        for i in range(len(content) - len(block) + 1):
-            if all(content[i + j].strip() == block[j].strip() for j in range(len(block))):
-                return i
+        # Filter out empty lines and normalize whitespace
+        def normalize(lines: List[str]) -> List[str]:
+            return [line.strip() for line in lines if line.strip()]
+
+        normalized_content = normalize(content)
+        normalized_block = normalize(block)
+
+        if not normalized_block:
+            return None
+
+        # Try to find the block in normalized content
+        for i in range(len(normalized_content) - len(normalized_block) + 1):
+            if all(normalized_content[i + j] == normalized_block[j] for j in range(len(normalized_block))):
+                # Find the actual line number in original content
+                line_count = 0
+                for idx, line in enumerate(content):
+                    if line.strip():
+                        if line_count == i:
+                            return idx
+                        line_count += 1
+                return None
 
         return None
 
-    @error_handler(exit_on_error=False)
     def cleanup(self):
-        """Clean up temporary files"""
         try:
             shutil.rmtree(self.preview_dir)
         except Exception as e:
-            raise FileOperationError(f"Failed to clean up preview directory: {e}", cause=e)
+            print(f"Warning: Failed to clean up preview directory: {e}")
 
     def __del__(self):
         """Ensure cleanup on destruction"""
