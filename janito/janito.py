@@ -101,11 +101,12 @@ class JanitoCommands:  # Renamed from ClaudeCommands
             self.cache_ext = '.xml'  # Change cache extension
             self.history_dir = Path.home() / '.janito' / 'history'  # Add history directory
             self.history_dir.mkdir(parents=True, exist_ok=True)
+            self.change_handler = FileChangeHandler()  # Add file change handler
+            self.console = Console()  # Add console for rich output
         except Exception as e:
             raise ConfigError("Failed to initialize Janito", cause=e)
         
     def _get_files_content(self) -> str:
-        """Get content of all Python files in current directory and subdirectories"""
         content = []
         try:
             base_path = Path().absolute()
@@ -204,6 +205,7 @@ class JanitoCommands:  # Renamed from ClaudeCommands
             return cached_response
             
         # Start progress indicator in background thread
+        # Start progress indicator in background thread
         self.stop_progress.clear()
         progress_thread = threading.Thread(
             target=self._show_progress,
@@ -251,6 +253,35 @@ class JanitoCommands:  # Renamed from ClaudeCommands
         finally:
             self.stop_progress.set()
             progress_thread.join()
+
+    @error_handler(exit_on_error=False)
+    def handle_file_change(self, request: str) -> str:
+        """Handle file modification request starting with !"""
+        try:
+            # Get current workspace status
+            workspace_status = self.get_workspace_status()
+            files_content = self._get_files_content()
+            
+            # Generate change prompt
+            prompt = self.change_handler.generate_changes_prompt(
+                workspace_status,
+                files_content,
+                request
+            )
+            
+            # Get response from Claude
+            response = self.send_message(prompt)
+            
+            # Process the changes
+            success = self.change_handler.process_changes(response)
+            
+            if not success:
+                return "Failed to process file changes. Please check the response format."
+            
+            return "File changes applied successfully."
+            
+        except Exception as e:
+            raise JanitoError("Failed to process file changes", cause=e)
 
     @error_handler(exit_on_error=False)
     def save_history(self, args) -> str:
@@ -351,6 +382,39 @@ class JanitoCommands:  # Renamed from ClaudeCommands
         except Exception as e:
             raise JanitoError("Failed to show workspace content", cause=e)
 
+    @error_handler(exit_on_error=False)
+    def handle_info_request(self, request: str, workspace_status: str) -> str:
+        """Handle information request ending with ?"""
+        try:
+            # Get current files content
+            files_content = self._get_files_content()
+            
+            # Build the prompt for information request
+            prompt = f"""Current workspace status:
+{workspace_status}
+
+{files_content if files_content else ""}
+
+Information request: {request}
+
+Please analyze the current project context and provide information.
+Focus on explaining and understanding without suggesting any file modifications.
+Format your response using markdown for better readability.
+Use code blocks with language identifiers when showing code.
+Use headings, lists, and emphasis to organize information.
+"""
+            
+            # Get response from Claude
+            response = self.send_message(prompt)
+            
+            # Render markdown
+            md = Markdown(response)
+            self.console.print(md)
+            return ""  # Return empty since we printed directly
+            
+        except Exception as e:
+            raise JanitoError("Failed to process information request", cause=e)
+
 class JanitoConsole:
     """Interactive console for Janito with command handling and REPL"""
     def __init__(self):
@@ -404,15 +468,7 @@ class JanitoConsole:
             print("\nJanito source file changed - restarting...")
             self.restart_requested = True
             self.running = False
-            
-            # Force an immediate cleanup and exit of the prompt session
-            if hasattr(self, 'session'):
-                # Reset the input buffer
-                if hasattr(self.session, '_default_buffer'):
-                    self.session._default_buffer.reset()
-                # Force the app to process the next input cycle
-                if hasattr(self.session, 'app'):
-                    self.session.app.exit()
+            self.restart_process()
 
         try:
             package_dir = os.path.dirname(os.path.dirname(__file__))
@@ -420,6 +476,20 @@ class JanitoConsole:
             self.watcher.start()
         except Exception as e:
             print(f"Warning: Could not set up file watcher: {e}")
+
+    def restart_process(self):
+        """Restart the current process using module invocation"""
+        try:
+            if self.watcher:
+                self.watcher.stop()
+            print("\nRestarting Janito process...")
+            # Use -m to run as module and preserve original args
+            python_exe = sys.executable
+            args = [python_exe, '-m', 'janito'] + sys.argv[1:]
+            os.execv(python_exe, args)
+        except Exception as e:
+            print(f"Error during restart: {e}")
+            sys.exit(1)
 
     def get_prompt(self):
         """Generate the command prompt"""
@@ -462,7 +532,7 @@ class JanitoConsole:
     def run(self):
         """Main command loop"""
         try:
-            while self.running:
+            while self.running and self.session:  # Check session is valid
                 try:
                     command = self.session.prompt(self.get_prompt()).strip()
                     
@@ -478,6 +548,15 @@ class JanitoConsole:
                                 print(result)
                         else:
                             print(f"Unknown command: {cmd}")
+                    elif command.startswith('!') and self.janito:
+                        # Handle file change request
+                        result = self.janito.handle_file_change(command[1:])  # Remove ! prefix
+                        print(f"\n{result}")
+                    elif command.endswith('?') and self.janito:
+                        # Handle information request
+                        workspace_status = self.janito.get_workspace_status()
+                        result = self.janito.handle_info_request(command[:-1], workspace_status)  # Remove ? suffix
+                        print(f"\n{result}")
                     elif self.janito:
                         result = self.janito.send_message(command)
                         print(f"\n{result}")
@@ -489,10 +568,15 @@ class JanitoConsole:
                 except (KeyboardInterrupt, SystemExit):
                     if self.restart_requested:
                         break
-                    continue
+                    if not self.restart_requested:  # Only exit if not restarting
+                        self.exit([])
+                    break
         finally:
             if self.watcher:
                 self.watcher.stop()
+            if self.restart_requested:
+                # Clean exit for restart
+                sys.exit(0)
 
 class CLI:
     """Command-line interface handler for Janito using Typer"""
@@ -529,9 +613,15 @@ class CLI:
                 traceback.print_exc()
 
     @error_handler(exit_on_error=True)
-    def run(self, args=None):
+    def run(self, args=None):        
         """Run the CLI application"""
-        self.app()
+        try:
+            console = JanitoConsole()
+            console.run()
+        except Exception as e:
+            print(f"\nFatal error: {str(e)}")
+            print("\nTraceback:")
+            traceback.print_exc()
 
 def run_cli():
     """Main entry point"""
