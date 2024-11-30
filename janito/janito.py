@@ -34,6 +34,8 @@ from rich.text import Text
 import typer
 from typing import Optional
 from janito.error import handle_error, error_handler, JanitoError, APIError, ConfigError
+import readline  # Add to imports at top
+import signal   # Add to imports at top
 
 """
 Main module for Janito - Language-Driven Software Development Assistant.
@@ -461,6 +463,30 @@ class JanitoConsole:
         self.running = True
         self.restart_requested = False
         self._setup_file_watcher()
+        self._setup_signal_handlers()
+
+    def _setup_signal_handlers(self):
+        """Setup signal handlers for clean terminal state"""
+        signal.signal(signal.SIGINT, self._handle_interrupt)
+        signal.signal(signal.SIGTERM, self._handle_interrupt)
+
+    def _handle_interrupt(self, signum, frame):
+        """Handle interrupt signals"""
+        self.cleanup_terminal()
+        if not self.restart_requested:
+            print("\nExiting...")
+            sys.exit(0)
+
+    def cleanup_terminal(self):
+        """Restore terminal settings"""
+        try:
+            # Reset terminal state
+            os.system('stty sane')
+            # Clear readline state
+            readline.set_startup_hook(None)
+            readline.clear_history()
+        except Exception as e:
+            print(f"Warning: Error cleaning up terminal: {e}")
 
     def _setup_file_watcher(self):
         """Set up file watcher for auto-restart"""
@@ -483,12 +509,14 @@ class JanitoConsole:
             if self.watcher:
                 self.watcher.stop()
             print("\nRestarting Janito process...")
+            self.cleanup_terminal()
             # Use -m to run as module and preserve original args
             python_exe = sys.executable
             args = [python_exe, '-m', 'janito'] + sys.argv[1:]
             os.execv(python_exe, args)
         except Exception as e:
             print(f"Error during restart: {e}")
+            self.cleanup_terminal()
             sys.exit(1)
 
     def get_prompt(self):
@@ -527,6 +555,7 @@ class JanitoConsole:
     def exit(self, args):
         """Exit the console"""
         self.running = False
+        self.cleanup_terminal()
 
     @error_handler(exit_on_error=False)
     def run(self):
@@ -575,8 +604,9 @@ class JanitoConsole:
             if self.watcher:
                 self.watcher.stop()
             if self.restart_requested:
-                # Clean exit for restart
-                sys.exit(0)
+                self.restart_process()
+            else:
+                self.cleanup_terminal()
 
 class CLI:
     """Command-line interface handler for Janito using Typer"""
