@@ -23,7 +23,7 @@ import subprocess  # Add at the top with other imports
 import re  # Add to imports at top
 import ast  # Add to imports at top
 import tempfile
-from janito.change import FileChangeHandler, DeltaResult, DeltaType  # Change relative imports to absolute
+from janito.change import FileChangeHandler  # Remove unused imports
 from janito.watcher import FileWatcher
 from janito.claude import ClaudeAPIAgent
 from rich.progress import Progress, SpinnerColumn, TextColumn  # Add to imports at top
@@ -208,7 +208,7 @@ class JanitoCommands:  # Renamed from ClaudeCommands
         except Exception as e:
             raise RuntimeError(f"Failed to get workspace status: {e}")
 
-    def show_content(self) -> str:
+    def show_workspace(self) -> str:
         """Show directory structure and Python files in current workspace"""
         try:
             status = self.get_workspace_status()
@@ -217,7 +217,7 @@ class JanitoCommands:  # Renamed from ClaudeCommands
             print(status)
             return ""
         except Exception as e:
-            raise RuntimeError(f"Failed to show workspace content: {e}")
+            raise RuntimeError(f"Failed to show workspace: {e}")
 
     def handle_info_request(self, request: str, workspace_status: str) -> str:
         """Handle information request ending with ?"""
@@ -266,6 +266,14 @@ class JanitoCommands:  # Renamed from ClaudeCommands
         except Exception as e:
             return f"Error displaying file: {str(e)}"
 
+    def toggle_debug(self) -> str:
+        """Toggle debug mode on/off"""
+        self.debug = not self.debug
+        # Also toggle debug on the Claude agent
+        if hasattr(self, 'claude') and self.claude:
+            self.claude.debug = self.debug
+        return f"Debug mode {'enabled' if self.debug else 'disabled'}"
+
 class JanitoConsole:
     """Interactive console for Janito with command handling and REPL"""
     def __init__(self):
@@ -279,7 +287,7 @@ class JanitoConsole:
             janito_commands = {
                 '.clear': lambda _: self.janito.clear_history(),
                 '.debug': lambda _: self.janito.toggle_debug(),
-                '.content': lambda _: self.janito.show_content(),
+                '.workspace': lambda _: self.janito.show_workspace(),
                 '.last': lambda _: self.janito.get_last_response(),  # Add last command
                 '.show': lambda args: self.janito.show_file(args[0]) if args else "Error: File path required",
                 '.help': self.help  # Just point to the help method instead of a lambda

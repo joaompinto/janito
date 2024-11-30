@@ -2,13 +2,15 @@
 CHANGE_XML_FORMAT = """XML Format Requirements:
 <fileChanges>
     <change path="file.py" operation="create|modify">
-        <block description="Description of changes">
-            <oldContent indentation="number">
+        <block description="Description of changes" indentation="N">
+            <!-- N = number of space characters from start of line -->
+            <oldContent>
                 // Exact content to be replaced (empty for create/append)
-                // indentation attribute specifies the block's indent level (spaces)
+                // Keep original indentation in content
             </oldContent>
             <newContent>
-                // New content to be inserted (preserve same indentation as oldContent)
+                // New content to replace the old content
+                // Keep desired indentation in content
             </newContent>
         </block>
     </change>
@@ -16,14 +18,17 @@ CHANGE_XML_FORMAT = """XML Format Requirements:
 
 RULES:
 - Use XML tags for file changes.
+- Each block must have exactly one oldContent and one newContent section.
+- Multiple changes to a file should use multiple block elements.
 - Provide a description for each change block.
-- Include both old and new content for modifications.
-- Specify indentation level in oldContent using indentation="number"
-- Preserve indentation in both oldContent and newContent blocks
+- Indentation attribute specifies number of leading spaces to ignore when comparing
 - Use operation="create" for new files.
 - Use operation="modify" for existing files.
 - Ensure oldContent is empty for file append operations.
 - Include enough context in oldContent to uniquely identify the section.
+- Empty newContent indicates the oldContent should be deleted
+- For appending, use empty oldContent with non-empty newContent
+- For deletion, use non-empty oldContent with empty newContent
 """
 
 # Core system prompt focused on role and purpose
