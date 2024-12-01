@@ -32,6 +32,8 @@ class XMLChange:
 class XMLChangeParser:
     def __init__(self):
         self.console = Console()
+        self.current_operation = None
+        self.has_invalid_tags = False  # Track invalid tag occurrences
 
     def _validate_tag_format(self, line: str) -> bool:
         """Validate that a line contains only a single XML tag and nothing else"""
@@ -40,6 +42,11 @@ class XMLChangeParser:
             return True
         if stripped.startswith('<?xml'):
             return True
+            
+        # Allow empty content tags in one line
+        if stripped in ('<oldContent></oldContent>', '<newContent></newContent>'):
+            return True
+            
         # Check if line contains exactly one XML tag and nothing else
         return bool(re.match(r'^\s*<[^>]+>\s*$', line))
 
@@ -66,17 +73,34 @@ class XMLChangeParser:
         current_section = None
         content_buffer = []
         in_content = False
+        self.current_operation = None
+        self.has_invalid_tags = False  # Reset at start of parsing
         
         try:
             lines = response.splitlines()
             for i, line in enumerate(lines):
+                stripped = line.strip()
+                
+                # Update operation tracking when encountering a change tag
+                if match := re.match(r'<change\s+path="([^"]+)"\s+operation="([^"]+)">', stripped):
+                    _, operation = match.groups()
+                    self.current_operation = operation
+                    self.has_invalid_tags = False  # Reset for new change
+
+                # Reset operation on change end
+                elif stripped == '</change>':
+                    if current_change and not self.has_invalid_tags:
+                        changes.append(current_change)
+                    current_change = None
+                    self.current_operation = None
+                    continue
+
                 # Validate tag format
                 if not self._validate_tag_format(line) and not in_content:
                     self.console.print(f"[red]Invalid tag format at line {i+1}: {line}[/]")
+                    self.has_invalid_tags = True
                     continue
 
-                stripped = line.strip()
-                
                 if not stripped and not in_content:
                     continue
 
@@ -146,7 +170,7 @@ class XMLChangeParser:
                     if stripped:
                         current_change.content += line + '\n'
 
-            return changes
+            return [c for c in changes if not self.has_invalid_tags]
             
         except Exception as e:
             self.console.print(f"[red]Error parsing XML: {str(e)}[/]")

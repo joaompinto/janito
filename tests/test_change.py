@@ -324,3 +324,70 @@ def test_valid_tag_format(parser):
     assert len(changes) == 1
     assert changes[0].path.name == "test.py"
     assert len(changes[0].blocks) == 1
+
+def test_parse_empty_content_tags_inline(parser):
+    """Test parsing XML with empty content tags on single lines"""
+    test_xml = '''<fileChanges>
+    <change path="test.py" operation="create">
+        <block description="Test block">
+            <oldContent></oldContent>
+            <newContent></newContent>
+        </block>
+    </change>
+</fileChanges>'''
+    
+    changes = parser.parse_response(test_xml)
+    assert len(changes) == 1
+    assert changes[0].path.name == "test.py"
+    assert len(changes[0].blocks) == 1
+
+def test_parse_mixed_content_tags(parser):
+    """Test parsing XML with mix of inline and multiline content tags"""
+    test_xml = '''<fileChanges>
+    <change path="test.py" operation="create">
+        <block description="Test block">
+            <oldContent></oldContent>
+            <newContent>
+                def test():
+                    pass
+            </newContent>
+        </block>
+    </change>
+</fileChanges>'''
+    
+    changes = parser.parse_response(test_xml)
+    assert len(changes) == 1
+    assert changes[0].path.name == "test.py"
+    assert len(changes[0].blocks) == 1
+    assert len(changes[0].blocks[0].new_content) == 2
+
+def test_invalid_inline_content(parser):
+    """Test parsing XML with invalid inline content"""
+    test_xml = '''<fileChanges>
+    <change path="test.py" operation="create">
+        <block description="Test">text here is invalid<oldContent></oldContent>
+    </block>
+    </change>
+</fileChanges>'''
+    
+    changes = parser.parse_response(test_xml)
+    assert len(changes) == 0
+
+def test_validate_modify_inline_oldcontent(parser):
+    """Test that inline oldContent is rejected for modify operations"""
+    test_xml = '''<fileChanges>
+    <change path="test.py" operation="modify">
+        <block description="Test block">
+            <oldContent></oldContent>
+            <newContent>
+                def test():
+                    pass
+            </newContent>
+        </block>
+    </change>
+</fileChanges>'''
+    
+    changes = parser.parse_response(test_xml)
+    assert len(changes) == 1  # Should still parse as valid
+    assert changes[0].operation == "modify"
+    assert len(changes[0].blocks) == 1

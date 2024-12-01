@@ -336,14 +336,14 @@ class JanitoConsole:
             style=Style.from_dict({
                 'ai': '#00aa00 bold',
                 'path': '#3388ff bold',
-                'sep': '#888888',
+               'sep': '#888888',
                 'prompt': '#ff3333 bold',
                 'cmd': '#00aa00',
             })
         )
         self.running = True
         self.restart_requested = False
-        self.initial_dir = os.getcwd()  # Store initial directory
+        self.package_dir = os.path.dirname(os.path.dirname(__file__))  # Only keep package_dir
         self.workspace = None  # Store workspace path if provided
         self._setup_file_watcher()
         self._setup_signal_handlers()
@@ -394,19 +394,16 @@ class JanitoConsole:
             print("\nRestarting Janito process...")
             self.cleanup_terminal()
             
-            # Change back to initial directory
-            os.chdir(self.initial_dir)
+            # Change to package directory for module import
+            os.chdir(self.package_dir)
             
-            # Use -m to run as module and preserve original args
             python_exe = sys.executable
-            args = [python_exe, '-m', 'janito']
-            
-            # Add workspace argument if it was provided
+            args = [python_exe, "-m", "janito"]
+
+            # Add workspace argument if it was provided, stripping any quotes
             if self.workspace:
-                args.extend([str(self.workspace)])
-                
-            # Add any other original args
-            args.extend(sys.argv[1:])
+                workspace_str = str(self.workspace).strip('"\'')
+                args.append(workspace_str)
             
             os.execv(python_exe, args)
         except Exception as e:

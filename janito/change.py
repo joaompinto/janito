@@ -254,9 +254,12 @@ class FileChangeHandler:
                     start_idx = self._find_block_start(modified_content, block.old_content)
                     if start_idx is None:
                         self.console.print(f"[red]Could not find matching block in {change.path}:[/]")
-                        self.console.print("\n[yellow]Looking for:[/]")
+                        self.console.print("\n[yellow]Content to find:[/]")
                         for line in block.old_content:
                             self.console.print(f"[yellow]{line}[/]")
+                        self.console.print("\n[yellow]File content:[/]")
+                        for i, line in enumerate(modified_content):
+                            self.console.print(f"[yellow]{i+1:4d}: {line}[/]")
                         blocks_to_process = None
                         break
                     blocks_to_process.append((block, start_idx))
@@ -312,31 +315,98 @@ class FileChangeHandler:
         Returns tuple of (start_index, indentation) or None if not found"""
         if not block:
             return None
-
+            
         # Get normalized versions of block lines for comparison
-        block_normalized = [line.lstrip() for line in block if line.strip()]
-        if not block_normalized:
+        # Only normalize non-empty lines, preserve empty ones
+        block_normalized = [(line.lstrip() if line.strip() else '') for line in block]
+        if not any(line.strip() for line in block_normalized):
             return None
 
-        # Compare lines ignoring indentation
+        # Find first non-empty line in block for initial match
+        first_nonempty_idx = next((i for i, line in enumerate(block_normalized) if line.strip()), 0)
+        first_pattern = block_normalized[first_nonempty_idx]
+
+        debug_info = {
+            'partial_matches': [],
+            'closest_match': None,
+            'closest_match_line': -1,
+            'closest_match_score': 0
+        }
+
+        # Compare lines, now preserving empty lines
         for i in range(len(content) - len(block_normalized) + 1):
-            matches = True
-            first_line = content[i].lstrip()
-            if not first_line == block_normalized[0]:
+            # Find where the first non-empty line matches
+            if content[i].lstrip() != first_pattern:
                 continue
 
             # Get indentation of first matching line
-            indent = len(content[i]) - len(first_line)
+            indent = len(content[i]) - len(content[i].lstrip())
+            
+            matches = True
+            matching_lines = 0
+            mismatch_details = None
 
-            # Check remaining lines
-            for j, block_line in enumerate(block_normalized[1:], 1):
-                content_line = content[i + j].lstrip()
-                if content_line != block_line:
-                    matches = False
-                    break
+            # Check all lines, including empty ones
+            for j, block_line in enumerate(block_normalized):
+                content_idx = i + j
+                content_line = content[content_idx]
+                
+                # For empty lines, just check if both are empty
+                if not block_line.strip():
+                    if content_line.strip():
+                        matches = False
+                        mismatch_details = {
+                            'line_number': content_idx,
+                            'expected': 'empty line',
+                            'found': content_line
+                        }
+                        break
+                else:
+                    if content_line.lstrip() != block_line:
+                        matches = False
+                        mismatch_details = {
+                            'line_number': content_idx,
+                            'expected': block_line,
+                            'found': content_line.lstrip()
+                        }
+                        break
+                matching_lines += 1
+
             if matches:
-                # Return the start index and the indentation level of the first line
                 return (i, indent)
+            
+            # Store partial match info
+            match_score = matching_lines / len(block_normalized)
+            debug_info['partial_matches'].append({
+                'start_line': i,
+                'matched_lines': matching_lines,
+                'total_lines': len(block_normalized),
+                'score': match_score,
+                'mismatch': mismatch_details
+            })
+            if match_score > debug_info['closest_match_score']:
+                debug_info['closest_match_score'] = match_score
+                debug_info['closest_match'] = content[i:i+len(block_normalized)]
+                debug_info['closest_match_line'] = i
+
+        # If we get here, no match was found - show debug info
+        self.console.print("[yellow]Block not found. Debug information:[/]")
+        self.console.print(f"[yellow]Looking for {len(block_normalized)} lines:[/]")
+        for line in block_normalized:
+            self.console.print(f"[yellow]  {line}[/]")
+        
+        if debug_info['partial_matches']:
+            best_match = max(debug_info['partial_matches'], key=lambda x: x['score'])
+            self.console.print("\n[yellow]Best partial match:[/]")
+            self.console.print(f"[yellow]At line {best_match['start_line']+1}:[/]")
+            for line in debug_info['closest_match']:
+                self.console.print(f"[yellow]  {line}[/]")
+            self.console.print(f"[yellow]Matched {best_match['matched_lines']}/{best_match['total_lines']} lines[/]")
+            if best_match['mismatch']:
+                self.console.print("\n[red]First mismatch:[/]")
+                self.console.print(f"[red]At line {best_match['mismatch']['line_number']+1}:[/]")
+                self.console.print(f"[red]Expected: {best_match['mismatch']['expected']}[/]")
+                self.console.print(f"[red]Found:    {best_match['mismatch']['found']}[/]")
 
         return None
 
