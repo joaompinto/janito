@@ -213,7 +213,7 @@ class JanitoConsole:
 
     def get_prompt(self, cwd=None):
         """Generate the command prompt"""
-        return HTML('<sep>#</sep> ')
+        return HTML('🤖 ')
 
     def render_status_bar(self):
         """Render the persistent status bar"""
