@@ -11,8 +11,7 @@ from typing import List, Optional
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from threading import Event
 import time
-from janito.utils import generate_file_structure, format_tree, get_files_content  # Update import
-from janito.prompts import SYSTEM_PROMPT, build_info_prompt, build_change_prompt, build_general_prompt  # Add to imports
+from janito.prompts import SYSTEM_PROMPT, build_info_prompt, build_change_prompt, build_general_prompt  # Update imports
 
 # Install rich traceback handler
 install(show_locals=True)
@@ -27,13 +26,13 @@ class ClaudeAPIAgent:
         self.conversation_history = []
         self.debug = False
         self.stop_progress = Event()
-        self.system_message = "You are Janito, an AI assistant focused on Python software development."
+        self.system_message = SYSTEM_PROMPT
         self.last_prompt = None
         self.last_full_message = None
         self.last_response = None
+        # Remove workspace instance since it's not used
 
-    def _get_files_content(self) -> str:
-        return get_files_content(Path().absolute())
+    # Remove _get_files_content method since it's not used
 
     def _show_progress(self, description: str):
         """Show progress spinner while waiting"""
@@ -121,9 +120,3 @@ class ClaudeAPIAgent:
             return f"History loaded from {filename}"
         except Exception as e:
             return f"Error loading history: {str(e)}"
-    
-    def handle_info_request(self, request: str, workspace_status: str) -> str:
-        """Handle information request without file modifications"""
-        files_content = self._get_files_content()
-        message = build_info_prompt(files_content, request)
-        return self.send_message(message)

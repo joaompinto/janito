@@ -1,165 +1,61 @@
-from typing import Optional, List, Set  # Add Set to imports
+from typing import Optional, List, Set
 import re
 from pathlib import Path
-from typing import Optional, List
 import ast
 import shutil
 from rich.syntax import Syntax
 from rich.console import Console
-from dataclasses import dataclass
 import tempfile
-from janito.utils import build_context_prompt, get_files_content  # Simplify imports
-
-"""
-File modification system for Janito.
-Handles parsing and applying code changes requested by users.
-Provides XML-based change descriptions and safety checks for file modifications.
-"""
-
-@dataclass
-class XMLBlock:
-    """Simple container for parsed XML blocks"""
-    description: str = ""
-    old_content: List[str] = None
-    new_content: List[str] = None
-    indentation: int = 0
-    
-    def __post_init__(self):
-        if self.old_content is None:
-            self.old_content = []
-        if self.new_content is None:
-            self.new_content = []
-
-@dataclass
-class XMLChange:
-    """Simple container for parsed XML changes"""
-    path: Path
-    operation: str
-    blocks: List[XMLBlock] = None  # Fix brackets syntax
-    content: str = ""
-
-    def __post_init__(self):
-        if self.blocks is None:
-            self.blocks = []
+from janito.workspace import Workspace
+from janito.xmlchangeparser import XMLChangeParser, XMLChange
 
 class FileChangeHandler:
     def __init__(self):
         self.preview_dir = Path(tempfile.mkdtemp(prefix='janito_preview_'))
         self.console = Console()
+        self.workspace = Workspace()
+        self.xml_parser = XMLChangeParser()
 
-    def generate_changes_prompt(self, dir_status: str, files_content: str, file_request: str) -> str:
-        return build_context_prompt(files_content, dir_status, file_request, "change")
+    # Remove generate_changes_prompt method as it's not being used
 
-    def _parse_xml_response(self, response: str) -> List[XMLChange]:
-        """Parse XML response line by line"""
-        changes = []
-        current_change = None
-        current_block = None
-        current_section = None
-        content_lines = []
-        
+    # Remove _parse_xml_response method as it's replaced by xml_parser
+
+    def test_parse_empty_block(self) -> bool:
+        """Test parsing of XML with empty content blocks"""
+        test_xml = '''<fileChanges>
+    <change path="hello.py" operation="create">
+        <block description="Create new file hello.py">
+            <oldContent></oldContent>
+            <newContent></newContent>
+        </block>
+    </change>
+</fileChanges>'''
+
         try:
-            lines = response.splitlines()
-            for line in lines:
-                if not line:
-                    continue
+            changes = self.xml_parser.parse_response(test_xml)
+            if not changes:
+                self.console.print("[red]Error: No changes parsed[/]")
+                return False
 
-                # Match change start
-                if match := re.match(r'<change\s+path="([^"]+)"\s+operation="([^"]+)">', line.strip()):
-                    path, operation = match.groups()
-                    current_change = XMLChange(Path(path), operation)
-                    current_block = None
-                    current_section = None
-                
-                # Match block start with indentation
-                elif match := re.match(r'<block\s+description="([^"]+)"\s+indentation="(\d+)">', line.strip()):
-                    if current_change:
-                        desc, indent = match.groups()
-                        current_block = XMLBlock(description=desc, indentation=int(indent))
-                        current_section = None
-                elif match := re.match(r'<block\s+description="([^"]+)">', line.strip()):
-                    if current_change:
-                        current_block = XMLBlock(description=match.group(1))
-                        current_section = None
-                
-                # Match content sections - removed indentation from oldContent
-                elif line.strip() == "<oldContent>":
-                    if current_block:
-                        current_section = "old"
-                        content_lines = []
+            change = changes[0]
+            if (change.path.name != "hello.py" or 
+                change.operation != "create" or 
+                not change.blocks or 
+                change.blocks[0].description != "Create new file hello.py"):
+                self.console.print("[red]Error: Parsed change does not match expected structure[/]")
+                return False
 
-                # Extract indentation from oldContent tag and skip the line
-                if match := re.match(r'<oldContent\s+indentation="(\d+)">', line.strip()):
-                    if current_block:
-                        current_block.indentation = int(match.group(1))
-                        current_section = "old"
-                        content_lines = []
-                    continue
-                elif line.strip() == "<oldContent>":
-                    if current_block:
-                        current_section = "old"
-                        content_lines = []
-                    continue
+            block = change.blocks[0]
+            if block.old_content != [] or block.new_content != []:
+                self.console.print("[red]Error: Content lists should be empty[/]")
+                return False
 
-                # Match change start
-                if match := re.match(r'<change\s+path="([^"]+)"\s+operation="([^"]+)">', line.strip()):
-                    path, operation = match.groups()
-                    current_change = XMLChange(Path(path), operation)
-                    current_block = None
-                    current_section = None
-                
-                # Match block start
-                elif match := re.match(r'<block\s+description="([^"]+)">', line.strip()):
-                    if current_change:
-                        current_block = XMLBlock(description=match.group(1))
-                        current_section = None
-                
-                # Match content sections
-                elif line.strip() == "<oldContent>":
-                    if current_block:
-                        current_section = "old"
-                        content_lines = []
-                
-                # Match section ends
-                elif line.strip() == "</oldContent>":
-                    if current_block:
-                        current_block.old_content = content_lines
-                        content_lines = []
-                elif line.strip() == "<newContent>":
-                    if current_block:
-                        current_section = "new"
-                        content_lines = []
-                
-                elif line.strip() == "</newContent>":
-                    if current_block:
-                        current_block.new_content = content_lines
-                        content_lines = []
-                
-                # Match block end
-                elif line.strip() == "</block>":
-                    if current_change and current_block:
-                        current_change.blocks.append(current_block)
-                        current_block = None
-                
-                # Match change end
-                elif line.strip() == "</change>":
-                    if current_change:
-                        changes.append(current_change)
-                        current_change = None
-                
-                # Collect content lines
-                elif current_section and current_block and not line.strip().startswith("</") and not line.strip().startswith("<"):
-                    content_lines.append(line)
-                
-                # Collect direct content for create operations
-                elif current_change and not current_block and not line.strip().startswith("</"):
-                    current_change.content += line + "\n"
+            self.console.print("[green]Empty block parsing test passed[/]")
+            return True
 
-            return changes
-            
         except Exception as e:
-            self.console.print(f"[red]Error parsing XML: {str(e)}[/]")
-            return []
+            self.console.print(f"[red]Test failed with error: {e}[/]")
+            return False
 
     def _preview_changes(self, changes: List[XMLChange], raw_response: str = None) -> bool:
         """Show preview of all changes and ask for confirmation"""
@@ -178,8 +74,21 @@ class FileChangeHandler:
         # Show changes preview
         for change in changes:
             if change.operation == 'create':
+                # Check both direct content and block content
+                has_content = bool(change.content.strip())
+                has_block_content = any(block.new_content for block in change.blocks)
+                
+                if not (has_content or has_block_content):
+                    self.console.print(f"\n[red]Error: Create operation for {change.path} has no content.[/]")
+                    return False
+                
+                if has_content:
+                    content_to_show = change.content
+                else:
+                    content_to_show = "\n".join(change.blocks[0].new_content)
+                    
                 self.console.print(f"\n[green]CREATE NEW FILE: {change.path}[/]")
-                syntax = Syntax(change.content, "python", theme="monokai")
+                syntax = Syntax(content_to_show, "python", theme="monokai")
                 self.console.print(syntax)
                 continue
                 
@@ -241,7 +150,7 @@ class FileChangeHandler:
                     else:
                         # Find and replace block content
                         lines = modified_content.splitlines()
-                        start_idx = self._find_block_start(lines, block.old_content, block.indentation)
+                        start_idx = self._find_block_start(lines, block.old_content)
                         if start_idx is None:
                             continue
                         end_idx = start_idx + len(block.old_content)
@@ -261,18 +170,17 @@ class FileChangeHandler:
 
     def process_changes(self, response: str) -> bool:
         try:
-            # Extract and validate XML content
             if not (match := re.search(r'<fileChanges>(.*?)</fileChanges>', response, re.DOTALL)):
                 self.console.print("[red]No file changes found in response[/]")
                 self.console.print("\nResponse content:")
                 self.console.print(response)
                 return False
 
-            xml_content = match.group(1)
+            xml_content = f"<fileChanges>{match.group(1)}</fileChanges>"
             self.console.print("[cyan]Found change block, parsing...[/]")
 
-            # Parse changes
-            changes = self._parse_xml_response(xml_content)
+            # Use the xml_parser instance
+            changes = self.xml_parser.parse_response(xml_content)
             if not changes:
                 self.console.print("[red]No valid changes found after parsing[/]")
                 return False
@@ -290,8 +198,16 @@ class FileChangeHandler:
 
                 # Handle file creation separately
                 if change.operation == 'create':
-                    change.path.write_text(change.content)
-                    self.console.print(f"[green]Created new file: {change.path}[/]")
+                    content_to_write = change.content
+                    if not content_to_write.strip() and change.blocks:
+                        # If no direct content but we have blocks, use the new content from first block
+                        content_to_write = "\n".join(change.blocks[0].new_content)
+                    
+                    if content_to_write.strip():
+                        change.path.write_text(content_to_write)
+                        self.console.print(f"[green]Created new file: {change.path}[/]")
+                    else:
+                        self.console.print(f"[red]Error: No content to write for {change.path}[/]")
                     continue
 
                 # Validate file exists for modifications
@@ -299,8 +215,9 @@ class FileChangeHandler:
                     self.console.print(f"[red]File not found: {change.path}[/]")
                     continue
 
-                # Read file content once
-                original_content = change.path.read_text().splitlines()
+                # Read file content once - read as text to preserve exact endings
+                original_text = change.path.read_text()
+                original_content = original_text.splitlines()
                 modified_content = original_content.copy()
 
                 # First pass: validate all blocks can be found
@@ -312,7 +229,7 @@ class FileChangeHandler:
                         continue
 
                     # Find the block location
-                    start_idx = self._find_block_start(modified_content, block.old_content, block.indentation)
+                    start_idx = self._find_block_start(modified_content, block.old_content)
                     if start_idx is None:
                         self.console.print(f"[red]Could not find matching block in {change.path}:[/]")
                         self.console.print("\n[yellow]Looking for:[/]")
@@ -332,6 +249,9 @@ class FileChangeHandler:
                 for block, start_idx in reversed(blocks_to_process):
                     if start_idx is None:  # Append operation
                         if block.new_content:  # Only append if there is content
+                            # Ensure there's a newline before appending if file isn't empty and doesn't end with one
+                            if modified_content and not original_text.endswith('\n'):
+                                modified_content[-1] = modified_content[-1] + '\n'
                             modified_content.extend(block.new_content)
                     else:
                         # Handle deletion (empty new_content) or replacement
@@ -351,24 +271,16 @@ class FileChangeHandler:
             self.console.print(f"[red]Failed to process file changes: {e}[/]")
             return False
 
-    def _find_block_start(self, content: List[str], block: List[str], indentation: int = 0) -> Optional[int]:
-        """Find the starting index of a block in the content, handling indentation"""
+    def _find_block_start(self, content: List[str], block: List[str]) -> Optional[int]:
+        """Find the starting index of a block in the content with exact matching"""
         if not block:
             return None
 
-        # Helper to get line without indentation
-        def remove_indentation(line: str, indent: int) -> str:
-            if line.startswith(" " * indent):
-                return line[indent:]
-            return line
-
-        # Compare lines ignoring specified indentation
+        # Compare lines exactly including indentation
         for i in range(len(content) - len(block) + 1):
             matches = True
             for j, block_line in enumerate(block):
-                content_line = content[i + j]
-                # Remove specified indentation before comparing
-                if remove_indentation(content_line, indentation) != remove_indentation(block_line, indentation):
+                if content[i + j] != block_line:
                     matches = False
                     break
             if matches:

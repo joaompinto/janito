@@ -36,7 +36,7 @@ from typing import Optional
 import readline  # Add to imports at top
 import signal   # Add to imports at top
 from rich.traceback import install
-from janito.utils import generate_file_structure, format_tree, get_files_content  # Add import at top
+from janito.workspace import Workspace  # Update import
 from janito.prompts import build_change_prompt, build_info_prompt, build_general_prompt, SYSTEM_PROMPT  # Add to imports
 
 # Install rich traceback handler
@@ -99,23 +99,18 @@ class JanitoCommands:  # Renamed from ClaudeCommands
             self.api_key = api_key or os.getenv('ANTHROPIC_API_KEY')
             if not self.api_key:
                 raise ValueError("ANTHROPIC_API_KEY environment variable is required")
-            self.claude = ClaudeAPIAgent(api_key=self.api_key)  # Create Claude agent instance
+            self.claude = ClaudeAPIAgent(api_key=self.api_key)
             self.change_handler = FileChangeHandler()
             self.console = Console()
-            # Remove redundant attributes that are now in ClaudeAPIAgent
             self.debug = False
             self.stop_progress = Event()
-            self.change_handler = FileChangeHandler()  # Add file change handler
-            self.console = Console()  # Add console for rich output
-            self.last_sent = None  # Add last sent message storage
-            self.last_response = None  # Add last response storage
-            self.system_message = SYSTEM_PROMPT  # Use the prompt from prompts.py
+            self.system_message = SYSTEM_PROMPT
+            self.workspace = Workspace()  # Add workspace instance
         except Exception as e:
             raise ValueError(f"Failed to initialize Janito: {e}")
-            raise ValueError(f"Failed to initialize Janito: {e}")
-        
+
     def _get_files_content(self) -> str:
-        return get_files_content(Path().absolute())
+        return self.workspace.get_files_content()
 
     def _build_context(self, request: str, request_type: str = "general") -> str:
         """Build context with workspace status and files content"""
@@ -194,19 +189,7 @@ class JanitoCommands:  # Renamed from ClaudeCommands
         return "Conversation history cleared"
 
     def get_workspace_status(self) -> str:
-        """Get a summary of Python files in current workspace"""
-        try:
-            base_path = Path().absolute()
-            tree = generate_file_structure(base_path)
-            
-            if not tree:
-                return "No Python files found in the current workspace."
-                
-            tree_lines = format_tree(tree)
-            return "Python files in workspace:\n" + "\n".join(tree_lines)
-            
-        except Exception as e:
-            raise RuntimeError(f"Failed to get workspace status: {e}")
+        return self.workspace.get_workspace_status()
 
     def show_workspace(self) -> str:
         """Show directory structure and Python files in current workspace"""
@@ -274,6 +257,53 @@ class JanitoCommands:  # Renamed from ClaudeCommands
             self.claude.debug = self.debug
         return f"Debug mode {'enabled' if self.debug else 'disabled'}"
 
+    def check_syntax(self) -> str:
+        """Check all Python files in the workspace for syntax errors"""
+        try:
+            errors = []
+            for file in self.workspace.base_path.rglob("*.py"):
+                try:
+                    with open(file, "r") as f:
+                        content = f.read()
+                    ast.parse(content)
+                except SyntaxError as e:
+                    errors.append(f"Syntax error in {file}: {e}")
+            
+            if errors:
+                return "\n".join(errors)
+            return "No syntax errors found."
+        except Exception as e:
+            return f"Error checking syntax: {e}"
+
+    def run_python(self, filepath: str) -> str:
+        """Run a Python file"""
+        try:
+            path = Path(filepath)
+            if not path.exists():
+                return f"Error: File not found - {filepath}"
+            if not path.is_file():
+                return f"Error: Not a file - {filepath}"
+            if not filepath.endswith('.py'):
+                return f"Error: Not a Python file - {filepath}"
+                
+            self.console.print(f"\n[cyan]Running Python file: {filepath}[/cyan]")
+            self.console.print("=" * 80)
+            
+            result = subprocess.run([sys.executable, str(path)], 
+                                  capture_output=True, 
+                                  text=True)
+            
+            if result.stdout:
+                self.console.print("\n[green]Output:[/green]")
+                print(result.stdout)
+            if result.stderr:
+                self.console.print("\n[red]Errors:[/red]")
+                print(result.stderr)
+                
+            return ""
+        except Exception as e:
+            return f"Error running file: {str(e)}"
+
 class JanitoConsole:
     """Interactive console for Janito with command handling and REPL"""
     def __init__(self):
@@ -290,6 +320,9 @@ class JanitoConsole:
                 '.workspace': lambda _: self.janito.show_workspace(),
                 '.last': lambda _: self.janito.get_last_response(),  # Add last command
                 '.show': lambda args: self.janito.show_file(args[0]) if args else "Error: File path required",
+                '.check': lambda _: self.janito.check_syntax(),  # Add check command
+                '.p': lambda args: self.janito.run_python(args[0]) if args else "Error: File path required",
+                '.python': lambda args: self.janito.run_python(args[0]) if args else "Error: File path required",
                 '.help': self.help  # Just point to the help method instead of a lambda
             }
             self.commands.update(janito_commands)
@@ -408,6 +441,7 @@ class JanitoConsole:
             print("  .content - Show current workspace content")
             print("  .last    - Show last Claude response")
             print("  .show    - Show file content with syntax highlighting")
+            print("  .check   - Check workspace Python files for syntax errors")
             print("\nMessage Modes:")
             print("  1. Regular message:")
             print("     Example: how does the file watcher work")

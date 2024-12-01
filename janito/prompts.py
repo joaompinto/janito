@@ -2,26 +2,28 @@
 CHANGE_XML_FORMAT = """XML Format Requirements:
 <fileChanges>
     <change path="file.py" operation="create|modify">
-        <block description="Description of changes" indentation="N">
-            <!-- N = number of space characters from start of line -->
+        <block description="Description of changes">
             <oldContent>
                 // Exact content to be replaced (empty for create/append)
-                // Keep original indentation in content
+                // Must match existing indentation exactly
             </oldContent>
             <newContent>
                 // New content to replace the old content
-                // Keep desired indentation in content
+                // Must include desired indentation
             </newContent>
         </block>
     </change>
 </fileChanges>
 
 RULES:
+- XML tags must be on their own lines, never inline with content
+- Content must start on the line after its opening tag
+- Each closing tag must be on its own line
 - Use XML tags for file changes.
 - Each block must have exactly one oldContent and one newContent section.
 - Multiple changes to a file should use multiple block elements.
 - Provide a description for each change block.
-- Indentation attribute specifies number of leading spaces to ignore when comparing
+- Preserve all indentation exactly in both oldContent and newContent blocks
 - Use operation="create" for new files.
 - Use operation="modify" for existing files.
 - Ensure oldContent is empty for file append operations.
@@ -81,6 +83,17 @@ GENERAL_PROMPT = """<context>
 Please analyze the workspace status and respond to the user message, format the answers in markdown for better readability.
 """
 
+FIX_SYNTAX_PROMPT = """Fix the following Python syntax errors:
+
+{error_details}
+
+TASK:
+Please fix all syntax errors in the files above. 
+Provide the fixes using the XML change format below.
+Do not modify any functionality, only fix syntax errors.
+
+""" + CHANGE_XML_FORMAT  # Add XML format to prompt
+
 def build_info_prompt(files_content: str, request: str) -> str:
     """Build prompt for information requests"""
     return INFO_REQUEST_PROMPT.format(
@@ -103,3 +116,29 @@ def build_general_prompt(workspace_status: str, files_content: str, message: str
         files_content=files_content,
         message=message
     )
+
+def build_fix_syntax_prompt(error_files: dict) -> str:
+    """Build prompt for fixing syntax errors in files.
+    
+    Args:
+        error_files: Dict mapping filepath to dict with 'content' and 'error' keys
+    """
+    errors_report = ["Files with syntax errors to fix:\n"]
+    
+    for filepath, details in error_files.items():
+        errors_report.append(f"=== {filepath} ===")
+        errors_report.append(f"Error: {details['error']}")
+        errors_report.append("Content:")
+        errors_report.append(details['content'])
+        errors_report.append("")  # Empty line between files
+        
+    return """Please fix the following Python syntax errors:
+
+{}
+
+Provide the fixes in the standard XML change format.
+Only fix syntax errors, do not modify functionality.
+Keep the changes minimal to just fix the syntax.""".format('\n'.join(errors_report))
+
+
+
