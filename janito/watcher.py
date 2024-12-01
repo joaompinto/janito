@@ -4,6 +4,7 @@ import time
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import sys
+from typing import Callable, Optional
 
 """
 File watching system for Janito.
@@ -13,7 +14,8 @@ Provides debouncing and filtering capabilities to handle file system events effi
 
 class PackageFileHandler(FileSystemEventHandler):
     """Watches for changes in Python package files and triggers restart callbacks"""
-    def __init__(self, callback, base_path='.'):
+    def __init__(self, callback: Callable[[str, str], None], base_path: str = '.'):
+        super().__init__()
         self.callback = callback
         self.last_modified = time.time()
         self.package_dir = os.path.normpath(os.path.dirname(os.path.dirname(__file__)))
@@ -43,9 +45,9 @@ class PackageFileHandler(FileSystemEventHandler):
             print(f"\nError processing file {event_path}: {e}")
 
 class FileWatcher:
-    def __init__(self, callback, base_path='.'):
-        self.observer = None
-        # Update to use PackageFileHandler instead of ProjectFileHandler
+    """File system watcher for auto-restart functionality"""
+    def __init__(self, callback: Callable[[str, str], None], base_path: str = '.'):
+        self.observer: Optional[Observer] = None
         self.handler = PackageFileHandler(callback, base_path)
         self.base_path = os.path.abspath(base_path)
         self.is_running = False  # Add state tracking
@@ -55,7 +57,6 @@ class FileWatcher:
         try:
             if not self.is_running:
                 self.is_running = True
-                print("\nStarting file watcher:")
                 print(f"🔍 Monitoring Janito package in: {self.base_path}")
                 print("⚡ Auto-restart enabled for package modifications")
                 self.observer = Observer()

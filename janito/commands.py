@@ -1,54 +1,20 @@
-from prompt_toolkit import PromptSession
-from prompt_toolkit.completion import WordCompleter, Completer, Completion
-from prompt_toolkit.formatted_text import HTML
-from prompt_toolkit.styles import Style
-from prompt_toolkit.document import Document
-from prompt_toolkit.completion.base import CompleteEvent
-import anthropic
-import os
+from typing import Optional, List
 from pathlib import Path
-import json
-from typing import List, Optional, AsyncGenerator, Iterable, Tuple
-import asyncio
-from hashlib import sha256
-from datetime import datetime, timedelta
+import ast
+import os
 import sys
-import time
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
-import traceback  # Add import at the top with other imports
-from rich.markdown import Markdown
-from rich.console import Console
-import subprocess  # Add at the top with other imports
-import re  # Add to imports at top
-import ast  # Add to imports at top
-import tempfile
-from janito.change import FileChangeHandler  # Remove unused imports
-from janito.watcher import FileWatcher
-from janito.claude import ClaudeAPIAgent
-from rich.progress import Progress, SpinnerColumn, TextColumn  # Add to imports at top
-from threading import Event
-import threading
+import subprocess
 from rich.syntax import Syntax
+from rich.console import Console
+from rich.markdown import Markdown
 from rich.text import Text
-import typer
-from typing import Optional
-import readline  # Add to imports at top
-import signal   # Add to imports at top
-from rich.traceback import install
-from janito.workspace import Workspace  # Update import
-from janito.prompts import build_change_prompt, build_info_prompt, build_general_prompt, SYSTEM_PROMPT  # Add to imports
+from threading import Event
+from janito.workspace import Workspace
+from janito.claude import ClaudeAPIAgent
+from janito.change import FileChangeHandler
+from janito.prompts import build_general_prompt, build_info_prompt, build_change_prompt, build_fix_error_prompt, SYSTEM_PROMPT
 
-# Install rich traceback handler
-install(show_locals=True)
-
-"""
-Main module for Janito - Language-Driven Software Development Assistant.
-Provides the core CLI interface and command handling functionality.
-Manages user interactions, file operations, and API communication with Claude.
-"""
-
-class JanitoCommands:  # Renamed from ClaudeCommands
+class JanitoCommands:
     def __init__(self, api_key: Optional[str] = None):
         try:
             self.api_key = api_key or os.getenv('ANTHROPIC_API_KEY')
@@ -60,9 +26,38 @@ class JanitoCommands:  # Renamed from ClaudeCommands
             self.debug = False
             self.stop_progress = Event()
             self.system_message = SYSTEM_PROMPT
-            self.workspace = Workspace()  # Add workspace instance
+            self.workspace = Workspace()
         except Exception as e:
             raise ValueError(f"Failed to initialize Janito: {e}")
+
+    def missing_files(self, args):
+        """Show files in workspace that are not included based on patterns"""
+        default_exclude = self.workspace.default_exclude
+        default_patterns = self.workspace.default_patterns
+        gitignore_paths = list(self.workspace.base_path.rglob(".gitignore"))
+        gitignore_content = []
+
+        for p in gitignore_paths:
+            with open(p) as f:
+                gitignore_content.extend([line.strip() for line in f if line.strip() and not line.strip().startswith("#")])
+
+        tree = self.workspace.generate_file_structure()
+        self.console.print("[bold]Files excluded from workspace:[/]")
+        for pattern in default_exclude + gitignore_content:
+            self.console.print(f"Pattern: {pattern} (from {'.gitignore' if pattern in gitignore_content else 'default excludes'})")
+            # Check each path in the tree against the pattern
+            for path in list(tree.keys()):
+                if any(part.startswith(pattern) for part in Path(path).parts):
+                    self.console.print(f"  {path}")
+
+        self.console.print("\n[bold]Files included based on patterns:[/]") 
+        for pattern in default_patterns:
+            self.console.print(f"Pattern: {pattern} (default include pattern)")
+            # Check each path in the tree against the pattern
+            import fnmatch
+            for path in list(tree.keys()):
+                if fnmatch.fnmatch(str(path), pattern):
+                    self.console.print(f"  {path}")
 
     def _get_files_content(self) -> str:
         return self.workspace.get_files_content()
@@ -82,9 +77,13 @@ class JanitoCommands:  # Renamed from ClaudeCommands
 {request}"""
 
     def send_message(self, message: str) -> str:
+        """Send message with interruptible progress bar"""
         try:
             if self.debug:
                 print("\n[Debug] Sending request to Claude")
+            
+            # Reset the stop event
+            self.stop_progress.clear()
             
             # Build general context prompt
             prompt = build_general_prompt(
@@ -93,12 +92,57 @@ class JanitoCommands:  # Renamed from ClaudeCommands
                 message
             )
             
-            # Use claude agent to send message
-            response_text = self.claude.send_message(prompt)
-            self.last_response = response_text
-            return response_text
-            
+            from rich.progress import Progress, SpinnerColumn, TextColumn
+            with Progress(
+                SpinnerColumn(),
+                TextColumn("[progress.description]{task.description}"),
+                transient=True,
+                disable=False
+            ) as progress:
+                # Add a simple spinner task
+                task = progress.add_task("Waiting for response...", total=None)
+                
+                try:
+                    # Start Claude request without waiting
+                    import threading
+                    response_ready = threading.Event()
+                    response_text = [""]  # Use list to allow modification in thread
+                    
+                    def claude_request():
+                        try:
+                            response_text[0] = self.claude.send_message(prompt, stop_event=self.stop_progress)
+                        finally:
+                            response_ready.set()
+                    
+                    # Start request in background
+                    request_thread = threading.Thread(target=claude_request)
+                    request_thread.daemon = True
+                    request_thread.start()
+                    
+                    # Wait for response with interruption check
+                    while not response_ready.is_set():
+                        if self.stop_progress.is_set():
+                            progress.stop()
+                            return "Operation cancelled by user."
+                        response_ready.wait(0.1)  # Check every 100ms
+                    
+                    if self.stop_progress.is_set():
+                        return "Operation cancelled by user."
+                        
+                    if not response_text[0]:
+                        return "No response received."
+                        
+                    self.last_response = response_text[0]
+                    return response_text[0]
+                    
+                except KeyboardInterrupt:
+                    progress.stop()
+                    self.stop_progress.set()
+                    return "Operation cancelled by user."
+                    
         except Exception as e:
+            if self.stop_progress.is_set():
+                return "Operation cancelled by user."
             raise RuntimeError(f"Failed to process message: {e}")
 
     def _display_file_content(self, filepath: Path) -> None:
@@ -149,13 +193,21 @@ class JanitoCommands:  # Renamed from ClaudeCommands
     def get_workspace_status(self) -> str:
         return self.workspace.get_workspace_status()
 
-    def show_workspace(self) -> str:
+    def show_workspace(self, show_missing: bool = False) -> str:
         """Show directory structure and Python files in current workspace"""
         try:
-            status = self.get_workspace_status()
-            print("\nWorkspace structure:")
-            print("=" * 80)
-            print(status)
+            self.workspace.print_workspace_structure()
+            
+            if show_missing:
+                excluded_files = self.workspace.get_excluded_files()
+                if excluded_files:
+                    print("\nExcluded files and directories:")
+                    print("=" * 80)
+                    for path in excluded_files:
+                        print(f"  {path}")
+                else:
+                    print("\nNo excluded files or directories found.")
+                    
             return ""
         except Exception as e:
             raise RuntimeError(f"Failed to show workspace: {e}")
@@ -233,6 +285,36 @@ class JanitoCommands:  # Renamed from ClaudeCommands
         except Exception as e:
             return f"Error checking syntax: {e}"
 
+    def _attempt_fix_error(self, filepath: str, error_output: str) -> str:
+        """Attempt to fix Python errors by consulting Claude"""
+        try:
+            self.console.print("\n[yellow]Would you like me to attempt to fix this error automatically? (y/N)[/]")
+            if input().lower() != 'y':
+                return "Fix attempt cancelled by user."
+
+            # Get file content for context
+            with open(filepath) as f:
+                file_content = f.read()
+                
+            # Build context using the proper prompt builder
+            prompt = build_fix_error_prompt(
+                self.get_workspace_status(),
+                file_content,
+                filepath,
+                error_output
+            )
+            
+            # Get and process response
+            response = self.claude.send_message(prompt)
+            success = self.change_handler.process_changes(response)
+            
+            if success:
+                return "Changes applied. Try running the file again."
+            return "Failed to apply fixes. Manual intervention required."
+            
+        except Exception as e:
+            return f"Error attempting fix: {str(e)}"
+
     def run_python(self, filepath: str) -> str:
         """Run a Python file"""
         try:
@@ -254,8 +336,13 @@ class JanitoCommands:  # Renamed from ClaudeCommands
             if result.stdout:
                 self.console.print("\n[green]Output:[/green]")
                 print(result.stdout)
-            if result.stderr:
-                self.console.print("\n[red]Errors:[/red]")
+                
+            if result.returncode != 0:
+                self.console.print("\n[red]Execution failed with errors:[/red]")
+                print(result.stderr)
+                return self._attempt_fix_error(filepath, result.stderr)
+            elif result.stderr:
+                self.console.print("\n[yellow]Warnings:[/yellow]")
                 print(result.stderr)
                 
             return ""
@@ -267,7 +354,11 @@ class JanitoCommands:  # Renamed from ClaudeCommands
         try:
             path = Path(filepath)
             if not path.exists():
-                return f"Error: File not found - {filepath}"
+                # Create the file if it doesn't exist for .gitignore and similar files
+                if filepath in ['.gitignore', '.env', 'README.md']:
+                    path.touch()
+                else:
+                    return f"Error: File not found - {filepath}"
             if not path.is_file():
                 return f"Error: Not a file - {filepath}"
 
@@ -284,71 +375,3 @@ class JanitoCommands:  # Renamed from ClaudeCommands
                 
         except Exception as e:
             return f"Error editing file: {str(e)}"
-
-import typer
-import traceback
-from pathlib import Path
-import os
-from janito.console import JanitoConsole
-
-class CLI:
-    """Command-line interface handler for Janito using Typer"""
-    def __init__(self):
-        self.app = typer.Typer(
-            help="Janito - Language-Driven Software Development Assistant",
-            add_completion=False,
-            no_args_is_help=False,
-        )
-        self._setup_commands()
-
-    def _setup_commands(self):
-        """Setup Typer commands"""
-        @self.app.command()
-        def start(
-            workspace: Optional[str] = typer.Argument(None, help="Optional workspace directory to change to"),
-            debug: bool = typer.Option(False, "--debug", help="Enable debug mode"),
-            no_watch: bool = typer.Option(False, "--no-watch", help="Disable file watching"),
-        ):
-            """Start Janito interactive console"""
-            try:
-                # Change to workspace directory if provided
-                if workspace:
-                    workspace_path = Path(workspace).resolve()
-                    if not workspace_path.exists():
-                        self.console.print(f"\nError: Workspace directory does not exist: {workspace_path}")
-                        raise typer.Exit(1)
-                    os.chdir(workspace_path)
-
-                console = JanitoConsole()
-                if workspace:
-                    console.workspace = workspace_path  # Store workspace path
-                if debug:
-                    console.janito.debug = True
-                if no_watch:
-                    if console.watcher:
-                        console.watcher.stop()
-                        console.watcher = None
-                
-                # Print workspace info after file watcher setup
-                if workspace:
-                    print("\n" + "="*50)
-                    print(f"🚀 Working on project: {workspace_path.name}")
-                    print(f"📂 Path: {workspace_path}")
-                    print("="*50 + "\n")
-                    
-                console.run()
-
-            except Exception as e:
-                print(f"\nFatal error: {str(e)}")
-                print("\nTraceback:")
-                traceback.print_exc()
-                raise typer.Exit(1)
-
-    def run(self):
-        """Run the CLI application"""
-        self.app()
-
-def run_cli():
-    """Main entry point"""
-    cli = CLI()
-    cli.run()

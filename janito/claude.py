@@ -34,66 +34,56 @@ class ClaudeAPIAgent:
 
     # Remove _get_files_content method since it's not used
 
-    def _show_progress(self, description: str):
-        """Show progress spinner while waiting"""
-        # Create new Progress instance each time
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            transient=True
-        ) as progress:
-            task = progress.add_task(description, total=None)
-            while not self.stop_progress.is_set():
-                progress.update(task)
-                time.sleep(0.1)
-
-    def send_message(self, message: str, system_prompt: str = None) -> str:
+    def send_message(self, message: str, system_prompt: str = None, stop_event: Event = None) -> str:
         """Send message to Claude API and return response"""
         try:
-            # Store the full message including system prompt
-            self.last_full_message = f"""=== SYSTEM PROMPT ===
-{system_prompt or self.system_message}
-
-=== USER MESSAGE ===
-{message}"""
-            
-            # Start progress indicator
-            self.stop_progress.clear()
-            progress_thread = threading.Thread(
-                target=self._show_progress,
-                args=("Waiting for Claude's response...",)
-            )
-            progress_thread.start()
+            # Store the full message
+            self.last_full_message = message
             
             try:
+                # Check if already cancelled
+                if stop_event and stop_event.is_set():
+                    return ""
+                
+                # Start API request
                 response = self.client.messages.create(
-                    model="claude-3-sonnet-20240229",
+                    model="claude-3-opus-20240229",
                     system=self.system_message,
-                    max_tokens=4096,
+                    max_tokens=4000,
                     messages=[
                         {"role": "user", "content": message}
-                    ]
+                    ],
+                    temperature=0,
                 )
+                
+                # Handle response
                 response_text = response.content[0].text
-                self.last_response = response_text  # Add this line
-            finally:
-                self.stop_progress.set()
-                progress_thread.join()
-            
-            if self.debug:
-                print("\n[Debug] Received response:")
-                print("=" * 80)
-                print(response_text)
-                print("=" * 80)
-            
-            # Update conversation history
-            self.conversation_history.append({"role": "user", "content": message})
-            self.conversation_history.append({"role": "assistant", "content": response_text})
-            
-            return response_text
-            
+                
+                # Only store and process response if not cancelled
+                if not (stop_event and stop_event.is_set()):
+                    self.last_response = response_text
+                    
+                    if self.debug:
+                        print("\n[Debug] Received response:")
+                        print("=" * 80)
+                        print(response_text)
+                        print("=" * 80)
+                    
+                    # Update conversation history
+                    self.conversation_history.append({"role": "user", "content": message})
+                    self.conversation_history.append({"role": "assistant", "content": response_text})
+                
+                # Always return the response, let caller handle cancellation
+                return response_text
+                
+            except KeyboardInterrupt:
+                if stop_event:
+                    stop_event.set()
+                return ""
+                
         except Exception as e:
-            self.stop_progress.set()
+            if stop_event and stop_event.is_set():
+                return ""
             return f"Error: {str(e)}"
 
     def toggle_debug(self) -> str:

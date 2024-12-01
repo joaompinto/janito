@@ -1,19 +1,20 @@
 # XML Format Specification
 CHANGE_XML_FORMAT = """XML Format Requirements:
 <fileChanges>
-    <change path="file.py" operation="create|modify">
+    <change path="./file.py" operation="create|modify">
         <block description="Description of changes">
             <oldContent>
                 // Exact content to be replaced (empty for create/append)
             </oldContent>
             <newContent>
-                // New content to replace the old content
+                // New content to replace the old content (empty for deletion)
             </newContent>
         </block>
     </change>
 </fileChanges>
 
 RULES:
+- The path attribute MUST relative to the workspace base directory
 - XML tags must be on their own lines, never inline with content
 - Content must start on the line after its opening tag
 - Each closing tag must be on its own line
@@ -46,11 +47,12 @@ INFO_REQUEST_PROMPT = """<context>
     </request>
 </context>
 
-Please provide information based on the above project context.
+1. First analyze the current workspace structure and content.
+2. Consider dependencies and relationships between files.
+3. Then provide information based on the above project context.
 Focus on explaining and analyzing without suggesting any file modifications.
 """
 
-# Updated change request prompt that includes format requirements
 CHANGE_REQUEST_PROMPT = """<context>
     <workspaceStatus>
         {workspace_status}
@@ -62,6 +64,10 @@ CHANGE_REQUEST_PROMPT = """<context>
         {request}
     </request>
 </context>
+
+1. First analyze the current workspace structure and content.
+2. Consider dependencies and relationships between files.
+3. Then propose changes that address the user's request.
 
 """ + CHANGE_XML_FORMAT
 
@@ -77,10 +83,15 @@ GENERAL_PROMPT = """<context>
     </userMessage>
 </context>
 
-Please analyze the workspace status and respond to the user message, format the answers in markdown for better readability.
+1. First analyze the current workspace structure and content.
+2. Consider dependencies and relationships between files.
+3. Then respond to the user message.
+
+Format the response in markdown for better readability.
 """
 
-FIX_SYNTAX_PROMPT = """Fix the following Python syntax errors:
+FIX_SYNTAX_PROMPT = """1. First analyze the current workspace structure.
+2. Then address the following Python syntax errors:
 
 {error_details}
 
@@ -90,6 +101,17 @@ Provide the fixes using the XML change format below.
 Do not modify any functionality, only fix syntax errors.
 
 """ + CHANGE_XML_FORMAT  # Add XML format to prompt
+
+# Add new prompt template for error fixing
+FIX_ERROR_PROMPT = """There's an error in the Python file {filepath}:
+
+Error output:
+{error_output}
+
+Please analyze the error and suggest fixes. Use the XML format below for any code changes.
+Focus only on fixing the error, don't modify unrelated code.
+
+""" + CHANGE_XML_FORMAT
 
 def build_info_prompt(files_content: str, request: str) -> str:
     """Build prompt for information requests"""
@@ -136,6 +158,17 @@ def build_fix_syntax_prompt(error_files: dict) -> str:
 Provide the fixes in the standard XML change format.
 Only fix syntax errors, do not modify functionality.
 Keep the changes minimal to just fix the syntax.""".format('\n'.join(errors_report))
+
+def build_fix_error_prompt(workspace_status: str, file_content: str, filepath: str, error_output: str) -> str:
+    """Build prompt for fixing Python execution errors"""
+    return f"""=== WORKSPACE STATUS ===
+{workspace_status}
+
+=== CURRENT FILE CONTENT ===
+{file_content}
+
+=== ERROR FIX REQUEST ===
+{FIX_ERROR_PROMPT.format(filepath=filepath, error_output=error_output)}"""
 
 
 

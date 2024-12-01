@@ -1,4 +1,4 @@
-# Python
+# PythonG
 __pycache__/
 *.py[cod]
 *$py.class
@@ -50,3 +50,6 @@ htmlcov/
 .coverage.*
 coverage.xml
 *.cover
+
+.pytest_cache/
+.janito/history

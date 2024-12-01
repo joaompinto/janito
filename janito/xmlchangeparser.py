@@ -30,6 +30,7 @@ class XMLChange:
             self.blocks = []
 
 class XMLChangeParser:
+    """XML parser for file changes"""
     def __init__(self):
         self.console = Console()
         self.current_operation = None
@@ -49,6 +50,23 @@ class XMLChangeParser:
             
         # Check if line contains exactly one XML tag and nothing else
         return bool(re.match(r'^\s*<[^>]+>\s*$', line))
+
+    def _validate_path(self, path_str: str) -> bool:
+        """Validate that path is relative and does not try to escape workspace"""
+        try:
+            path = Path(path_str)
+            # Check if path is absolute
+            if path.is_absolute():
+                self.console.print(f"[red]Error: Path must be relative: {path_str}[/]")
+                return False
+            # Check for path traversal attempts
+            if '..' in path.parts:
+                self.console.print(f"[red]Error: Path cannot contain '..': {path_str}[/]")
+                return False
+            return True
+        except Exception:
+            self.console.print(f"[red]Error: Invalid path format: {path_str}[/]")
+            return False
 
     def parse_response(self, response: str) -> List[XMLChange]:
         """Parse XML response according to format specification:
@@ -111,6 +129,10 @@ class XMLChangeParser:
                     
                 elif match := re.match(r'<change\s+path="([^"]+)"\s+operation="([^"]+)">', stripped):
                     path, operation = match.groups()
+                    # Validate path before creating change object
+                    if not self._validate_path(path):
+                        self.has_invalid_tags = True
+                        continue
                     if operation not in ('create', 'modify'):
                         self.console.print(f"[red]Invalid operation '{operation}' - skipping change[/]")
                         continue
