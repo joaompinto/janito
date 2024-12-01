@@ -10,11 +10,12 @@ from janito.workspace import Workspace
 from janito.xmlchangeparser import XMLChangeParser, XMLChange
 
 class FileChangeHandler:
-    def __init__(self):
+    def __init__(self, interactive=True):
         self.preview_dir = Path(tempfile.mkdtemp(prefix='janito_preview_'))
         self.console = Console()
         self.workspace = Workspace()
         self.xml_parser = XMLChangeParser()
+        self.interactive = interactive
 
     # Remove generate_changes_prompt method as it's not being used
 
@@ -31,67 +32,134 @@ class FileChangeHandler:
     </change>
 </fileChanges>'''
 
-        try:
-            changes = self.xml_parser.parse_response(test_xml)
-            if not changes:
-                self.console.print("[red]Error: No changes parsed[/]")
-                return False
-
-            change = changes[0]
-            if (change.path.name != "hello.py" or 
-                change.operation != "create" or 
-                not change.blocks or 
-                change.blocks[0].description != "Create new file hello.py"):
-                self.console.print("[red]Error: Parsed change does not match expected structure[/]")
-                return False
-
-            block = change.blocks[0]
-            if block.old_content != [] or block.new_content != []:
-                self.console.print("[red]Error: Content lists should be empty[/]")
-                return False
-
-            self.console.print("[green]Empty block parsing test passed[/]")
-            return True
-
-        except Exception as e:
-            self.console.print(f"[red]Test failed with error: {e}[/]")
+        changes = self.xml_parser.parse_response(test_xml)
+        if not changes:
+            self.console.print("[red]Error: No changes parsed[/]")
             return False
+
+        change = changes[0]
+        if (change.path.name != "hello.py" or 
+            change.operation != "create" or 
+            not change.blocks or 
+            change.blocks[0].description != "Create new file hello.py"):
+            self.console.print("[red]Error: Parsed change does not match expected structure[/]")
+            return False
+
+        block = change.blocks[0]
+        if block.old_content != [] or block.new_content != []:
+            self.console.print("[red]Error: Content lists should be empty[/]")
+            return False
+
+        self.console.print("[green]Empty block parsing test passed[/]")
+        return True
+
+    def _validate_syntax(self, filepath: Path) -> Optional[SyntaxError]:
+        """Validate Python syntax for a file
+        Returns None if syntax is valid, or SyntaxError if invalid"""
+        try:
+            with open(filepath) as f:
+                ast.parse(f.read())
+            return None
+        except SyntaxError as e:
+            return e
+
+    def _create_preview_files(self, changes: List[XMLChange]) -> dict[Path, Path]:
+        """Create preview files for all changes
+        Returns dict mapping original path to preview path"""
+        preview_files = {}
+        
+        for change in changes:
+            preview_path = self.preview_dir / change.path.name
+            
+            if change.operation == 'create':
+                # For new files, use direct content or block content
+                content = change.content
+                if not content.strip() and change.blocks:
+                    content = "\n".join(change.blocks[0].new_content)
+                preview_path.write_text(content)
+                
+            elif change.operation == 'modify' and change.path.exists():
+                # For modifications, apply changes to a copy
+                original_text = change.path.read_text()
+                original_content = original_text.splitlines()
+                modified_content = original_content.copy()
+
+                for block in change.blocks:
+                    if not block.old_content or (len(block.old_content) == 1 and not block.old_content[0].strip()):
+                        if block.new_content:
+                            if modified_content and not original_text.endswith('\n'):
+                                modified_content[-1] = modified_content[-1] + '\n'
+                            indented_content = [line if not line.strip() else '    ' + line 
+                                             for line in block.new_content]
+                            modified_content.extend(indented_content)
+                    else:
+                        result = self._find_block_start(modified_content, block.old_content)
+                        if result is None:
+                            continue
+                        start_idx, base_indent = result
+                        end_idx = start_idx + len([l for l in block.old_content if l.strip()])
+                        
+                        if block.new_content:
+                            # Use the base indentation of the original block
+                            indented_content = []
+                            for i, line in enumerate(block.new_content):
+                                if not line.strip():
+                                    indented_content.append('')
+                                else:
+                                    # First non-empty line gets base indentation
+                                    # Subsequent lines maintain relative indentation
+                                    if not indented_content or all(not l.strip() for l in indented_content):
+                                        curr_indent = base_indent
+                                    else:
+                                        # Calculate relative indent from first line
+                                        first_indent = len(block.new_content[0]) - len(block.new_content[0].lstrip())
+                                        curr_indent = base_indent + (len(line) - len(line.lstrip()) - first_indent)
+                                    indented_content.append(' ' * curr_indent + line.lstrip())
+                            modified_content[start_idx:end_idx] = indented_content
+                        else:
+                            del modified_content[start_idx:end_idx]
+                
+                preview_path.write_text('\n'.join(modified_content))
+            
+            preview_files[change.path] = preview_path
+            
+        return preview_files
 
     def _preview_changes(self, changes: List[XMLChange], raw_response: str = None) -> bool:
         """Show preview of all changes and ask for confirmation"""
-        # Validate Python syntax before previewing
-        invalid_files = self._validate_syntax(changes)
+        # Create preview files
+        preview_files = self._create_preview_files(changes)
+        
+        # Validate syntax for all preview files
+        invalid_files = []
+        for orig_path, preview_path in preview_files.items():
+            if error := self._validate_syntax(preview_path):
+                invalid_files.append((orig_path, error))
+        
         if invalid_files:
             self.console.print(f"\n[red]Syntax errors detected in the following files:[/]")
-            for file in invalid_files:
-                self.console.print(f"- {file}")
+            for path, error in invalid_files:
+                self.console.print(f"- {path}: {error}")
+                syntax = Syntax(preview_files[path].read_text(), "python", theme="monokai", line_numbers=True)
+                self.console.print(syntax)
             self.console.print("\n[red]Changes cannot be applied due to syntax errors.[/]")
             return False
-            
+
+        if not self.interactive:
+            return True
+
+        # Rest of preview logic
         self.console.print("\n[cyan]Preview of changes to be applied:[/]")
         self.console.print("=" * 80)
-        
-        # Show changes preview
+
         for change in changes:
             if change.operation == 'create':
-                # Check both direct content and block content
-                has_content = bool(change.content.strip())
-                has_block_content = any(block.new_content for block in change.blocks)
-                
-                if not (has_content or has_block_content):
-                    self.console.print(f"\n[red]Error: Create operation for {change.path} has no content.[/]")
-                    return False
-                
-                if has_content:
-                    content_to_show = change.content
-                else:
-                    content_to_show = "\n".join(change.blocks[0].new_content)
-                    
+                preview_content = preview_files[change.path].read_text()
                 self.console.print(f"\n[green]CREATE NEW FILE: {change.path}[/]")
-                syntax = Syntax(content_to_show, "python", theme="monokai")
+                syntax = Syntax(preview_content, "python", theme="monokai")
                 self.console.print(syntax)
                 continue
-                
+
             if not change.path.exists():
                 self.console.print(f"\n[red]SKIP: File not found - {change.path}[/]")
                 continue
@@ -122,99 +190,55 @@ class FileChangeHandler:
         
         return response == 'y'
 
-    def _validate_syntax(self, changes: List[XMLChange]) -> Set[Path]:
-        """Validate Python syntax for all files involved in the changes"""
-        invalid_files = set()
-        
-        for change in changes:
-            if change.operation == 'create':
-                try:
-                    ast.parse(change.content)
-                except SyntaxError as e:
-                    invalid_files.add(change.path)
-                    self.console.print(f"[red]Syntax error in new file {change.path}: {e}[/]")
-                    # Show content for new files
-                    syntax = Syntax(change.content, "python", theme="monokai", line_numbers=True)
-                    self.console.print(syntax)
-                    
-            elif change.operation == 'modify':
-                if not change.path.exists():
-                    continue
-                
-                original_content = change.path.read_text()
-                modified_content = original_content
-                
-                for block in change.blocks:
-                    if not block.old_content or (len(block.old_content) == 1 and not block.old_content[0].strip()):
-                        modified_content += "\n".join(block.new_content)
-                    else:
-                        # Find and replace block content
-                        lines = modified_content.splitlines()
-                        start_idx = self._find_block_start(lines, block.old_content)
-                        if start_idx is None:
-                            continue
-                        end_idx = start_idx + len(block.old_content)
-                        lines[start_idx:end_idx] = block.new_content
-                        modified_content = '\n'.join(lines)
-                    
-                try:
-                    ast.parse(modified_content)
-                except SyntaxError as e:
-                    invalid_files.add(change.path)
-                    self.console.print(f"[red]Syntax error in {change.path}: {e}[/]")
-                    # Show the problematic modified content
-                    syntax = Syntax(modified_content, "python", theme="monokai", line_numbers=True)
-                    self.console.print(syntax)
-                    
-        return invalid_files
-
     def process_changes(self, response: str) -> bool:
-        try:
-            if not (match := re.search(r'<fileChanges>(.*?)</fileChanges>', response, re.DOTALL)):
-                self.console.print("[red]No file changes found in response[/]")
-                self.console.print("\nResponse content:")
-                self.console.print(response)
-                return False
+        if not (match := re.search(r'<fileChanges>(.*?)</fileChanges>', response, re.DOTALL)):
+            self.console.print("[red]No file changes found in response[/]")
+            self.console.print("\nResponse content:")
+            self.console.print(response)
+            return False
 
-            xml_content = f"<fileChanges>{match.group(1)}</fileChanges>"
-            self.console.print("[cyan]Found change block, parsing...[/]")
+        xml_content = f"<fileChanges>{match.group(1)}</fileChanges>"
+        self.console.print("[cyan]Found change block, parsing...[/]")
 
-            # Use the xml_parser instance
-            changes = self.xml_parser.parse_response(xml_content)
-            if not changes:
-                self.console.print("[red]No valid changes found after parsing[/]")
-                return False
+        changes = self.xml_parser.parse_response(xml_content)
+        if not changes:
+            self.console.print("[red]No valid changes found after parsing[/]")
+            return False
 
-            # Preview and confirm changes
-            if not self._preview_changes(changes, raw_response=response):
-                self.console.print("[yellow]Changes cancelled by user[/]")
-                return False
+        # Preview and confirm changes
+        if not self._preview_changes(changes, raw_response=response):
+            self.console.print("[yellow]Changes cancelled by user[/]")
+            return False
 
-            # Process each change as a transaction
-            for change in changes:
-                if change.operation not in ('create', 'modify'):
-                    self.console.print(f"[red]Invalid operation '{change.operation}' for {change.path}[/]")
-                    continue
+        # Process each change as a transaction
+        for change in changes:
+            if change.operation not in ('create', 'modify'):
+                self.console.print(f"[red]Invalid operation '{change.operation}' for {change.path}[/]")
+                continue
 
-                # Handle file creation separately
-                if change.operation == 'create':
-                    content_to_write = change.content
-                    if not content_to_write.strip() and change.blocks:
-                        # If no direct content but we have blocks, use the new content from first block
-                        content_to_write = "\n".join(change.blocks[0].new_content)
-                    
-                    if content_to_write.strip():
+            # Handle file creation separately
+            if change.operation == 'create':
+                content_to_write = change.content
+                if not content_to_write.strip() and change.blocks:
+                    content_to_write = "\n".join(change.blocks[0].new_content)
+                
+                if content_to_write.strip():
+                    try:
                         change.path.write_text(content_to_write)
                         self.console.print(f"[green]Created new file: {change.path}[/]")
-                    else:
-                        self.console.print(f"[red]Error: No content to write for {change.path}[/]")
-                    continue
+                    except (OSError, IOError) as e:
+                        self.console.print(f"[red]Failed to create file {change.path}: {e}[/]")
+                        return False
+                else:
+                    self.console.print(f"[red]Error: No content to write for {change.path}[/]")
+                continue
 
-                # Validate file exists for modifications
-                if not change.path.exists():
-                    self.console.print(f"[red]File not found: {change.path}[/]")
-                    continue
+            # Validate file exists for modifications
+            if not change.path.exists():
+                self.console.print(f"[red]File not found: {change.path}[/]")
+                continue
 
+            try:
                 # Read file content once - read as text to preserve exact endings
                 original_text = change.path.read_text()
                 original_content = original_text.splitlines()
@@ -224,11 +248,9 @@ class FileChangeHandler:
                 blocks_to_process = []
                 for block in change.blocks:
                     if not block.old_content or (len(block.old_content) == 1 and not block.old_content[0].strip()):
-                        # Append operations are always valid
                         blocks_to_process.append((block, None))
                         continue
 
-                    # Find the block location
                     start_idx = self._find_block_start(modified_content, block.old_content)
                     if start_idx is None:
                         self.console.print(f"[red]Could not find matching block in {change.path}:[/]")
@@ -239,60 +261,91 @@ class FileChangeHandler:
                         break
                     blocks_to_process.append((block, start_idx))
 
-                # Skip file if any block couldn't be found
                 if blocks_to_process is None:
                     self.console.print(f"[red]Skipping modifications to {change.path} due to missing block[/]")
                     continue
 
-                # Second pass: apply all changes now that we know they're all valid
-                offset = 0
-                for block, start_idx in reversed(blocks_to_process):
-                    if start_idx is None:  # Append operation
-                        if block.new_content:  # Only append if there is content
-                            # Ensure there's a newline before appending if file isn't empty and doesn't end with one
+                # Second pass: apply all changes
+                for block, location in reversed(blocks_to_process):
+                    if location is None:  # Append operation
+                        if block.new_content:
                             if modified_content and not original_text.endswith('\n'):
                                 modified_content[-1] = modified_content[-1] + '\n'
-                            modified_content.extend(block.new_content)
+                            indented_content = [line if not line.strip() else '    ' + line 
+                                             for line in block.new_content]
+                            modified_content.extend(indented_content)
                     else:
-                        # Handle deletion (empty new_content) or replacement
-                        end_idx = start_idx + len(block.old_content)
+                        start_idx, base_indent = location
+                        end_idx = start_idx + len([l for l in block.old_content if l.strip()])
+                        
                         if block.new_content:
-                            modified_content[start_idx:end_idx] = block.new_content
+                            # Use the base indentation of the original block
+                            indented_content = []
+                            for i, line in enumerate(block.new_content):
+                                if not line.strip():
+                                    indented_content.append('')
+                                else:
+                                    # First non-empty line gets base indentation
+                                    # Subsequent lines maintain relative indentation
+                                    if not indented_content or all(not l.strip() for l in indented_content):
+                                        curr_indent = base_indent
+                                    else:
+                                        # Calculate relative indent from first line
+                                        first_indent = len(block.new_content[0]) - len(block.new_content[0].lstrip())
+                                        curr_indent = base_indent + (len(line) - len(line.lstrip()) - first_indent)
+                                    indented_content.append(' ' * curr_indent + line.lstrip())
+                            modified_content[start_idx:end_idx] = indented_content
                         else:
-                            del modified_content[start_idx:end_idx]  # Delete the block
+                            del modified_content[start_idx:end_idx]
 
-                # Write all changes back to file
                 change.path.write_text('\n'.join(modified_content))
                 self.console.print(f"[green]Updated file: {change.path}[/]")
 
-            return True
+            except (OSError, IOError) as e:
+                self.console.print(f"[red]Failed to modify file {change.path}: {e}[/]")
+                return False
 
-        except Exception as e:
-            self.console.print(f"[red]Failed to process file changes: {e}[/]")
-            return False
+        return True
 
-    def _find_block_start(self, content: List[str], block: List[str]) -> Optional[int]:
-        """Find the starting index of a block in the content with exact matching"""
+    def _find_block_start(self, content: List[str], block: List[str]) -> Optional[tuple[int, int]]:
+        """Find the starting index and indentation level of a block in the content
+        Returns tuple of (start_index, indentation) or None if not found"""
         if not block:
             return None
 
-        # Compare lines exactly including indentation
-        for i in range(len(content) - len(block) + 1):
+        # Get normalized versions of block lines for comparison
+        block_normalized = [line.lstrip() for line in block if line.strip()]
+        if not block_normalized:
+            return None
+
+        # Compare lines ignoring indentation
+        for i in range(len(content) - len(block_normalized) + 1):
             matches = True
-            for j, block_line in enumerate(block):
-                if content[i + j] != block_line:
+            first_line = content[i].lstrip()
+            if not first_line == block_normalized[0]:
+                continue
+
+            # Get indentation of first matching line
+            indent = len(content[i]) - len(first_line)
+
+            # Check remaining lines
+            for j, block_line in enumerate(block_normalized[1:], 1):
+                content_line = content[i + j].lstrip()
+                if content_line != block_line:
                     matches = False
                     break
             if matches:
-                return i
+                # Return the start index and the indentation level of the first line
+                return (i, indent)
 
         return None
 
     def cleanup(self):
+        """Clean up preview directory"""
         try:
             shutil.rmtree(self.preview_dir)
-        except Exception as e:
-            print(f"Warning: Failed to clean up preview directory: {e}")
+        except (OSError, IOError) as e:
+            self.console.print(f"[yellow]Warning: Failed to clean up preview directory: {e}[/]")
 
     def __del__(self):
         """Ensure cleanup on destruction"""

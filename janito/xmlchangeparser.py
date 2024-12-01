@@ -114,29 +114,37 @@ class XMLChangeParser:
                         in_content = True
                 elif stripped in ('</oldContent>', '</newContent>'):
                     if current_block and in_content:
-                        # Only trim empty lines at start/end, preserve content lines
-                        content = content_buffer
-                        # Remove leading empty lines
-                        while content and not content[0].strip():
-                            content.pop(0)
-                        # Remove trailing empty lines    
-                        while content and not content[-1].strip():
-                            content.pop()
-                        
-                        if current_section == 'old':
-                            current_block.old_content = [line.rstrip() for line in content]
+                        # Find the common indentation of non-empty lines
+                        non_empty_lines = [line for line in content_buffer if line.strip()]
+                        if non_empty_lines:
+                            # Find minimal indent by looking at first real line
+                            first_line = next(line for line in content_buffer if line.strip())
+                            indent = len(first_line) - len(first_line.lstrip())
+                            # Remove only the common indentation from XML
+                            content = []
+                            for line in content_buffer:
+                                if line.strip():
+                                    # Remove only the XML indentation
+                                    content.append(line[indent:])
+                                elif content:  # Keep empty lines only if we have previous content
+                                    content.append('')
                         else:
-                            current_block.new_content = [line.rstrip() for line in content]
+                            content = []
+
+                        if current_section == 'old':
+                            current_block.old_content = content
+                        else:
+                            current_block.new_content = content
                         in_content = False
                         current_section = None
                     continue
                 
                 elif in_content:
-                    # Add all lines within content tags without filtering
+                    # Store lines with their original indentation
                     content_buffer.append(line)
                 elif current_change and not current_block and not stripped.startswith('<'):
                     if stripped:
-                        current_change.content += line.rstrip() + '\n'
+                        current_change.content += line + '\n'
 
             return changes
             

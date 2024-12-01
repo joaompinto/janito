@@ -5,11 +5,9 @@ CHANGE_XML_FORMAT = """XML Format Requirements:
         <block description="Description of changes">
             <oldContent>
                 // Exact content to be replaced (empty for create/append)
-                // Must match existing indentation exactly
             </oldContent>
             <newContent>
                 // New content to replace the old content
-                // Must include desired indentation
             </newContent>
         </block>
     </change>
@@ -23,7 +21,6 @@ RULES:
 - Each block must have exactly one oldContent and one newContent section.
 - Multiple changes to a file should use multiple block elements.
 - Provide a description for each change block.
-- Preserve all indentation exactly in both oldContent and newContent blocks
 - Use operation="create" for new files.
 - Use operation="modify" for existing files.
 - Ensure oldContent is empty for file append operations.
