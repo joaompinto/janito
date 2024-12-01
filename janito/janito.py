@@ -455,6 +455,22 @@ class JanitoConsole:
         self.running = False
         self.cleanup_terminal()
 
+    def _execute_shell_command(self, command: str) -> None:
+        """Execute a shell command and print output"""
+        try:
+            process = subprocess.run(
+                command,
+                shell=True,
+                text=True,
+                capture_output=True
+            )
+            if process.stdout:
+                print(process.stdout.strip())
+            if process.stderr:
+                print(process.stderr.strip(), file=sys.stderr)
+        except Exception as e:
+            print(f"Error executing command: {e}", file=sys.stderr)
+
     def run(self):
         """Main command loop"""
         try:
@@ -465,7 +481,10 @@ class JanitoConsole:
                     if not command:
                         continue
                         
-                    if command.startswith('.'):
+                    if command.startswith('$'):
+                        # Handle shell command
+                        self._execute_shell_command(command[1:].strip())
+                    elif command.startswith('.'):
                         parts = command.split()
                         cmd, args = parts[0], parts[1:]
                         if cmd in self.commands:

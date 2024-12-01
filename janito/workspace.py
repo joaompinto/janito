@@ -7,7 +7,7 @@ class Workspace:
     def __init__(self, base_path: Path = None):
         self.base_path = base_path or Path().absolute()
         self.default_exclude = [".janito", "__pycache__", ".git"]
-        self.default_patterns = ["*.py", "*.txt", "*.md"]
+        self.default_patterns = ["*.py", "*.txt", "*.md", "**/.gitignore"]  # Updated patterns
 
     def generate_file_structure(self, pattern: str = None, exclude_patterns: List[str] = None) -> Dict:
         """Generate a tree structure of files in the workspace directory."""
@@ -21,7 +21,9 @@ class Workspace:
             for pattern in patterns:
                 for file in sorted(base_path.rglob(pattern)):
                     try:
-                        if any(pat in str(file) for pat in exclude_patterns):
+                        import fnmatch
+
+                        if any(fnmatch.fnmatch(str(file), pat) for pat in exclude_patterns):
                             continue
                         
                         try:

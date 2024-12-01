@@ -54,8 +54,10 @@ class FileChangeHandler:
         return True
 
     def _validate_syntax(self, filepath: Path) -> Optional[SyntaxError]:
-        """Validate Python syntax for a file
+        """Validate Python syntax only for .py files
         Returns None if syntax is valid, or SyntaxError if invalid"""
+        if filepath.suffix != ".py":
+            return None
         try:
             with open(filepath) as f:
                 ast.parse(f.read())
@@ -324,13 +326,14 @@ class FileChangeHandler:
 
         # Find first non-empty line in block for initial match
         first_nonempty_idx = next((i for i, line in enumerate(block_normalized) if line.strip()), 0)
-        first_pattern = block_normalized[first_nonempty_idx]
+        first_pattern = block_normalized[first_nonempty_idx].lstrip()
 
         debug_info = {
             'partial_matches': [],
             'closest_match': None,
             'closest_match_line': -1,
-            'closest_match_score': 0
+            'closest_match_score': 0,
+            'content': content  # Store content for debug output
         }
 
         # Compare lines, now preserving empty lines
@@ -390,11 +393,15 @@ class FileChangeHandler:
                 debug_info['closest_match_line'] = i
 
         # If we get here, no match was found - show debug info
-        self.console.print("[yellow]Block not found. Debug information:[/]")
+        self.console.print(":warning: [yellow]Block not found in file. Debug information:[/]")
         self.console.print(f"[yellow]Looking for {len(block_normalized)} lines:[/]")
         for line in block_normalized:
             self.console.print(f"[yellow]  {line}[/]")
-        
+
+        self.console.print("\n[yellow]File content:[/]")
+        syntax = Syntax("\n".join(debug_info['content']), "python", theme="monokai", line_numbers=True)
+        self.console.print(syntax)
+
         if debug_info['partial_matches']:
             best_match = max(debug_info['partial_matches'], key=lambda x: x['score'])
             self.console.print("\n[yellow]Best partial match:[/]")
