@@ -24,28 +24,55 @@ from rich.panel import Panel
 from rich.text import Text
 from rich.rule import Rule
 from rich import box
+from datetime import datetime
+from itertools import chain
+from janito.scan import collect_files_content, is_dir_empty
+from rich.prompt import Prompt
 
-def format_analysis(analysis: str, raw: bool = False) -> None:
+def format_analysis(analysis: str, raw: bool = False, claude: Optional[ClaudeAPIAgent] = None) -> None:
     """Format and display the analysis output"""
     console = Console()
-    if raw:
-        console.print(analysis)
+    if raw and claude:
+        console.print("\n=== Message History ===")
+        for role, content in claude.messages_history:
+            console.print(f"\n[bold cyan]{role.upper()}:[/bold cyan]")
+            console.print(content)
+        console.print("\n=== End Message History ===\n")
     else:
         md = Markdown(analysis)
         console.print(md)
 
-def is_dir_empty(path: Path) -> bool:
-    """Check if directory is empty, ignoring hidden files"""
-    return not any(item for item in path.iterdir() if not item.name.startswith('.'))
+def prompt_user(message: str, choices: List[str] = None) -> str:
+    """Display a prominent user prompt with optional choices"""
+    console = Console()
+    console.print()
+    console.print(Rule(" User Input Required ", style="bold cyan"))
+    
+    if choices:
+        choice_text = f"[cyan]Options: {', '.join(choices)}[/cyan]"
+        console.print(Panel(choice_text, box=box.ROUNDED))
+    
+    return Prompt.ask(f"[bold cyan]> {message}[/bold cyan]")
 
 def get_option_selection() -> int:
     """Get user input for option selection"""
     while True:
         try:
-            option = int(input("\nSelect option number: "))
+            option = int(prompt_user("Select option number"))
             return option
         except ValueError:
-            print("Please enter a valid number")
+            console = Console()
+            console.print("[red]Please enter a valid number[/red]")
+
+def get_history_path(workdir: Path) -> Path:
+    """Create and return the history directory path"""
+    history_dir = workdir / '.janito' / 'history'
+    history_dir.mkdir(parents=True, exist_ok=True)
+    return history_dir
+
+def get_timestamp() -> str:
+    """Get current UTC timestamp in YMD_HMS format with leading zeros"""
+    return datetime.utcnow().strftime('%Y%m%d_%H%M%S')
 
 def save_prompt_to_file(prompt: str) -> Path:
     """Save prompt to a named temporary file that won't be deleted"""
@@ -54,12 +81,14 @@ def save_prompt_to_file(prompt: str) -> Path:
     temp_path.write_text(prompt)
     return temp_path
 
-def save_to_file(content: str, prefix: str) -> Path:
-    """Save content to a named temporary file that won't be deleted"""
-    temp_file = tempfile.NamedTemporaryFile(prefix=prefix, suffix='.txt', delete=False)
-    temp_path = Path(temp_file.name)
-    temp_path.write_text(content)
-    return temp_path
+def save_to_file(content: str, prefix: str, workdir: Path) -> Path:
+    """Save content to a timestamped file in history directory"""
+    history_dir = get_history_path(workdir)
+    timestamp = get_timestamp()
+    filename = f"{timestamp}_{prefix}.txt"
+    file_path = history_dir / filename
+    file_path.write_text(content)
+    return file_path
 
 def format_parsed_changes(changes: List[Dict[str, Any]]) -> None:
     """Format and display parsed changes in a readable way"""
@@ -138,17 +167,23 @@ def format_parsed_changes(changes: List[Dict[str, Any]]) -> None:
                     align="left"
                 ))
 
-def handle_option_selection(claude: ClaudeAPIAgent, initial_response: str, request: str, raw: bool = False, workdir: Optional[Path] = None) -> None:
+def handle_option_selection(claude: ClaudeAPIAgent, initial_response: str, request: str, raw: bool = False, workdir: Optional[Path] = None, include: Optional[List[Path]] = None) -> None:
     """Handle option selection and implementation details"""
     option = get_option_selection()
     try:
-        selected_prompt = build_selected_option_prompt(option, request, initial_response)
-        prompt_file = save_to_file(selected_prompt, 'selected_')
+        # Get current files content with included paths
+        paths_to_scan = [workdir] if workdir else []
+        if include:
+            paths_to_scan.extend(include)
+        files_content = collect_files_content(paths_to_scan, workdir) if paths_to_scan else ""
+        
+        selected_prompt = build_selected_option_prompt(option, request, initial_response, files_content)
+        prompt_file = save_to_file(selected_prompt, 'selected_', workdir)
         print(f"\nSelected prompt saved to: {prompt_file}")
         
         selected_response = claude.send_message(selected_prompt)
         # Save response to changes file
-        changes_file = save_to_file(selected_response, 'changes_')
+        changes_file = save_to_file(selected_response, 'changes_', workdir)
         print(f"\nChanges saved to: {changes_file}")
         
         # Parse and format changes
@@ -159,7 +194,8 @@ def handle_option_selection(claude: ClaudeAPIAgent, initial_response: str, reque
             handle_changes_file(changes_file, workdir)    # Preview and apply changes
             
     except ValueError as e:
-        print(f"\nError: {e}")
+        console = Console()
+        console.print(f"\nError: {e}")
 
 def replay_saved_file(filepath: Path, claude: ClaudeAPIAgent, workdir: Path, raw: bool = False) -> None:
     """Process a saved prompt file and display the response"""
@@ -176,11 +212,16 @@ def replay_saved_file(filepath: Path, claude: ClaudeAPIAgent, workdir: Path, raw
         format_parsed_changes(changes)
         handle_changes_file(filepath, workdir)
     elif file_type == 'analysis':
-        format_analysis(content, raw)
-        handle_option_selection(claude, content, content, raw)  # Pass original content as request
+        format_analysis(content, raw, claude)
+        handle_option_selection(claude, content, content, raw, workdir)  # Pass original content as request
     elif file_type == 'selected':
+        if raw:
+            console = Console()
+            console.print("\n=== Prompt Content ===")
+            console.print(content)
+            console.print("=== End Prompt Content ===\n")
         response = claude.send_message(content)
-        changes_file = save_to_file(response, 'changes_')
+        changes_file = save_to_file(response, 'changes_', workdir)
         print(f"\nChanges saved to: {changes_file}")
         
         # Display formatted changes
@@ -192,64 +233,46 @@ def replay_saved_file(filepath: Path, claude: ClaudeAPIAgent, workdir: Path, raw
         response = claude.send_message(content)
         format_analysis(response, raw)
 
-def collect_files_content(workdir: Path) -> str:
-    """Collect content from all files in the directory in XML format"""
-    content_parts = []
-    console = Console()
-    
-    console.print("\n[bold blue]Files being analyzed:[/bold blue]")
-    for file_path in workdir.rglob('*'):
-        if file_path.is_file() and not file_path.name.startswith('.'):
-            try:
-                relative_path = file_path.relative_to(workdir)
-                console.print(f"  • {relative_path}")
-                file_content = file_path.read_text()
-                content_parts.append(f"<file>\n<path>{relative_path}</path>\n<content>\n{file_content}\n</content>\n</file>")
-            except Exception as e:
-                console.print(f"[red]Warning: Could not read {file_path}: {e}[/red]")
-    
-    return "\n".join(content_parts)
-
 def main(
     workdir: Path = typer.Argument(..., help="Working directory containing the files", exists=True, file_okay=False, dir_okay=True),
     request: str = typer.Argument(..., help="The modification request"),
     raw: bool = typer.Option(False, "--raw", help="Print raw response instead of markdown format"),
     play: Optional[Path] = typer.Option(None, "--play", help="Replay a saved prompt file"),
+    include: Optional[List[Path]] = typer.Option(None, "-i", "--include", help="Additional paths to include in analysis", exists=True),
 ) -> None:
     """
     Analyze files and provide modification instructions.
-    
-    Args:
-        workdir: Directory containing the files to analyze
-        request: What modifications to make
-        raw: Whether to print raw response instead of markdown format
     """
     claude = ClaudeAPIAgent(system_prompt=SYSTEM_PROMPT)
     
     if play:
         replay_saved_file(play, claude, workdir, raw)
         return
-        
+    
     # Regular flow
+    paths_to_scan = [workdir]
+    if include:
+        paths_to_scan.extend(include)
+    
     is_empty = is_dir_empty(workdir)
-    if is_empty:
+    if is_empty and not include:
         console = Console()
         console.print("\n[bold blue]Empty directory - will create new files[/bold blue]")
         files_content = ""
     else:
-        files_content = collect_files_content(workdir)
+        files_content = collect_files_content(paths_to_scan, workdir)
     
     # Get initial analysis and save it
     initial_prompt = build_request_analisys_prompt(files_content, request)
     initial_response = claude.send_message(initial_prompt)
-    analysis_file = save_to_file(initial_response, 'analysis_')
+    analysis_file = save_to_file(initial_response, 'analysis_', workdir)
     print(f"\nAnalysis saved to: {analysis_file}")
     
     # Show initial response
-    format_analysis(initial_response, raw)
+    format_analysis(initial_response, raw, claude)
     
     # Always prompt for option selection
-    handle_option_selection(claude, initial_response, request, raw, workdir)  # Pass workdir to handle_option_selection
+    handle_option_selection(claude, initial_response, request, raw, workdir, include)
 
-if __name__ == "__main__":  # Note the double underscore
+if __name__ == "__main__":
     typer.run(main)

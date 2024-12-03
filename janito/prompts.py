@@ -21,6 +21,7 @@ Current files:
 Always provide options using a header label "=== **Option 1** : ...", "=== **Option 2**: ...", etc.
 Provide the header with a short description followed by the file changes on the next line
 What files should be modified and what should they contain? (one line description)
+Do not provide the content of any of the file suggested to be created or modified.
 
 Request:
 {request}
@@ -29,9 +30,13 @@ Request:
 SELECTED_OPTION_PROMPT = """
 Original request: {request}
 
-Please provide detailed implementation using the following option as a guide:
-
+Please provide detailed implementation using the following instructions as a guide:
 {option_text}
+
+Current files:
+<files>
+{files_content}
+</files>
 
 Original request: {request}
 
@@ -46,10 +51,12 @@ Please provide implementation details following these guidelines:
     ## <uuid> new  ##
     new content block
     ## <uuid> end  ##
+- Use the same <uuid> for all the blocks
+- on insert_ operations the new content block should not repeat content from original block
+- If you can not find a specific file required to satisfy the instructions , report it as an <error>reason</error> and do not provide any changes
 """
 
-
-def build_selected_option_prompt(option_number: int, request: str, initial_response: str) -> str:
+def build_selected_option_prompt(option_number: int, request: str, initial_response: str, files_content: str = "") -> str:
     """Build prompt for selected option details"""
     options = parse_options(initial_response)
     if option_number not in options:
@@ -57,7 +64,8 @@ def build_selected_option_prompt(option_number: int, request: str, initial_respo
     
     return SELECTED_OPTION_PROMPT.format(
         option_text=options[option_number],
-        request=request
+        request=request,
+        files_content=files_content
     )
 
 def parse_options(response: str) -> dict[int, str]:

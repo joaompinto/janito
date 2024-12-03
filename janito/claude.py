@@ -23,10 +23,14 @@ class ClaudeAPIAgent:
         self.last_prompt = None
         self.last_full_message = None
         self.last_response = None
+        self.messages_history = []
+        if system_prompt:
+            self.messages_history.append(("system", system_prompt))
 
     def send_message(self, message: str, stop_event: Event = None) -> str:
         """Send message to Claude API and return response"""
         try:
+            self.messages_history.append(("user", message))
             # Store the full message
             self.last_full_message = message
             
@@ -52,6 +56,7 @@ class ClaudeAPIAgent:
                 # Only store and process response if not cancelled
                 if not (stop_event and stop_event.is_set()):
                     self.last_response = response_text
+                    self.messages_history.append(("assistant", response_text))
                 
                 # Always return the response, let caller handle cancellation
                 return response_text
@@ -62,6 +67,8 @@ class ClaudeAPIAgent:
                 return ""
                 
         except Exception as e:
+            error_msg = f"Error: {str(e)}"
+            self.messages_history.append(("error", error_msg))
             if stop_event and stop_event.is_set():
                 return ""
-            return f"Error: {str(e)}"
+            return error_msg
