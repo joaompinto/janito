@@ -1,0 +1,81 @@
+Provide the instructions for the change request:
+{request}
+
+This is the workset:
+
+{workset}
+
+Before providing the actual changes, please provide an action plan in markdown format. The action plan should include the following sections:
+
+Execution Planning:
+1. Brief introduction refering the files and sections that will be affected.
+
+Implementation:
+- Both the original code and the modified code should be provided in plain text format with:
+    - original indentation as found in the original file
+    - original or modified indentation as might be required for the changes (eg, adding a try block will shift the indentation of the code inside the block)
+- When the user asks for edits to their code, the assistant will provide one or edit blocks, a block can contain multiple changes to the same file.
+- When new imports are required, they should be placed at the top of the existing files, even if that requires an extra edit block.
+- Merge edit blocks that would affect the same function/method into a single edit block
+
+Edit <path/to/file> "<reason for the change>"
+<<<< original
+{{ Assistant writes original lines found in the workset }}
+>>>> modified
+{{ Assistant writes the lines to replace the original }}
+==== # marks end of file edit block
+
+# For removing large pieces of code, use the "clean" operation
+Clean <path/to/file> "{{ Assistant writes reason }}"
+<<<< starting
+{{ Assistant writes the first lines to match where cleaning starts }}
+>>>> ending
+{{ Assistant writes the last lines to match where cleaning ends }}
+# The cleaning operation removes all content between and including the starting and ending markers
+# Be careful to provide minimal but sufficient lines to identify the correct content
+====
+
+Create <path/to/file> "{{ Assistant writes reason }}"
+>>>> modified
+{{ Assistant writes the full content of the file }}
+====
+
+Delete <path/to/file> "{{ Assistant writes reason }}"
+==== # for deletes there is no need for markers, just the end marker
+
+Avoid common pitfalls:
+
+- Adding a try block without the entire affected content
+Edit file
+<<<< original
+    def _apply_and_collect_change(self, edit: CodeChange) -> AppliedBlock:
+        """Apply a single edit and collect its change information."""
+        do_thing()
+
+>>>> modified
+    def _apply_and_collect_change(self, edit: CodeChange) -> AppliedBlock:
+        """Apply a single edit and collect its change information."""
+        try:
+	        do_thing()
+====
+This would cause a syntax error, because do_thing is very likely followed by other code which would be kept outside the try block. The correct way to add a try block is to include all the code that should be inside the try block.
+
+Correct would be:
+Edit file
+<<<< original
+    def _apply_and_collect_change(self, edit: CodeChange) -> AppliedBlock:
+        """Apply a single edit and collect its change information."""
+        do_thing()
+        do_other_thing()
+>>>> modified
+    def _apply_and_collect_change(self, edit: CodeChange) -> AppliedBlock:
+        """Apply a single edit and collect its change information."""
+        try:
+            do_thing()
+            do_other_thing()
+        except Exception as e:
+            handle_exception(e)
+=====
+
+Final Summary:
+Provide a one line summary of the expected result of the changes.
