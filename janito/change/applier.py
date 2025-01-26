@@ -50,19 +50,20 @@ class ChangeApplier:
         # Ensure target directory exists
         self.target_dir.mkdir(parents=True, exist_ok=True)
         
-        # Track changes as we apply them
-        changes = []
         current_file = None
         
         # Process edits in order as they were added
         for edit in self.edits:
             if current_file != edit.filename:
-                self.end_file_edit()
+                if current_file is not None:
+                    self.end_file_edit()
                 self.start_file_edit(str(edit.filename), edit.edit_type)
                 current_file = edit.filename
             self._apply_and_collect_change(edit)
-
-        self.end_file_edit()
+        
+        # Close the final file if there was one
+        if current_file is not None:
+            self.end_file_edit()
 
     def _apply_and_collect_change(self, edit: CodeChange) -> AppliedBlock:
         """Apply a single edit and collect its change information."""
@@ -115,7 +116,7 @@ class ChangeApplier:
                 self.current_content[start_range[0]:end_range[1]] = []
                 self._last_changed_line = start_range[0]
                 
-            except ValueError as e:
+            except EditContentNotFoundError as e:
                 error_msg = f"Failed to find clean section in {self.current_file}: {e}"
                 applied_block = AppliedBlock(
                     filename=edit.filename,

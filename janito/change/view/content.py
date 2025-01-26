@@ -36,7 +36,7 @@ def get_file_syntax(filepath: Path) -> Optional[str]:
     Returns:
         String containing the syntax lexer name or None if not found
     """
-    return ext_map.get(filepath.suffix.lower())
+    return FILE_EXTENSION_MAP.get(filepath.suffix.lower())
 
 def create_content_preview(filepath: Path, content: str, is_new: bool = False) -> Syntax:
     """Create a preview with syntax highlighting using consistent styling

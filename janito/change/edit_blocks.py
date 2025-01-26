@@ -21,8 +21,10 @@ class CodeChange:
 
 def parse_edit_command(line: str, command: str) -> tuple[Path, str]:
     """Parse an Edit or Create command line to extract filename and reason.
-    Expected format: Command filename "reason"
-    Example: Edit path/to/file.py "Add new feature"
+    Expected format: Command filename "reason" or Command `filename` "reason"
+    Examples: 
+        Edit path/to/file.py "Add new feature"
+        Create `moving_ball.py` "Create main script"
     """
     if not line or not line.startswith(command):
         raise ValueError(f"Invalid command format in line:\n{line}\nExpected: {command} filename \"reason\"")
@@ -32,7 +34,12 @@ def parse_edit_command(line: str, command: str) -> tuple[Path, str]:
     if len(parts) < 2:
         raise ValueError(f"Missing reason in quotes in line:\n{line}")
         
-    filename = Path(parts[0].replace(f"{command} ", "").strip())
+    # Extract and clean filename - handle both normal and markdown backtick formats
+    filename_part = parts[0].replace(f"{command} ", "").strip()
+    if filename_part.startswith('`') and filename_part.endswith('`'):
+        filename_part = filename_part[1:-1]  # Remove backticks
+    
+    filename = Path(filename_part)
     reason = parts[1].strip()
     
     return filename, reason

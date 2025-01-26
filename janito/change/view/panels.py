@@ -25,15 +25,15 @@ def create_diff_columns(
     context_lines: int = 3,
     current_change: int = 1,
     total_changes: int = 1,
-    operation: str = "Edit",
+    edit_command: str = "Edit",
     reason: str = None,
     is_removal: bool = False
 ) -> Tuple[Text, Columns]:  # Changed return type to return header and content separately
     """Create side-by-side diff view with consistent styling and context."""
     # Create header with progress info and rule
     header = Text()
-    header_text, header_style = create_progress_header(
-        operation=operation,
+    header_text, _ = create_progress_header(
+        edit_command=edit_command,
         filename=filename,
         current=current_change,
         total=total_changes,
@@ -168,12 +168,12 @@ def create_panel_text(title: str, content: str, width: int) -> Text:
     text.append(content)
     return text
 
-def create_progress_header(operation: str, filename: str, current: int, total: int,
+def create_progress_header(edit_command: str, filename: str, current: int, total: int,
                           term_width: int, reason: str = None, style: str = "cyan") -> Tuple[Text, str]:
     """Create a header showing filename and global change counter.
 
     Args:
-        operation: Type of operation being performed
+        edit_command: Type of edit command being performed
         filename: Name of the file being modified
         current: Current global change number
         total: Total number of changes
@@ -185,7 +185,7 @@ def create_progress_header(operation: str, filename: str, current: int, total: i
         Tuple of (Rich Text object, style)
     """
     text = Text()
-    header = f"{operation}: {filename} | Progress {current}/{total}"
+    header = f"{edit_command}: {filename} | Progress {current}/{total}"
     if reason:
         header += f" | {reason}"
     
