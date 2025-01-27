@@ -8,6 +8,8 @@ if not ai_backend:
         ai_backend = 'claudeai'
     elif os.getenv('DEEPSEEK_API_KEY'):
         ai_backend = 'deepseekai'
+    elif os.getenv('GROQ_API_KEY'):
+        ai_backend = 'groqcloud'
     else:
         raise ValueError("No AI backend API keys found. Please set either ANTHROPIC_API_KEY or DEEPSEEK_API_KEY")
 
@@ -15,6 +17,8 @@ if ai_backend == "deepseekai":
     from .deepseekai import DeepSeekAIAgent as AIAgent
 elif ai_backend == 'claudeai':
     from .claudeai import ClaudeAIAgent as AIAgent
+elif ai_backend == 'groqcloud':
+    from .groqcloud import GroqCloudAgent as AIAgent
 else:
     raise ValueError(f"Unsupported AI_BACKEND: {ai_backend}")
 

@@ -10,6 +10,7 @@ class Agent(ABC):
         self.last_prompt = None
         self.last_full_message = None
         self.last_response = None
+        self.model = None
 
     @abstractmethod
     def send_message(self, message: str, system: str) -> str:
