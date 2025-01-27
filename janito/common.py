@@ -78,10 +78,14 @@ def progress_send_message(message: str) -> Optional[str]:
                 elapsed_minutes = elapsed_seconds // 60
                 remaining_seconds = elapsed_seconds % 60
                 time_str = f"{elapsed_minutes}m{remaining_seconds}s" if elapsed_minutes > 0 else f"{elapsed_seconds}s"
+                # Calculate message size in bytes
+                message_bytes = len(message.encode('utf-8'))
+                size_str = f"{message_bytes:,} bytes"
                 live.update(Text.assemble(
                     f"Waiting for {agent.friendly_name} response... (",
                     (time_str, "magenta"),
-                    ")",
+                    f") • Message size: ",
+                    (size_str, "cyan"),
                     justify="center"
                 ))
                 agent_thread.join(timeout=0.25)
