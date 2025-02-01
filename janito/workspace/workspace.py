@@ -79,8 +79,12 @@ class Workspace:
         # Convert recursive_paths to absolute for comparison
         abs_recursive_paths = {config.workspace_dir / p for p in recursive_paths}
 
-        path = path.resolve()
-        processed_files.add(path)
+        # Use resolve() only for existence checks, not for storing
+        resolved_path = path.resolve()
+        if resolved_path in processed_files:
+            return
+            
+        processed_files.add(resolved_path)
 
         if path.is_dir():
             try:
@@ -316,8 +320,50 @@ class Workspace:
         if config.debug:
             Console(stderr=True).print(f"[green]Debug: Deleted file: {path}[/green]")
 
-    def apply_changes(self, preview_dir: Path, created_files: List[Path], modified_files: Set[Path], deleted_files: Set[Path]):
+    def move_file(self, old_path: Path, new_path: Path) -> None:
+        """Move a file in the workspace.
+        
+        Args:
+            old_path: Relative path to the file to move
+            new_path: Relative path to the new location
+            
+        Raises:
+            PathNotRelativeError: If either path is absolute
+            FileNotFoundError: If source file doesn't exist
+            FileExistsError: If target file already exists
+        """
+        if old_path.is_absolute() or new_path.is_absolute():
+            raise PathNotRelativeError(f"Paths must be relative: {old_path} -> {new_path}")
+        
+        abs_old_path = config.workspace_dir / old_path
+        abs_new_path = config.workspace_dir / new_path
+        
+        if not abs_old_path.exists():
+            raise FileNotFoundError(f"Source file does not exist: {old_path}")
+        
+        if abs_new_path.exists():
+            raise FileExistsError(f"Target file already exists: {new_path}")
+        
+        # Create parent directories if they don't exist
+        abs_new_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Move the file
+        abs_old_path.rename(abs_new_path)
+        
+        if config.debug:
+            Console(stderr=True).print(f"[green]Debug: Moved file: {old_path} -> {new_path}[/green]")
+
+    def apply_changes(self, preview_dir: Path, created_files: List[Path], 
+                     modified_files: Set[Path], deleted_files: Set[Path],
+                     moved_files: List[Tuple[Path, Path]]):
         """Apply changes from preview directory to workspace."""
+        if config.debug:
+            Console(stderr=True).print(
+                f"[cyan]Debug: Applying changes: {len(created_files)} files to create, "
+                f"{len(modified_files)} to modify, {len(deleted_files)} to delete, "
+                f"{len(moved_files)} to move[/cyan]"
+            )
+
         for filename in created_files:
             content = (preview_dir / filename).read_text(encoding='utf-8')
             self.create_file(filename, content)
@@ -326,10 +372,14 @@ class Workspace:
         for filename in modified_files:
             content = (preview_dir / filename).read_text(encoding='utf-8')
             self.modify_file(filename, content)
-            print("Modified workspace file: ", filename)  # This will now include cleaned files
+            print("Modified workspace file: ", filename)
 
         for filename in deleted_files:
             self.delete_file(filename)
             print("Deleted workspace file: ", filename)
+
+        for old_path, new_path in moved_files:
+            self.move_file(old_path, new_path)
+            print(f"Moved workspace file: {old_path} -> {new_path}")
 
 

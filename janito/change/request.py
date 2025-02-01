@@ -1,4 +1,5 @@
 from rich.console import Console
+from pprint import pprint
 from janito.common import progress_send_message, _get_system_prompt
 from janito.workspace import workset, workspace
 from janito.config import config
@@ -6,7 +7,7 @@ from pathlib import Path
 import tempfile
 from janito.change.applier import ChangeApplier
 from janito.change.validator import Validator
-from janito.change.edit_blocks import EditType, CodeChange, get_edit_blocks
+from janito.change.instructions_parser import EditType, InstructionsParser, CodeChange
 from typing import List, Dict, Optional
 import shutil
 from rich.markdown import Markdown
@@ -55,66 +56,44 @@ class ResponseHandler:
     def __init__(self, response: str):
         self.response = response
         self.console = Console()
-        self.edit_blocks = []
-        self.viewer = None
-        self.applied_blocks = None  # Store applied blocks reference
-
-    def show_block_changes(self, block_marker: str):
-        """Callback to display changes for a specific block marker"""
-        if block_marker and self.applied_blocks:
-            # Find the block with matching marker and show it
-            for block in self.applied_blocks.blocks:
-                if block.block_marker == block_marker:
-                    self.viewer._show_block(block)
-                    break
 
     def process(self):
-        self.edit_blocks, self.annotated_response = get_edit_blocks(self.response)
+        inst_parser = InstructionsParser()
+        instructions = inst_parser.parse(self.response)
         
         # Setup preview directory and applier
         preview_dir = workspace.setup_preview_directory()
         applier = ChangeApplier(preview_dir)
-        self.viewer = ChangeViewer()
-
-        # Apply changes
-        for block in self.edit_blocks:
-            applier.add_edit(block)
-        applier.apply()
         
-        # Store reference to applied blocks
-        self.applied_blocks = applier.applied_blocks
+        # Build the change plan
+        for instruction in instructions:
+            if isinstance(instruction, CodeChange):
+                applier.add_edit(instruction)
 
-        # Split response into sections and display with changes
-        sections = self.annotated_response.split("[Edit Block ")
-
-        if sections:
-            self.console.print(Markdown(sections[0]))  # Print initial text
-            for section in sections[1:]:
-                marker, text = section.split("]", 1)
-                # Find and show the corresponding block's changes
-                for block in self.applied_blocks.blocks:
-                    if block.block_marker == marker:
-                        self.viewer._show_block(block)
-                        break
-                self.console.print(Markdown(text))  # Print text after the block
-
+        # Apply the changes to the preview directory
+        applied_blocks = applier.apply()
+        viewer = ChangeViewer()
+        viewer.show(instructions, applied_blocks)
+        
         # Add horizontal ruler to separate changes from validation
         self.console.rule("[bold]Validation", style="dim")
 
         # Collect files that need validation (excluding deleted files)
-        files_to_validate = {edit.filename for edit in self.edit_blocks 
-                           if edit.edit_type != EditType.DELETE}
+        files_to_validate = {block.filename for block in applied_blocks 
+                           if block.edit_type != EditType.DELETE}
 
         # Validate changes and run tests
         validator = Validator(preview_dir)
         validator.validate_files(files_to_validate)
         validator.run_tests()
 
-        # Collect the list of created/modified/deleted files
-        created_files = [edit.filename for edit in self.edit_blocks if edit.edit_type == EditType.CREATE]
-        modified_files = set(edit.filename for edit in self.edit_blocks 
-                           if edit.edit_type in (EditType.EDIT, EditType.CLEAN))  # Include cleaned files
-        deleted_files = set(edit.filename for edit in self.edit_blocks if edit.edit_type == EditType.DELETE)
+        # Collect the list of created/modified/deleted/moved files
+        created_files = [block.filename for block in applied_blocks if block.edit_type == EditType.CREATE]
+        modified_files = set(block.filename for block in applied_blocks 
+                           if block.edit_type in (EditType.EDIT, EditType.CLEAN))
+        deleted_files = set(block.filename for block in applied_blocks if block.edit_type == EditType.DELETE)
+        moved_files = [(block.filename, block.new_filename) for block in applied_blocks 
+                      if block.edit_type == EditType.MOVE]
 
         # prompt the user if we want to apply the changes
         if config.auto_apply:
@@ -128,7 +107,7 @@ class ResponseHandler:
                 return
 
         # Apply changes to workspace
-        workspace.apply_changes(preview_dir, created_files, modified_files, deleted_files)
+        workspace.apply_changes(preview_dir, created_files, modified_files, deleted_files, moved_files)
 
 def replay_saved_response():
     response_file = (config.workspace_dir or Path(".")) / '.janito_last_response.txt'

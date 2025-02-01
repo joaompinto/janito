@@ -40,7 +40,6 @@ class Validator:
         """Run tests if configured in janito.yaml."""
         config_file = self.preview_dir / 'janito.yaml'
         if not config_file.exists():
-            print("No test configuration found")
             return
 
         try:

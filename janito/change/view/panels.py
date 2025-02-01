@@ -6,7 +6,7 @@ from pathlib import Path
 from rich.columns import Columns
 from rich.text import Text
 from rich.layout import Layout
-from ..edit_blocks import EditType, CodeChange
+from ..instructions_parser import EditType, CodeChange
 from .styling import format_content
 from .sections import find_modified_sections
 
@@ -43,7 +43,6 @@ def create_diff_columns(
     
     header.append(header_text)
     header.append("\n")
-    header.append("─" * term_width, style="dim")
 
     # Find sections that have changed
     sections = find_modified_sections(
@@ -168,8 +167,38 @@ def create_panel_text(title: str, content: str, width: int) -> Text:
     text.append(content)
     return text
 
+def create_header(header_text: str, term_width: int, bg_color: str = "dark_blue",
+                 include_rule: bool = True) -> Text:
+    """Create a centered header with optional horizontal rule.
+
+    Args:
+        header_text: Text to display in the header
+        term_width: Width of the terminal
+        bg_color: Background color for the header
+        include_rule: Whether to include a horizontal rule below the header
+
+    Returns:
+        Rich Text object containing the formatted header
+    """
+    text = Text()
+    
+    # Calculate padding for centering
+    padding = (term_width - len(header_text)) // 2
+    
+    # Create full-width background by padding both sides
+    full_line = " " * padding + header_text + " " * (term_width - len(header_text) - padding)
+    
+    # Apply background color to entire line
+    text.append(full_line, style=f"white on {bg_color}")
+    text.append("\n")
+    
+    if include_rule:
+        text.append("─" * term_width, style="dim")
+    
+    return text
+
 def create_progress_header(edit_command: str, filename: str, current: int, total: int,
-                          term_width: int, reason: str = None, style: str = "cyan") -> Tuple[Text, str]:
+                         term_width: int, reason: str = None, style: str = "cyan") -> Tuple[Text, str]:
     """Create a header showing filename and global change counter.
 
     Args:
@@ -184,18 +213,9 @@ def create_progress_header(edit_command: str, filename: str, current: int, total
     Returns:
         Tuple of (Rich Text object, style)
     """
-    text = Text()
     header = f"{edit_command}: {filename} | Progress {current}/{total}"
     if reason:
         header += f" | {reason}"
     
-    # Calculate padding for centering
-    padding = (term_width - len(header)) // 2
-    
-    # Create full-width background by padding both sides
-    full_line = " " * padding + header + " " * (term_width - len(header) - padding)
-    
-    # Apply background color to entire line with better contrast
-    text.append(full_line, style=f"white on dark_blue")
-
+    text = create_header(header, term_width, "dark_blue", include_rule=True)
     return text, style

@@ -36,78 +36,68 @@ def apply_line_style(line: str, style: str, width: int, full_width: bool = False
 
 from textwrap import wrap
 
-def format_content(lines: List[str], search_lines: List[str] = None, replace_lines: List[str] = None,
-                  is_search: bool = False, width: int = 80, is_delete: bool = False, 
-                  is_removal: bool = False, syntax_type: str = None, is_append: bool = False) -> Text:
-    """Format content with appropriate styling based on operation type.
+def _format_line(text: Text, line: str, line_type: str, width: int, min_indent: int = 0,
+                full_width: bool = False) -> None:
+    """Helper function to format a single line with consistent styling.
     
-    Handles different content types:
-    - Regular content with diff highlighting
-    - Delete operations (red background)
-    - Append operations (green background)
-    - Text wrapping for long lines
+    Args:
+        text: Text object to append formatted line to
+        line: Line content to format
+        line_type: Type of line (unchanged, added, deleted, etc.)
+        width: Maximum line width
+        min_indent: Minimum indentation to remove
+        full_width: Whether to use full width background
     """
-    text = Text()
+    bg_color = current_theme.line_backgrounds.get(line_type, current_theme.line_backgrounds['unchanged'])
+    style = f"{current_theme.text_color} on {bg_color}"
+    
+    # Process line content
+    processed_line = line
+    if line.strip() and min_indent > 0:
+        processed_line = line[min_indent:]
+    
+    # Handle line wrapping
+    if len(processed_line) > width and not full_width:
+        wrapped_lines = wrap(processed_line, width=width, break_long_words=True, break_on_hyphens=False)
+        for wrapped in wrapped_lines:
+            text.append(apply_line_style(wrapped, style, width, full_width))
+    else:
+        text.append(apply_line_style(processed_line, style, width, full_width))
 
-    # For delete operations, show all content with red background in a single column
+def format_content(lines: List[str], search_lines: List[str] = None, replace_lines: List[str] = None,
+                  is_search: bool = False, width: int = 80, is_delete: bool = False,
+                  is_removal: bool = False, syntax_type: str = None, is_append: bool = False) -> Text:
+    """Format content with appropriate styling based on operation type."""
+    text = Text()
+    min_indent = get_min_indent(lines)
+
+    # Handle special cases first
     if is_delete or is_removal:
-        bg_color = current_theme.line_backgrounds['removed' if is_removal else 'deleted']
-        style = f"{current_theme.text_color} on {bg_color}"
-        min_indent = get_min_indent(lines)
+        line_type = 'removed' if is_removal else 'deleted'
         for line in lines:
-            processed_line = line[min_indent:] if line.strip() else line
-            text.append(apply_line_style(processed_line, style, width, full_width=True))
+            _format_line(text, line, line_type, width, min_indent, full_width=True)
         return text
 
-    # For append operations, show all lines as added
     if is_append:
-        bg_color = current_theme.line_backgrounds['added']
-        style = f"{current_theme.text_color} on {bg_color}"
-        min_indent = get_min_indent(lines)
         for line in lines:
-            if line.strip():
-                line = line[min_indent:]
-            text.append(apply_line_style(line, style, width, full_width=True))
+            _format_line(text, line, 'added', width, min_indent, full_width=True)
         return text
 
     # Regular diff formatting
     if search_lines and replace_lines:
-        # Find similar lines for better diff visualization
-        similar_pairs = find_similar_lines(search_lines, replace_lines)
-        similar_added = {j for _, j, _ in similar_pairs}
-        similar_deleted = {i for i, _, _ in similar_pairs}
-
-        # Create sets for comparison
         search_set = set(search_lines)
         replace_set = set(replace_lines)
         common_lines = search_set & replace_set
 
-        def add_line(line: str, line_type: str = 'unchanged'):
-            bg_color = current_theme.line_backgrounds.get(line_type, current_theme.line_backgrounds['unchanged'])
-            style = f"{current_theme.text_color} on {bg_color}"
-
-            if syntax_type == 'python':
-                # Just use the background color without syntax highlighting
-                text.append(apply_line_style(line, style, width))
-                return
-
-            # Wrap long lines
-            if len(line) > width:
-                wrapped_lines = wrap(line, width=width, break_long_words=True, break_on_hyphens=False)
-                for wrapped in wrapped_lines:
-                    text.append(apply_line_style(wrapped, style, width))
-            else:
-                text.append(apply_line_style(line, style, width))
-
-        for i, line in enumerate(lines):
-            if not line.strip():  # Handle empty lines
-                add_line("", 'unchanged')
+        for line in lines:
+            if not line.strip():
+                _format_line(text, "", 'unchanged', width)
             elif line in common_lines:
-                add_line(line, 'unchanged')
+                _format_line(text, line, 'unchanged', width, min_indent)
             elif not is_search:
-                add_line(line, 'added')
+                _format_line(text, line, 'added', width, min_indent)
             else:
-                add_line(line, 'deleted')
+                _format_line(text, line, 'deleted', width, min_indent)
 
     return text
 

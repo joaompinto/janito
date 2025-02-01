@@ -123,7 +123,10 @@ def progress_send_message(message: str) -> Optional[str]:
 
     if config.debug:
         console.print("[yellow]======= Received response[/yellow]")
-        print(response.content[0].text)
+        if isinstance(response, str):
+            print(response)
+        else:
+            print(response.content[0].text)
         console.print("[yellow]======= End of response[/yellow]")
     
     # Extract response text based on response type

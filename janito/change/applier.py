@@ -1,9 +1,16 @@
-from typing import List
+from typing import List, Dict, Optional
 from pathlib import Path
 from janito.config import config
 from .finder import find_range, EditContentNotFoundError
-from .edit_blocks import EditType, CodeChange
+from .instructions_parser import EditType, CodeChange
 from .applied_blocks import AppliedBlock, AppliedBlocks
+from rich.console import Console
+import shutil
+import os
+
+class ContentPositionError(Exception):
+    """Raised when trying to edit content at an invalid position."""
+    pass
 
 class ChangeApplier:
     def __init__(self, target_dir: Path):
@@ -13,61 +20,74 @@ class ChangeApplier:
         self.current_file = None
         self.current_content: List[str] = []
         self.applied_blocks = AppliedBlocks(blocks=[])
+        self.console = Console()
 
-    def add_edit(self, edit: CodeChange):
-        self.edits.append(edit)
-
-    def start_file_edit(self, filename: str, edit_type: EditType):
-        if self.current_file:
-            self.end_file_edit()
-        self._last_changed_line = 0
-        self.current_file = filename
-        self.current_edit_type = edit_type  # Store edit type for end_file_edit
+    def _handle_find_error(self, content: List[str], edit: CodeChange, error: Exception) -> str:
+        """Centralized error handling for find_range failures"""
+        debug_file = self.target_dir / f"failed_debug_{edit.filename.name}"
         
-        if edit_type == EditType.CREATE:
-            self.current_content = []
-        elif edit_type == EditType.DELETE:
-            if not (self.target_dir / filename).exists():
-                raise FileNotFoundError(f"Cannot delete non-existent file: {filename}")
-            self.current_content = []
-        else:
-            self.current_content = (self.target_dir / filename).read_text(encoding="utf-8").splitlines()
-    
-    def end_file_edit(self):
-        if self.current_file:
-            target_path = self.target_dir / self.current_file
-            if hasattr(self, 'current_edit_type') and self.current_edit_type == EditType.DELETE:
-                if target_path.exists():
-                    target_path.unlink()
-            else:
-                # Create parent directories if they don't exist
-                target_path.parent.mkdir(parents=True, exist_ok=True)
-                target_path.write_text("\n".join(self.current_content), encoding="utf-8")
-        self.current_file = None
-
-    def apply(self):
-        """Apply all edits and show summary of changes."""
-        # Ensure target directory exists
-        self.target_dir.mkdir(parents=True, exist_ok=True)
+        # Format debug content with clear sections
+        debug_content = [
+            "FIND:",
+            *edit.original,
+            "",  # Add blank line between sections
+            "ORIGINAL:",
+            *content,
+            "",  # Add blank line before error
+            "ERROR:",  # Add error section header
+            str(error)  # Add error message in its own section
+        ]
         
-        current_file = None
+        debug_file.write_text('\n'.join(debug_content), encoding='utf-8')
         
-        # Process edits in order as they were added
-        for edit in self.edits:
-            if current_file != edit.filename:
-                if current_file is not None:
-                    self.end_file_edit()
-                self.start_file_edit(str(edit.filename), edit.edit_type)
-                current_file = edit.filename
-            self._apply_and_collect_change(edit)
+        # Always print debug info with absolute path
+        self.console.print("\n[red]Failed to find matching content[/red]")
+        self.console.print(f"[yellow]Debug information saved to:[/yellow] {debug_file.absolute()}")
+        if config.debug:
+            self.console.print("[dim]Use the finder tool to analyze the failed match[/dim]")
         
-        # Close the final file if there was one
-        if current_file is not None:
-            self.end_file_edit()
+        return f"Failed to find edit section in {edit.filename}: {str(error)}"
 
     def _apply_and_collect_change(self, edit: CodeChange) -> AppliedBlock:
         """Apply a single edit and collect its change information."""
-        if edit.edit_type == EditType.CREATE:
+        if edit.edit_type == EditType.MOVE:
+            source_path = self.target_dir / edit.filename
+            target_path = self.target_dir / edit.new_filename
+            if not source_path.exists():
+                error_msg = f"Cannot move non-existent file: {source_path}"
+                applied_block = AppliedBlock(
+                    filename=edit.filename,
+                    edit_type=edit.edit_type,
+                    reason=edit.reason,
+                    original_content=[],
+                    modified_content=[],
+                    range_start=1,
+                    range_end=1,
+                    error_message=error_msg,
+                    has_error=True,
+                    block_id=edit.block_id,
+                    lines_changed=0
+                )
+            else:
+                # Create target directory if it doesn't exist
+                target_path.parent.mkdir(parents=True, exist_ok=True)
+                # Move the file
+                source_path.rename(target_path)
+                applied_block = AppliedBlock(
+                    filename=edit.filename,
+                    edit_type=edit.edit_type,
+                    reason=edit.reason,
+                    original_content=[],
+                    modified_content=[],
+                    range_start=1,
+                    range_end=1,
+                    new_filename=edit.new_filename,
+                    block_id=edit.block_id,
+                    lines_changed=0
+                )
+            self.applied_blocks.blocks.append(applied_block)
+            return applied_block
+        elif edit.edit_type == EditType.CREATE:
             self.current_content = edit.modified
             applied_block = AppliedBlock(
                 filename=edit.filename,
@@ -77,9 +97,9 @@ class ChangeApplier:
                 modified_content=edit.modified,
                 range_start=1,
                 range_end=len(edit.modified),
-                block_marker=edit.block_marker
+                block_id=edit.block_id,
+                lines_changed=len(edit.modified)
             )
-
         elif edit.edit_type == EditType.DELETE:
             applied_block = AppliedBlock(
                 filename=edit.filename,
@@ -89,18 +109,19 @@ class ChangeApplier:
                 modified_content=[],
                 range_start=1,
                 range_end=len(self.current_content),
-                block_marker=edit.block_marker
+                block_id=edit.block_id,
+                lines_changed=len(self.current_content)
             )
             self.current_content = []
-
         elif edit.edit_type == EditType.CLEAN:
             try:
+                if self._last_changed_line >= len(self.current_content):
+                    raise ContentPositionError(f"Start position {self._last_changed_line} is beyond content length {len(self.current_content)}")
                 start_range = find_range(self.current_content, edit.original, self._last_changed_line)
                 try:
                     end_range = find_range(self.current_content, edit.modified, start_range[1])
                 except EditContentNotFoundError:
                     end_range = (start_range[1], start_range[1])
-                
                 section = self.current_content[start_range[0]:end_range[1]]
                 applied_block = AppliedBlock(
                     filename=edit.filename,
@@ -110,14 +131,13 @@ class ChangeApplier:
                     modified_content=[],
                     range_start=start_range[0] + 1,
                     range_end=end_range[1],
-                    block_marker=edit.block_marker
+                    block_id=edit.block_id,
+                    lines_changed=len(section)
                 )
-                
                 self.current_content[start_range[0]:end_range[1]] = []
                 self._last_changed_line = start_range[0]
-                
-            except EditContentNotFoundError as e:
-                error_msg = f"Failed to find clean section in {self.current_file}: {e}"
+            except (EditContentNotFoundError, ContentPositionError) as e:
+                error_msg = self._handle_find_error(self.current_content, edit, e)
                 applied_block = AppliedBlock(
                     filename=edit.filename,
                     edit_type=edit.edit_type,
@@ -126,31 +146,49 @@ class ChangeApplier:
                     modified_content=[],
                     range_start=1,
                     range_end=len(self.current_content),
-                    block_marker=edit.block_marker,
                     error_message=error_msg,
-                    has_error=True
+                    has_error=True,
+                    block_id=edit.block_id,
+                    lines_changed=len(self.current_content)
                 )
-
         else:  # EDIT operation
             try:
+                if self._last_changed_line >= len(self.current_content):
+                    raise ContentPositionError(f"Start position {self._last_changed_line} is beyond content length {len(self.current_content)}")
                 edit_range = find_range(self.current_content, edit.original, self._last_changed_line)
+                # edit_range[0] is 0-based index into current_content
                 original_section = self.current_content[edit_range[0]:edit_range[1]]
+                
+                # Preserve indentation if different
+                first_line_original = original_section[0] if original_section else ""
+                first_line_edit = edit.original[0] if edit.original else ""
+                
+                # Calculate the indentation difference
+                original_indent = len(first_line_original) - len(first_line_original.lstrip())
+                edit_indent = len(first_line_edit) - len(first_line_edit.lstrip())
+                
+                # If indentation differs, adjust modified content
+                modified_content = edit.modified
+                if original_indent != edit_indent:
+                    indent_diff = original_indent - edit_indent
+                    if indent_diff > 0:
+                        modified_content = [" " * indent_diff + line for line in edit.modified]
                 
                 applied_block = AppliedBlock(
                     filename=edit.filename,
                     edit_type=edit.edit_type,
                     reason=edit.reason,
                     original_content=original_section,
-                    modified_content=edit.modified,
+                    modified_content=modified_content,
                     range_start=edit_range[0] + 1,
                     range_end=edit_range[0] + len(edit.original),
-                    block_marker=edit.block_marker
+                    block_id=edit.block_id,
+                    lines_changed=abs(len(modified_content) - len(original_section))
                 )
-                
                 self._last_changed_line = edit_range[0] + len(edit.original)
-                self.current_content[edit_range[0]:edit_range[1]] = edit.modified
-            except EditContentNotFoundError as e:
-                error_msg = f"Failed to find edit section in {self.current_file}: {e}"
+                self.current_content[edit_range[0]:edit_range[1]] = modified_content
+            except (EditContentNotFoundError, ContentPositionError) as e:
+                error_msg = self._handle_find_error(self.current_content, edit, e)
                 applied_block = AppliedBlock(
                     filename=edit.filename,
                     edit_type=edit.edit_type,
@@ -159,10 +197,75 @@ class ChangeApplier:
                     modified_content=edit.modified,
                     range_start=self._last_changed_line + 1,
                     range_end=self._last_changed_line + len(edit.original),
-                    block_marker=edit.block_marker,
                     error_message=error_msg,
-                    has_error=True
+                    has_error=True,
+                    block_id=edit.block_id,
+                    lines_changed=abs(len(edit.modified) - len(edit.original))
                 )
-
         self.applied_blocks.blocks.append(applied_block)
         return applied_block
+
+    def add_edit(self, edit: CodeChange) -> None:
+        """Add an edit to be applied later."""
+        self.edits.append(edit)
+
+    def _save_debug_info(self, file_content: List[str], edit: CodeChange, error: Exception) -> None:
+        """Save debug information when find_range fails."""
+        debug_file = self.target_dir / 'failed_debug.txt'
+        debug_content = [
+            "FIND:",
+            *edit.original,
+            "\nORIGINAL:",
+            *file_content,
+            f"\nERROR: {str(error)}"
+        ]
+        debug_file.write_text('\n'.join(debug_content), encoding='utf-8')
+
+    def apply(self) -> AppliedBlocks:
+        """Apply all recorded edits and return the results."""
+        self.current_file = None
+        self.current_content = []
+        self._last_changed_line = 0
+        self.applied_blocks = AppliedBlocks(blocks=[])
+
+        for edit in self.edits:
+            # Handle file changes
+            if self.current_file != edit.filename:
+                # Save current file if it exists
+                if self.current_file and self.current_content:
+                    file_path = self.target_dir / self.current_file
+                    file_path.parent.mkdir(parents=True, exist_ok=True)
+                    file_path.write_text('\n'.join(self.current_content) + '\n', encoding='utf-8')
+                
+                # Load new file
+                self.current_file = edit.filename
+                self._last_changed_line = 0
+                
+                if edit.edit_type not in [EditType.CREATE, EditType.MOVE]:
+                    file_path = self.target_dir / edit.filename
+                    if file_path.exists():
+                        self.current_content = file_path.read_text(encoding='utf-8').splitlines()
+                    else:
+                        self.current_content = []
+            
+            # Apply the edit and collect change information
+            self._apply_and_collect_change(edit)
+            
+            # Save file immediately for certain edit types
+            if edit.edit_type in [EditType.CREATE, EditType.DELETE]:
+                file_path = self.target_dir / edit.filename
+                if edit.edit_type == EditType.CREATE:
+                    file_path.parent.mkdir(parents=True, exist_ok=True)
+                if self.current_content:
+                    file_path.write_text('\n'.join(self.current_content) + '\n', encoding='utf-8')
+                else:
+                    if file_path.exists():
+                        file_path.unlink()
+        
+        # Save the last file if there's content
+        if self.current_file and self.current_content:
+            file_path = self.target_dir / self.current_file
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            file_path.write_text('\n'.join(self.current_content) + '\n', encoding='utf-8')
+        
+        return self.applied_blocks

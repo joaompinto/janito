@@ -6,15 +6,15 @@ ai_backend = os.getenv('AI_BACKEND', '').lower()
 if not ai_backend:
     if os.getenv('ANTHROPIC_API_KEY'):
         ai_backend = 'claudeai'
-    elif os.getenv('DEEPSEEK_API_KEY'):
-        ai_backend = 'deepseekai'
+    elif os.getenv('OPENAI_API_KEY'):
+        ai_backend = 'openai'
     elif os.getenv('GROQ_API_KEY'):
         ai_backend = 'groqcloud'
     else:
-        raise ValueError("No AI backend API keys found. Please set either ANTHROPIC_API_KEY or DEEPSEEK_API_KEY")
+        raise ValueError("No AI backend API keys found. Please set either ANTHROPIC_API_KEY, OPENAI_API_KEY, or GROQ_API_KEY")
 
-if ai_backend == "deepseekai":
-    from .deepseekai import DeepSeekAIAgent as AIAgent
+if ai_backend == "openai":
+    from .openai import OpenAIAgent as AIAgent
 elif ai_backend == 'claudeai':
     from .claudeai import ClaudeAIAgent as AIAgent
 elif ai_backend == 'groqcloud':

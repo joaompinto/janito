@@ -4,6 +4,9 @@ from typing import Optional
 class Agent(ABC):
     """Abstract base class for AI agents"""
     friendly_name = "Unknown"
+    api_key = None
+    model = None
+    base_url = None
     
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key

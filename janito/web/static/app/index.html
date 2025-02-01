@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Web Editor</title>
+    <link rel="stylesheet" href="app/styles.css">
+    <!-- Add Socket.IO client library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar">
+            <file-explorer id="mainExplorer"></file-explorer>
+        </div>
+        <resizable-separator></resizable-separator>
+        <div class="editor-container">
+            <div class="editor-area">
+                <code-editor id="codeEditor">
+# Welcome to Python Web Editor
+# Browse files in the explorer or start coding here
+
+def example():
+    """A simple example function"""
+    message = "Hello, Python!"
+    print(message)
+    
+    # Try some calculations
+    result = 42 * 2.5
+    print(f"The answer is: {result}")
+
+if __name__ == "__main__":
+    example()</code-editor>
+            </div>
+            <div class="status-bar">
+                <span class="status-text">Ready</span>
+                <span class="language-mode">(Python)</span>
+            </div>
+        </div>
+        <resizable-separator></resizable-separator>
+        <div class="chat-box-container" id="chatBoxContainer">
+            <chat-box></chat-box>
+        </div>
+    </div>
+    <div class="bottom-bar">
+        <div class="bottom-bar-content">
+            <div class="shortcuts">
+                <span class="shortcut-item">
+                    <span class="shortcut-key">Alt+F1</span>
+                    <span class="shortcut-description">Toggle Chat Box</span>
+                </span>
+            </div>
+            <div class="app-info">
+                <span class="app-version">v1.0.0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load components as modules -->
+    <script type="module" src="components/syntax-tokenizer.js"></script>
+    <script type="module" src="components/code-editor.js"></script>
+    <script type="module" src="components/file-explorer.js"></script>
+    <script type="module" src="components/code-output.js"></script>
+    <script type="module" src="components/chat-box.js"></script>
+    <script type="module" src="app/index.js"></script>
+</body>
+</html>

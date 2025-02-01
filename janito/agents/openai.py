@@ -4,19 +4,28 @@ from typing import Optional
 from threading import Event
 from .agent import Agent
 
-class DeepSeekAIAgent(Agent):
-    """ DeepSeek AI Agent """
-    DEFAULT_MODEL = "deepseek-chat"
-    friendly_name = "DeepSeek"
+class OpenAIAgent(Agent):
+    """ OpenAI Agent """
+    friendly_name = "OpenAI"
     
     def __init__(self):
-        self.api_key = os.getenv('DEEPSEEK_API_KEY')
         super().__init__(self.api_key)
+        self.api_key = os.getenv('OPENAI_API_KEY')
+        self.model = os.getenv('OPENAI_MODEL')
+        self.base_url = os.getenv('OPENAI_URL')
         
         if not self.api_key:
-            raise ValueError("DEEPSEEK_API_KEY environment variable is required")
-        self.client = OpenAI(api_key=self.api_key, base_url="https://api.deepseek.com")
-        self.model = self.DEFAULT_MODEL
+            raise ValueError("OPENAI_API_KEY environment variable is required")
+        if not self.model:
+            raise ValueError("OPENAI_MODEL environment variable is required")
+        if not self.base_url:
+            raise ValueError("OPENAI_URL environment variable is required")
+            
+        self.client = OpenAI(
+            api_key=self.api_key,
+            base_url=self.base_url
+        )
+        self.friendly_name = f"openai-{self.model}"
 
     def send_message(self, message: str, system_message: str) -> str:
         """Send message to OpenAI API and return response"""
@@ -31,7 +40,6 @@ class DeepSeekAIAgent(Agent):
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
-                max_completion_tokens=4096,
                 temperature=0,
             )
             

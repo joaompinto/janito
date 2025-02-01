@@ -1,79 +1,100 @@
 from rich.console import Console
+from rich.markdown import Markdown
 from ..applied_blocks import AppliedBlocks
-from .panels import create_diff_columns
+from .panels import create_diff_columns, create_header
 from .summary import show_changes_summary
 from .content import create_content_preview
 from rich.text import Text
+from rich.panel import Panel
+from rich.syntax import Syntax
+from ..applied_blocks import AppliedBlock
+from ..instructions_parser import EditType, CodeChange
+from typing import List, Union
 
 class ChangeViewer:
     def __init__(self):
         self.console = Console()
         
-    def show_changes(self, applied_blocks: AppliedBlocks):
-        """Show all changes with diffs and summary"""
-        for block in applied_blocks.blocks:
-            self._show_block(block)
-            
-        # Show summary table
+    def show(self, instructions: List[Union[str, CodeChange]], applied_blocks: AppliedBlocks):
+        """Show instructions with their applied results.
+        
+        For each element in instructions:
+        - If it's a string, show it as markdown
+        - If it's a CodeChange, find and show the corresponding AppliedBlock
+        """
+        # Create lookup dict for applied blocks by block_id
+        blocks_by_id = {block.block_id: block for block in applied_blocks.blocks}
+        total_blocks = len(applied_blocks.blocks)
+        shown_blocks = 0
+        
+        for item in instructions:
+            if isinstance(item, str):
+                # Show text as markdown
+                self.console.print(Markdown(item))
+            elif isinstance(item, CodeChange):
+                # Find and show corresponding applied block
+                if applied_block := blocks_by_id.get(item.block_id):
+                    shown_blocks += 1
+                    self._show_block(applied_block, shown_blocks, total_blocks)
+                else:
+                    # Show warning if no matching applied block found
+                    self.console.print(Panel(
+                        Text(f"⚠️ No result found for {item.edit_type.name} to {item.filename}", style="yellow"),
+                        border_style="yellow"
+                    ))
+        
+        # Show summary table at the end
         show_changes_summary(applied_blocks.get_changes_summary(), self.console)
         
-    def _show_block(self, block):
-        """Show a single change block with appropriate visualization"""
-        if block.edit_type.name == "CREATE":
-            # Create header
-            header = Text()
-            header_text = f"Create: {block.filename}"
-            padding = (self.console.width - len(header_text)) // 2
-            full_line = " " * padding + header_text + " " * (self.console.width - len(header_text) - padding)
-            header.append(full_line, style="white on dark_green")
-            header.append("\n")
-            header.append("─" * self.console.width, style="dim")
+    def _show_block(self, block: AppliedBlock, current_block: int, total_blocks: int):
+        """Display a single change block with its details."""
+        if block.has_error:
+            # Show error message in red panel
+            self.console.print(Panel(
+                Text(f"❌ {block.error_message}", style="red"),
+                title=f"Error applying changes to {block.filename}",
+                border_style="red"
+            ))
+            return
+
+        # Show the edit type
+        edit_type_str = f"[bold]{block.edit_type.name}[/bold]"
+        
+        if block.edit_type == EditType.MOVE:
+            self.console.print(f"\n{edit_type_str}: {block.filename} → {block.new_filename}")
+            return
             
-            # Create content preview
-            content = create_content_preview(
-                block.filename,
-                "\n".join(block.modified_content),
-                is_new=True
-            )
-            
-            self.console.print(header)
-            self.console.print(content)
-            
-        elif block.edit_type.name == "DELETE":
-            # Create header
-            header = Text()
-            header_text = f"Delete: {block.filename}"
-            padding = (self.console.width - len(header_text)) // 2
-            full_line = " " * padding + header_text + " " * (self.console.width - len(header_text) - padding)
-            header.append(full_line, style="white on dark_red")
-            header.append("\n")
-            header.append("─" * self.console.width, style="dim")
-            
-            self.console.print(header)
-            
-        elif block.edit_type.name == "CLEAN":
-            header, columns = create_diff_columns(
-                block.original_content,
-                [],  # No modified content for clean
-                str(block.filename),
-                block.range_start - 1,
-                self.console.width,
-                edit_command="Clean",
-                reason=block.reason,
-                is_removal=True
-            )
-            self.console.print(header)
-            self.console.print(columns)
-            
-        else:  # EDIT operation
-            header, columns = create_diff_columns(
+        if block.edit_type == EditType.DELETE:
+            self.console.print(f"\n{edit_type_str}: {block.filename}")
+            return
+
+        if block.original_content and block.modified_content:
+            # Show side-by-side diff for edits
+            header, diff_columns = create_diff_columns(
                 block.original_content,
                 block.modified_content,
-                str(block.filename),
-                block.range_start - 1,
-                self.console.width,
-                edit_command="Edit",
+                filename=block.filename,
+                start=block.range_start - 1,
+                term_width=self.console.width,
+                current_change=current_block,
+                total_changes=total_blocks,
+                edit_command=block.edit_type.name,
                 reason=block.reason
             )
             self.console.print(header)
-            self.console.print(columns)
+            self.console.print(diff_columns)
+        else:
+            # Show single panels for create/clean operations
+            if block.original_content:
+                self.console.print(Panel(
+                    Syntax("\n".join(block.original_content), "python", theme="monokai"),
+                    title="Original",
+                    border_style="red"
+                ))
+            
+            if block.modified_content:
+                self.console.print(Panel(
+                    Syntax("\n".join(block.modified_content), "python", theme="monokai"),
+                    title="Modified",
+                    border_style="green"
+                ))

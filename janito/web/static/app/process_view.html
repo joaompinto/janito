@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Process Manager Client</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .process-container {
+            border: 1px solid #ccc;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .output-container {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+        }
+        .stderr {
+            color: #d63031;
+        }
+        .stdout {
+            color: #0984e3;
+        }
+        .status {
+            color: #00b894;
+        }
+        .input-group {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        input[type="text"] {
+            padding: 5px;
+            flex-grow: 1;
+        }
+        button {
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .process-status {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            margin-left: 10px;
+            font-size: 0.9em;
+        }
+        .status-running {
+            background-color: #00b894;
+            color: white;
+        }
+        .status-terminated {
+            background-color: #d63031;
+            color: white;
+        }
+        .status-completed {
+            background-color: #0984e3;
+            color: white;
+        }
+        .command-info {
+            margin: 5px 0;
+            font-size: 0.9em;
+            color: #666;
+        }
+        .command-info code {
+            background: #f8f8f8;
+            padding: 2px 4px;
+            border-radius: 3px;
+            border: 1px solid #ddd;
+        }
+        #active-processes {
+            margin: 20px 0;
+            padding: 10px;
+            background: #f8f8f8;
+            border-radius: 5px;
+        }
+        
+        #active-processes button {
+            margin-bottom: 10px;
+        }
+        
+        #active-processes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Process Manager Client</h1>
+    
+    <div id="start-process">
+        <h2>Start New Process</h2>
+        <div class="input-group">
+            <input type="text" id="command" placeholder="Command (e.g., 'echo hello' or 'python script.py')" onkeydown="if(event.key === 'Enter') startProcess()">
+            <button onclick="startProcess()">Start Process</button>
+        </div>
+    </div>
+
+    <div id="active-processes">
+        <h2>Active Processes</h2>
+        <button onclick="refreshProcesses()">Refresh</button>
+        <div id="active-processes-list"></div>
+    </div>
+
+    <div id="processes"></div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:8000';
+        const socket = io(API_BASE);
+        const processes = new Map();
+
+        async function startProcess() {
+            let command = document.getElementById('command').value.trim();
+            if (!command) {
+                alert('Please enter a command');
+                return;
+            }
+            
+            let args;
+            if (command.includes('"')) {
+                const matches = command.match(/[^\s"']+|"([^"]*)"|'([^']*)'/g);
+                if (matches) {
+                    const parsed = matches.map(part => part.replace(/^["']|["']$/g, ''));
+                    command = parsed[0];
+                    args = parsed.slice(1);
+                }
+            } else {
+                const parts = command.split(' ');
+                command = parts[0];
+                args = parts.slice(1);
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/processes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ command, args }),
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    // Create a "fake" process container to show the error
+                    const errorId = 'error-' + Date.now();
+                    createProcessContainer(errorId, `${command} ${args.join(' ')}`);
+                    const outputContainer = document.getElementById(`output-${errorId}`);
+                    const line = document.createElement('div');
+                    line.className = 'stderr';
+                    line.textContent = data.detail;
+                    outputContainer.appendChild(line);
+                    updateProcessStatus(errorId, 'terminated');
+                    return;
+                }
+                
+                createProcessContainer(data.process_id, `${command} ${args.join(' ')}`);
+                setupProcessSocket(data.process_id);
+            } catch (error) {
+                alert(`Network error: ${error.message}`);
+            }
+        }
+
+        function createProcessContainer(processId, command) {
+            const container = document.createElement('div');
+            container.className = 'process-container';
+            container.id = `process-${processId}`;
+            
+            container.innerHTML = `
+                <h3>
+                    Process PID: ${processId}
+                    <span id="status-${processId}" class="process-status status-running">Running</span>
+                </h3>
+                <div class="command-info">Command: <code>${command}</code></div>
+                <div class="output-container" id="output-${processId}"></div>
+                <div class="input-group">
+                    <input type="text" id="input-${processId}" placeholder="Enter input" onkeydown="if(event.key === 'Enter') sendInput('${processId}')">
+                    <button onclick="sendInput('${processId}')">Send Input</button>
+                    <button onclick="terminateProcess('${processId}')">Terminate</button>
+                </div>
+            `;
+            
+            document.getElementById('processes').prepend(container);
+        }
+
+        function updateProcessStatus(processId, status, exitCode = null) {
+            const statusElement = document.getElementById(`status-${processId}`);
+            if (!statusElement) return;
+
+            let statusText = status;
+            let statusClass = '';
+
+            switch (status) {
+                case 'running':
+                    statusClass = 'status-running';
+                    statusText = 'Running';
+                    break;
+                case 'terminated':
+                    statusClass = 'status-terminated';
+                    statusText = 'Terminated';
+                    break;
+                case 'completed':
+                    statusClass = 'status-completed';
+                    statusText = exitCode === 0 ? 'Completed' : 'Failed';
+                    statusText += ` (Exit: ${exitCode})`;
+                    break;
+                case 'failed':
+                    statusClass = 'status-terminated';
+                    statusText = 'Failed';
+                    break;
+            }
+
+            statusElement.className = `process-status ${statusClass}`;
+            statusElement.textContent = statusText;
+
+            if (status !== 'running') {
+                const inputElement = document.getElementById(`input-${processId}`);
+                if (inputElement) {
+                    inputElement.disabled = true;
+                    inputElement.placeholder = 'Process ended';
+                }
+            }
+        }
+
+        function setupProcessSocket(processId) {
+            socket.on(`process_output_${processId}`, (message) => {
+                const outputContainer = document.getElementById(`output-${processId}`);
+                
+                if (message.type === 'status') {
+                    const exitCodeMatch = message.data.match(/(?:completed|failed) with code (\d+)/);
+                    const exitCode = exitCodeMatch ? parseInt(exitCodeMatch[1]) : null;
+                    const status = message.data.includes('failed') ? 'failed' : 'completed';
+                    updateProcessStatus(processId, status, exitCode);
+                    processes.delete(processId);
+                } else {
+                    const line = document.createElement('div');
+                    line.className = message.type;
+                    line.textContent = message.data;
+                    outputContainer.appendChild(line);
+                    outputContainer.scrollTop = outputContainer.scrollHeight;
+                }
+            });
+
+            processes.set(processId, true);
+        }
+
+        function sendInput(processId) {
+            if (!processes.has(processId)) {
+                alert('Process not connected');
+                return;
+            }
+
+            const inputElement = document.getElementById(`input-${processId}`);
+            const input = inputElement.value;
+            
+            try {
+                socket.emit('process_input', {
+                    process_id: processId,
+                    input: input
+                });
+                inputElement.value = '';
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        async function terminateProcess(processId) {
+            try {
+                await fetch(`${API_BASE}/processes/${processId}`, {
+                    method: 'DELETE',
+                });
+                processes.delete(processId);
+                updateProcessStatus(processId, 'terminated');
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        async function refreshProcesses() {
+            try {
+                const response = await fetch(`${API_BASE}/processes`);
+                const data = await response.json();
+                
+                const processesList = document.getElementById('active-processes-list');
+                processesList.innerHTML = ''; // Clear current list
+                
+                const processes = data.processes;
+                if (Object.keys(processes).length === 0) {
+                    processesList.innerHTML = '<p>No active processes</p>';
+                    return;
+                }
+                
+                for (const [pid, info] of Object.entries(processes)) {
+                    // Skip if we already have this process displayed
+                    if (document.getElementById(`process-${pid}`)) continue;
+                    
+                    createProcessContainer(pid, info.command);
+                    setupProcessSocket(pid);
+                    updateProcessStatus(pid, info.status);
+                }
+            } catch (error) {
+                console.error('Error fetching processes:', error);
+                alert(`Error fetching processes: ${error.message}`);
+            }
+        }
+
+        // Auto-refresh processes when page loads
+        refreshProcesses();
+        
+        // Set up periodic refresh every 10 seconds
+        setInterval(refreshProcesses, 10000);
+
+        socket.on('error', (data) => {
+            alert(`Socket error: ${data.error}`);
+        });
+    </script>
+</body>
+</html>
