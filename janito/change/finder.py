@@ -1,295 +1,49 @@
 from typing import List, Tuple, Optional
 from difflib import SequenceMatcher
 import os
+import sys
+import argparse
 
 class EditContentNotFoundError(Exception):
     """Raised when edit content cannot be found in the file."""
     pass
 
-SIMILARITY_THRESHOLD = 0.6  # Minimum similarity score (0.0-1.0) required for a line to match
-GAP_PENALTY = -0.2  # No longer used since switching to sequential matching
 
-def line_similarity(line1: str, line2: str) -> float:
-    """Calculate how similar two lines are using difflib.SequenceMatcher.
-    Returns a score between 0.0 (completely different) and 1.0 (identical)."""
-    return SequenceMatcher(None, line1, line2).ratio()
-
-def forward_pass(change_lines: List[str], full_lines: List[str], start: int = 0) -> Tuple[float, List[int]]:
-    """Search for matches going forward through the file."""
-    best_matches = []
-    best_score = 0.0
-    
-    if os.environ.get('DEBUG'):
-        print("\nDEBUG: Forward pass:")
-
-    # Try each possible starting position
-    for start_pos in range(start, len(full_lines) - len(change_lines) + 1):
-        current_matches = []
-        matched_count = 0
-        
-        # Try to match lines from this position
-        for i, line in enumerate(change_lines):
-            if line_similarity(line, full_lines[start_pos + i]) >= SIMILARITY_THRESHOLD:
-                current_matches.append(start_pos + i)
-                matched_count += 1
-                
-                # Early return for perfect sequential match
-                if matched_count == len(change_lines):
-                    if current_matches == list(range(start_pos, start_pos + len(change_lines))):
-                        if os.environ.get('DEBUG'):
-                            print(f"DEBUG:   Found perfect match at line {start_pos+1}")
-                            for i, pos in enumerate(current_matches):
-                                print(f"DEBUG:     {i+1}: '{full_lines[pos]}'")
-                        return 1.0, current_matches
-
-        # Calculate score for this match
-        if current_matches:
-            # Score based on how many lines matched and their sequentiality
-            match_ratio = len(current_matches) / len(change_lines)
-            gaps = sum(b - a - 1 for a, b in zip(current_matches, current_matches[1:])) if len(current_matches) > 1 else 0
-            score = match_ratio + (GAP_PENALTY * gaps)
-            
-            if os.environ.get('DEBUG'):
-                print(f"DEBUG:   Potential match at line {start_pos+1}")
-                print(f"DEBUG:     Matched {len(current_matches)}/{len(change_lines)} lines, {gaps} gaps, score: {score}")
-                for i, pos in enumerate(current_matches):
-                    print(f"DEBUG:     {i+1}: '{full_lines[pos]}'")
-            
-            if score > best_score:
-                best_score = score
-                best_matches = current_matches
-
-    if best_matches:
-        if os.environ.get('DEBUG'):
-            print(f"DEBUG:   Best match has score: {best_score}")
-        return best_score, best_matches
-    
-    return 0.0, []
-
-def backward_pass(change_lines: List[str], full_lines: List[str], end: int = None) -> Tuple[float, List[int]]:
-    """Search for matches going backward through the file."""
-    best_matches = []
-    best_score = 0.0
-    max_start = len(full_lines) - len(change_lines)
-    current_index = len(full_lines) - 1 if end is None else end
-    
-    if os.environ.get('DEBUG'):
-        print("\nDEBUG: Backward pass:")
-
-    # Try each possible ending position
-    for end_pos in range(current_index, len(change_lines) - 1, -1):
-        current_matches = []
-        matched_count = 0
-        
-        # Try to match lines from this position backwards
-        for i, line in enumerate(reversed(change_lines)):
-            pos = end_pos - i
-            if pos < 0:
-                break
-                
-            if line_similarity(line, full_lines[pos]) >= SIMILARITY_THRESHOLD:
-                current_matches.insert(0, pos)  # Insert at start to maintain order
-                matched_count += 1
-                
-                # Early return for perfect sequential match
-                if matched_count == len(change_lines):
-                    if current_matches == list(range(pos, pos + len(change_lines))):
-                        if os.environ.get('DEBUG'):
-                            print(f"DEBUG:   Found perfect match ending at line {end_pos+1}")
-                            for i, pos in enumerate(current_matches):
-                                print(f"DEBUG:     {i+1}: '{full_lines[pos]}'")
-                        return 1.0, current_matches
-
-        # Calculate score for this match
-        if current_matches:
-            # Score based on how many lines matched and their sequentiality
-            match_ratio = len(current_matches) / len(change_lines)
-            gaps = sum(b - a - 1 for a, b in zip(current_matches, current_matches[1:])) if len(current_matches) > 1 else 0
-            score = match_ratio + (GAP_PENALTY * gaps)
-            
-            if os.environ.get('DEBUG'):
-                print(f"DEBUG:   Potential match ending at line {end_pos+1}")
-                print(f"DEBUG:     Matched {len(current_matches)}/{len(change_lines)} lines, {gaps} gaps, score: {score}")
-                for i, pos in enumerate(current_matches):
-                    print(f"DEBUG:     {i+1}: '{full_lines[pos]}'")
-            
-            if score > best_score:
-                best_score = score
-                best_matches = current_matches
-
-    if best_matches:
-        if os.environ.get('DEBUG'):
-            print(f"DEBUG:   Best match has score: {best_score}")
-        return best_score, best_matches
-    
-    return 0.0, []
 
 def find_range(full_lines: List[str], changed_lines: List[str], start: int = 0) -> Tuple[int, int]:
-    """Find the location of a code block within a file.
-    
-    Args:
-        full_lines: The complete file content to search in
-        changed_lines: The code block to find
-        start: Line number to start searching from
-    
-    Returns:
-        Tuple[int, int]: Start and end line numbers of the match
-        
-    Raises:
-        EditContentNotFoundError: If the block can't be found or match score is too low
-        ValueError: If start position is invalid
-    
-    The matching process:
-    1. Validates inputs and checks content lengths
-    2. Performs forward and backward passes to find matches
-    3. Requires matches to be sequential (not just similar lines)
-    4. Both passes must succeed with high similarity scores
-    5. Returns the range that encompasses all matching lines
-    """
-    _validate_inputs(full_lines, changed_lines, start)
-    
-    # Add validation for content length
-    if len(changed_lines) > len(full_lines):
-        raise EditContentNotFoundError(
-            f"Search pattern ({len(changed_lines)} lines) is longer than content ({len(full_lines)} lines).\n"
-            f"Pattern starts with:\n{changed_lines[0]}\n"
-            f"Content starts with:\n{full_lines[0]}"
-        )
-    
-    if not changed_lines:
-        return (start, start)
-    
-    # Perform bidirectional matching
-    if os.environ.get('DEBUG'):
-        print("\nDEBUG: Starting bidirectional matching")
-    
-    forward_score, forward_matches = forward_pass(changed_lines, full_lines, start)
-    backward_score, backward_matches = backward_pass(changed_lines, full_lines)
-    
-    if os.environ.get('DEBUG'):
-        print(f"\nDEBUG: Forward score: {forward_score}")
-        print(f"DEBUG: Forward matches: {forward_matches}")
-        print(f"DEBUG: Backward score: {backward_score}")
-        print(f"DEBUG: Backward matches: {backward_matches}")
+    if start < 0 or start >= len(full_lines):
+        raise ValueError("Invalid start position")
 
-    if not forward_matches or not backward_matches:
-        _raise_no_match_error(changed_lines, start, 0.0, full_lines)
-    
-    # Check if both passes found the same range
-    forward_range = list(range(min(forward_matches), max(forward_matches) + 1))
-    backward_range = list(range(min(backward_matches), max(backward_matches) + 1))
-    
-    if forward_range == backward_range:
-        # Both passes found same range - use the better score
-        cumulative_score = max(forward_score, backward_score)
-        start_index = min(forward_matches)
-        end_index = max(forward_matches) + 1
-    else:
-        # Different ranges - check for overlap and consistency
-        overlap = set(forward_matches) & set(backward_matches)
-        if overlap:
-            # Use the overlapping range if it's sequential
-            overlap_list = sorted(overlap)
-            if overlap_list == list(range(min(overlap_list), max(overlap_list) + 1)):
-                # Overlapping section is sequential - use it
-                overlap_score = len(overlap) / len(changed_lines)  # Score based on overlap completeness
-                cumulative_score = max(forward_score, backward_score) * overlap_score
-                start_index = min(overlap)
-                end_index = max(overlap) + 1
-            else:
-                # Overlapping matches aren't sequential - use better scoring range
-                if forward_score > backward_score:
-                    cumulative_score = forward_score
-                    start_index = min(forward_matches)
-                    end_index = max(forward_matches) + 1
-                else:
-                    cumulative_score = backward_score
-                    start_index = min(backward_matches)
-                    end_index = max(backward_matches) + 1
-        else:
-            # No overlap - average the scores
-            cumulative_score = (forward_score + backward_score) / 2
-            start_index = min(forward_matches)
-            end_index = max(backward_matches) + 1
-    
-    if cumulative_score < SIMILARITY_THRESHOLD:
-        _raise_no_match_error(changed_lines, start, cumulative_score, full_lines)
-    
-    if os.environ.get('DEBUG'):
-        print(f"\nDEBUG: Final score: {cumulative_score}")
-        print(f"DEBUG: Final range: {start_index+1}-{end_index}")
-    
-    return (start_index, end_index)
+    def exact_match(start: int) -> Tuple[int, int]:
+        for i in range(start, len(full_lines) - len(changed_lines) + 1):
+            if full_lines[i:i + len(changed_lines)] == changed_lines:
+                return i, i + len(changed_lines)  # Note: This returns exclusive end index
+        return None
 
-def _validate_inputs(full_lines: List[str], changed_lines: List[str], start: int) -> None:
-    if start >= len(full_lines):
-        raise ValueError(f"Start position {start} is beyond content length {len(full_lines)}")
+    def indent_match(start: int) -> Tuple[int, int]:
+        def get_indent(line: str) -> int:
+            return len(line) - len(line.lstrip())
 
-def _raise_no_match_error(changed_lines: List[str], start: int, best_score: float, full_lines: List[str]) -> None:
-    sample = "\n".join(changed_lines[:3]) + ("..." if len(changed_lines) > 3 else "")
-    
-    if os.environ.get('DEBUG'):
-        print("\nDEBUG: Match failure analysis:")
-        print(f"DEBUG: Search started from line {start}")
-        print(f"DEBUG: Best match score ({best_score:.3f}) below threshold {SIMILARITY_THRESHOLD}")
-        print("DEBUG: Content being searched for:")
-        
-        # Track all matches with their scores
-        matches_with_scores = []
-        
-        for i, line in enumerate(changed_lines, 1):
-            # Find best matching line for each changed line
-            best_match_line = None
-            best_line_score = 0.0
-            
-            for full_idx, full_line in enumerate(full_lines):
-                score = line_similarity(line, full_line)
-                if score > best_line_score:
-                    best_line_score = score
-                    best_match_line = full_idx
-            
-            print(f"DEBUG: {i}: '{line}' (Best match: line {best_match_line + 1}, score: {best_line_score:.3f})")
-            matches_with_scores.append((best_match_line, best_line_score))
-        
-        # Find best continuous sequence close to the length we want
-        target_length = len(changed_lines)
-        best_sequence = []
-        best_sequence_score = 0.0
-        
-        for start_idx in range(len(full_lines)):
-            current_sequence = []
-            total_score = 0.0
-            
-            # Try to build a sequence starting here
-            for i, (match_line, score) in enumerate(matches_with_scores):
-                if match_line == start_idx + len(current_sequence):
-                    current_sequence.append(match_line)
-                    total_score += score
-                else:
-                    break
-            
-            # Score this sequence based on length and average match quality
-            if current_sequence:
-                sequence_score = (len(current_sequence) / target_length) * (total_score / len(current_sequence))
-                if sequence_score > best_sequence_score:
-                    best_sequence = current_sequence
-                    best_sequence_score = sequence_score
-        
-        if best_sequence:
-            best_start = best_sequence[0]
-            best_end = best_sequence[-1]
-            
-            print(f"\nDEBUG: Best matching range: lines {best_start + 1}-{best_end + 1}")
-            print(f"DEBUG: Sequence of matching lines: {[x + 1 for x in best_sequence]}")
-            print("DEBUG: Content at best matching range:")
-            for line_num in range(best_start, best_end + 1):
-                print(f"DEBUG: {line_num + 1}: {full_lines[line_num]}")
-    
-    raise EditContentNotFoundError(
-        f"Could not find matching block after line {start}. "
-        f"Looking for:\n{sample}\n"
-        f"Best match score: {best_score:.2f}"
-    )
+        for i in range(start, len(full_lines) - len(changed_lines) + 1):
+            if all(get_indent(full_lines[i + j]) == get_indent(changed_lines[j]) and full_lines[i + j].lstrip() == changed_lines[j].lstrip() for j in range(len(changed_lines))):
+                return i, i + len(changed_lines)  # Changed to exclusive end index
+        return None
+
+    def stripped_match(start: int) -> Tuple[int, int]:
+        stripped_changed_lines = [line.strip() for line in changed_lines]
+        for i in range(start, len(full_lines) - len(changed_lines) + 1):
+            if all(full_lines[i + j].strip() == stripped_changed_lines[j] for j in range(len(changed_lines))):
+                return i, i + len(changed_lines)  # Changed to exclusive end index
+        return None
+
+    # Try each strategy in order
+    for strategy in [exact_match, indent_match, stripped_match]:
+        result = strategy(start)
+        if result:
+            return result
+
+    raise EditContentNotFoundError("Code block not found in the file")
+
 
 def _parse_debug_file(debug_file_path: str) -> Tuple[List[str], List[str]]:
     """Parse a debug file containing FIND: and ORIGINAL: sections.
@@ -354,8 +108,6 @@ def _trim_empty_lines(lines: List[str]) -> List[str]:
     return lines[start:end]
 
 def main():
-    import sys
-    import argparse
     
     # Set DEBUG flag when running directly
     os.environ['DEBUG'] = '1'

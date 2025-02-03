@@ -121,7 +121,7 @@ class InstructionsParser:
         lines = response.splitlines()
         current_text = []
         start_line = 1
-        self.expecting_fence = False  # Add state for expecting code fence
+        self.expecting_fence = False
         
         for i, line in enumerate(lines, 1):
             self.current_line = i - 1
@@ -157,9 +157,9 @@ class InstructionsParser:
             if self.in_block:
                 if self.handle_block_markers(line):
                     if line == "====":
-                        # Filter out any empty lines at start/end of blocks
-                        original = [l for l in self.original_content if l.strip()] if self.original_content else []
-                        modified = [l for l in self.current_block if l.strip()]
+                        # Remove the filtering of empty lines
+                        original = self.original_content if self.original_content else []
+                        modified = self.current_block
                         
                         change = CodeChange(
                             self.filename,
@@ -171,7 +171,14 @@ class InstructionsParser:
                             block_id=self.next_id
                         )
                         if config.debug:
-                            self.console.print(f"[blue]Lines {start_line}-{i}:[/] {self.current_command} block (id={self.next_id})")
+                            orig_lines = len(original) if original else 0
+                            mod_lines = len(modified) if modified else 0
+                            first_line = original[0][:50] + "..." if original else "(empty)"
+                            self.console.print(
+                                f"[blue]Lines {start_line}-{i}:[/] {self.current_command} block "
+                                f"(id={self.next_id}, original={orig_lines}, modified={mod_lines} lines)\n"
+                                f"[dim]  First: {first_line}[/dim]"
+                            )
                         result.append(change)
                         self.next_id += 1
                         self.original_content = None
