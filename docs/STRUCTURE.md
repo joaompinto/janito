@@ -44,6 +44,8 @@
   - `last_messages/`: Directory storing all conversation history
     - `{timestamp}.json`: Individual conversation files with timestamp-based IDs
 - `tools/`: Project utility scripts
+  - `release.sh`: Bash script for releasing the package to PyPI
+  - `release.ps1`: PowerShell script for releasing the package to PyPI on Windows
 - `docs/`: Documentation files
   - `STRUCTURE.md`: This file, documenting the project structure
 
