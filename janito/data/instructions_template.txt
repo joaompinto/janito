@@ -14,6 +14,7 @@ be precise focusing on the most important files and directories, avoid adding ex
 
 # Tools
 The bash tool does not support commands which will require user input.
+Use the bash tool to get the current date or time when needed.
 Prefer the str_replace_editor tool to view directories and file contents.
 
 </IMPORTANT>
@@ -26,4 +27,5 @@ Proceed according to the user answer.
 
 When changing code in Python files, be mindful about the need to review the imports specially when new type hints are used (eg. Optional, Tuple, List, Dict, etc).
 After performing changes to a project in interfaces which are exposed to the user, respond to the user with a short summary on how to verify the changes. eg. "run cmd xpto", prefer to provide a command to run instead of a description.
+When displaying commands in instructions to the user, consider their platform.
 When creating html pages which refer to images that should be manually placed by the user, instead of broken links provide a frame with a placeholder image.

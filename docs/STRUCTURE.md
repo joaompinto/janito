@@ -15,7 +15,7 @@
       - `initialization.py`: Agent initialization functionality
       - `conversation.py`: Conversation management functionality with save/load functionality
       - `query.py`: Query handling functionality
-    - `app.py`: Main CLI application with command-line options including trust mode, no-tools mode, history display (with --history flag that exits after displaying history, and --history-count that can be combined with queries), and custom system instructions with short aliases, with support for flags that can be used with or without arguments, including the --continue flag that can be used in multiple ways: 1) as a flag without arguments to continue the most recent conversation, 2) with a numeric chat_id and optional request text, or 3) with a non-numeric query to continue the most recent conversation
+    - `app.py`: Main CLI application with command-line options including trust mode, no-tools mode, history display (with --history flag that exits after displaying history, which can be used as --history for default count or --history n for specific count), and custom system instructions with short aliases, with support for flags that can be used with or without arguments, including the --continue flag that can be used in multiple ways: 1) as a flag without arguments to continue the most recent conversation, 2) with a numeric chat_id and optional request text, or 3) with a non-numeric query to continue the most recent conversation, and --version flag that displays the current version from __init__.py
     - `commands.py`: Command handling logic including history command implementation
     - `commands/`: Reorganized command handling modules
       - `__init__.py`: Package initialization and re-exports
@@ -51,6 +51,6 @@
 - `pyproject.toml`: Project configuration including version information
 - `requirements.txt`: Project dependencies
 - `LICENSE`: License information
-- `README.md`: Project overview with usage instructions and features
+- `README.md`: Project overview with usage instructions and features including enhanced conversation history, no-tools mode, and custom system instructions
 - `README_DEV.md`: Developer documentation
 - `CHANGELOG.md`: Record of all notable changes to the project

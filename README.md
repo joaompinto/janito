@@ -14,8 +14,10 @@ Janito is a powerful AI-assisted command-line interface (CLI) tool built with Py
 - 🌐 Web page fetching with content extraction capabilities
 - 🔄 Parameter profiles for optimizing Claude's behavior for different tasks
 - 📋 Line delta tracking to monitor net changes in files
-- 💬 Conversation history with ability to resume previous conversations
+- 💬 Enhanced conversation history with browsing and management
 - 🔇 Trust mode for concise output without tool details
+- 🚫 No-tools mode for pure AI interactions without file system access
+- 📝 Custom system instructions for specialized assistant behavior
 
 ## 🛠️ System Requirements
 
@@ -94,6 +96,15 @@ janito --trust "Optimize the HTML code"
 # Or use the short alias
 janito -t "Optimize the HTML code"
 
+# Disable all tools for pure AI interaction
+janito --no-tools "Explain how HTML works"
+
+# View your conversation history
+janito --history
+
+# View a specific number of recent conversations
+janito --history 10
+
 # Continue the most recent conversation
 janito --continue "Please add one more line"
 
@@ -103,6 +114,11 @@ janito --continue 'abc123def' 'Let's refine that code'
 
 # Alternative way to continue a specific conversation
 janito --continue-id abc123def "Let's refine that code"
+
+# Provide custom system instructions
+janito --system "You are a poetry expert who speaks in rhymes" "Write about coding"
+# Or use the short alias
+janito -s "You are a poetry expert who speaks in rhymes" "Write about coding"
 
 # Show current configuration and available profiles
 janito --show-config
@@ -194,15 +210,81 @@ This feature is particularly useful for:
 - Focusing on results rather than the process
 - Creating cleaner output for documentation or sharing
 
+## 🚫 No-Tools Mode
+
+Janito provides a no-tools mode that disables all file system and external tools for pure AI interactions:
+
+### How It Works
+
+- When enabled with `--no-tools`, Janito disables all tools for the current session
+- Claude will respond based purely on its knowledge without accessing or modifying files
+- This mode is a per-session setting and not saved to your configuration
+
+### Using No-Tools Mode
+
+```bash
+# Enable no-tools mode
+janito --no-tools "Explain how Docker containers work"
+```
+
+This feature is particularly useful for:
+- Getting general information or explanations without file system access
+- Brainstorming sessions where you don't need file operations
+- Safer operation in sensitive environments
+- Faster responses for queries that don't require tools
+
+## 📝 Custom System Instructions
+
+Janito allows you to provide custom system instructions to change Claude's behavior:
+
+### How It Works
+
+- When provided with `--system` or `-s`, Janito uses your custom instructions instead of the default
+- This allows you to create specialized assistant personalities or behaviors
+- Custom instructions are a per-session setting and not saved to your configuration
+
+### Using Custom System Instructions
+
+```bash
+# Provide custom system instructions
+janito --system "You are a poetry expert who speaks in rhymes" "Write about coding"
+
+# Or use the short alias
+janito -s "You are a cybersecurity expert" "Review this authentication code"
+```
+
+This feature is particularly useful for:
+- Creating specialized assistant personalities
+- Focusing Claude on specific domains or expertise
+- Setting up specific response formats or styles
+- Educational scenarios where you need different expert perspectives
+
 ## 💬 Conversation History
 
-Janito automatically saves your conversation history, allowing you to continue previous discussions:
+Janito automatically saves your conversation history, allowing you to browse, manage, and continue previous discussions:
 
 ### How It Works
 
 - Each conversation is saved with a unique message ID in `.janito/last_messages/`
 - The most recent conversation is also saved as `.janito/last_message.json` for backward compatibility
 - After each conversation, Janito displays the command to continue that specific conversation
+
+### Browsing Your History
+
+You can view your conversation history with the `--history` flag:
+
+```bash
+# Show the 20 most recent conversations (default)
+janito --history
+
+# Show a specific number of recent conversations
+janito --history 10
+```
+
+This displays a table with:
+- Conversation ID
+- Date and time
+- First query from each conversation
 
 ### Using the Continue Feature
 
@@ -212,6 +294,13 @@ janito --continue "Add more details to your previous response"
 
 # Continue a specific conversation using its ID
 janito --continue abc123def "Let's modify that code you suggested"
+
+# Just use --continue without arguments to continue the most recent conversation
+# and be prompted for your next query
+janito --continue
+
+# Alternative way to continue a specific conversation
+janito --continue-id abc123def "Let's modify that code you suggested"
 ```
 
 The `--continue` flag (or `-c` for short) allows you to:
@@ -247,11 +336,17 @@ Janito offers a variety of command-line options to customize its behavior:
 --set-api-key TEXT            Set the Anthropic API key globally in the user's home directory
 --ask                         Enable ask mode which disables tools that perform changes
 --trust, -t                   Enable trust mode which suppresses tool outputs for concise execution
+--no-tools                    Disable all tools for this session (pure AI interaction)
 --temperature FLOAT           Set the temperature for model generation (0.0 to 1.0)
 --profile TEXT                Use a predefined parameter profile (precise, balanced, conversational, creative, technical)
 --role TEXT                   Set the assistant's role (default: 'software engineer')
+--system, -s TEXT             Provide custom system instructions, bypassing the default file load method
 --version                     Show the version and exit
---continue, -c TEXT           Continue a previous conversation, optionally with a specific message ID
+--continue, -c TEXT           Continue a conversation. Can be used as: 1) --continue (to continue most recent), 
+                              2) --continue 123 (to continue conversation with ID 123), or 
+                              3) --continue "query" (to continue most recent with new query)
+--continue-id TEXT            Continue a specific conversation with the given ID
+--history                     Show a summary of conversations. Use --history for default (20) or --history n to specify count
 --help                        Show the help message and exit
 ```
 

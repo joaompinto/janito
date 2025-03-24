@@ -7,6 +7,7 @@ import typer
 from rich.console import Console
 import importlib.metadata
 
+from janito import __version__
 from janito.config import get_config
 from janito.cli.commands import handle_config_commands, validate_parameters
 from janito.cli.agent import handle_query
@@ -35,7 +36,6 @@ def main(ctx: typer.Context,
          version: bool = typer.Option(False, "--version", help="Show the version and exit"),
          continue_id: Optional[str] = typer.Option(None, "--continue-id", help="Continue a specific conversation with the given ID"),
          continue_flag: Optional[str] = typer.Option(None, "--continue", "-c", help="Continue a conversation. Can be used as: 1) --continue (to continue most recent), 2) --continue 123 (to continue conversation with ID 123), or 3) --continue \"query\" (to continue most recent with new query)"),
-         history_count: Optional[int] = typer.Option(None, "--history-count", "-n", help="Show a summary of the specified number of conversations"),
          history_flag: bool = typer.Option(False, "--history", help="Show a summary of conversations. Use --history for default (20) or --history n to specify count")):
     """
     Janito CLI tool. If a query is provided without a command, it will be sent to the claudine agent.
@@ -66,11 +66,7 @@ def main(ctx: typer.Context,
     
     # Show version and exit if requested
     if version:
-        try:
-            version_str = importlib.metadata.version("janito")
-            console.print(f"🚀 Janito version: {version_str}")
-        except importlib.metadata.PackageNotFoundError:
-            console.print("🚀 Janito version: [italic]development[/italic]")
+        console.print(f"🚀 Janito version: {__version__}")
         sys.exit(0)
     
     # Validate temperature
@@ -166,7 +162,7 @@ def main(ctx: typer.Context,
         continue_id,
         continue_flag,
         history_flag,
-        history_count if history_count_override is None else history_count_override
+        history_count_override
     )
     
     if exit_after_config:

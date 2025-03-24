@@ -16,23 +16,22 @@ console = Console()
 
 def handle_history(history_flag: bool, history_count: Optional[int], ctx: typer.Context, query: Optional[str]) -> bool:
     """
-    Handle the --history and --history-count parameters to display conversation history.
+    Handle the --history parameter to display conversation history.
     
     Args:
         history_flag: Whether to show history (--history flag)
-        history_count: Number of history entries to display (--history-count option or value after --history)
+        history_count: Number of history entries to display (value after --history)
         ctx: Typer context
         query: Query string
         
     Returns:
         bool: True if the program should exit after this operation
     """
-    # Check if either --history or --history-count was used
-    if history_flag or history_count is not None:
+    # Check if --history was used
+    if history_flag:
         try:
             # If --history is used with a count value passed from app.py, use that
-            # Otherwise, if --history-count is provided, use that
-            # If neither specifies a count, default to 20
+            # If no count is specified, default to 20
             count = 20 if history_count is None else history_count
             
             # Get the workspace directory
@@ -111,14 +110,7 @@ def handle_history(history_flag: bool, history_count: Optional[int], ctx: typer.
                 console.print(f"  python -m janito --continue <ID> <request>")
             
             # If --history flag is used, always exit regardless of whether a query is provided
-            if history_flag:
-                # Simply exit without showing a warning about ignored query
-                return True
-                
-            # For --history-count, only exit if no query is provided
-            # This maintains backward compatibility for commands like "janito --history-count 5 <query>"
-            if history_count is not None and not query:
-                return True
+            return True
                 
         except Exception as e:
             console.print(f"[bold red]Error displaying history:[/bold red] {str(e)}")

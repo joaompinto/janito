@@ -210,7 +210,7 @@ def handle_config_commands(
         continue_id: Optional message ID to continue a specific conversation
         continue_flag: Optional string that can be empty (flag only) or contain a chat ID
         history_flag: Whether to show conversation history (--history flag)
-        history_count: Number of history entries to display (--history-count option)
+        history_count: Number of history entries to display (value after --history)
         
     Returns:
         bool: True if the program should exit after these operations
