@@ -1,6 +1,7 @@
 import os
 import fnmatch
 import re
+import glob
 from typing import List, Tuple
 from janito.tools.rich_console import print_info, print_success, print_error, print_warning
 from janito.tools.usage_tracker import track_usage
@@ -14,9 +15,8 @@ def search_text(text_pattern: str, file_pattern: str = "*", root_dir: str = ".",
     
     Args:
         text_pattern: Text pattern to search for within files
-        file_pattern: Pattern to match file names against (default: "*")
+        file_pattern: Pattern to match file paths against (e.g., "*.py", "*/tools/*.py")
                      Multiple patterns can be specified using semicolons or spaces as separators
-                     Examples: "*.py *.toml *.sh *.md test*"
         root_dir: Root directory to start search from (default: current directory)
         recursive: Whether to search recursively in subdirectories (default: True)
         
@@ -50,69 +50,55 @@ def search_text(text_pattern: str, file_pattern: str = "*", root_dir: str = ".",
         # Get gitignore patterns
         ignored_patterns = _get_gitignore_patterns(abs_root)
         
-        # Use os.walk for recursive behavior
-        if recursive:
-            for dirpath, dirnames, filenames in os.walk(abs_root):
-                # Skip ignored directories
-                dirnames[:] = [d for d in dirnames if not _is_ignored(os.path.join(dirpath, d), ignored_patterns, abs_root)]
-                
-                # Handle multiple patterns separated by semicolons or spaces
-                patterns = []
-                if ';' in file_pattern:
-                    patterns = file_pattern.split(';')
-                elif ' ' in file_pattern:
-                    patterns = file_pattern.split()
-                else:
-                    patterns = [file_pattern]
-                
-                for pattern in patterns:
-                    for filename in fnmatch.filter(filenames, pattern):
-                        file_path = os.path.join(dirpath, filename)
-                        
-                        # Skip ignored files
-                        if _is_ignored(file_path, ignored_patterns, abs_root):
-                            continue
-                        
-                        # Skip if already processed this file
-                        if file_path in matching_files:
-                            continue
-                        
-                        file_matches = _search_file(file_path, regex, abs_root)
-                        if file_matches:
-                            matching_files.append(file_path)
-                            match_count += len(file_matches)
-                            results.append(f"\n{os.path.relpath(file_path, abs_root)} ({len(file_matches)} matches):")
-                            results.extend(file_matches)
+        # Handle multiple patterns separated by semicolons or spaces
+        patterns = []
+        if ';' in file_pattern:
+            patterns = file_pattern.split(';')
+        elif ' ' in file_pattern and not (os.path.sep in file_pattern or '/' in file_pattern):
+            # Only split by space if the pattern doesn't appear to be a path
+            patterns = file_pattern.split()
         else:
-            # Non-recursive mode - only search in the specified directory
-            # Handle multiple patterns separated by semicolons or spaces
-            patterns = []
-            if ';' in file_pattern:
-                patterns = file_pattern.split(';')
-            elif ' ' in file_pattern:
-                patterns = file_pattern.split()
-            else:
-                patterns = [file_pattern]
+            patterns = [file_pattern]
+        
+        # Process each pattern
+        for pattern in patterns:
+            # Construct the glob pattern with the root directory
+            glob_pattern = os.path.join(abs_root, pattern) if not pattern.startswith(os.path.sep) else pattern
             
-            for pattern in patterns:
-                for filename in fnmatch.filter(os.listdir(abs_root), pattern):
-                    file_path = os.path.join(abs_root, filename)
+            # Use recursive glob if needed
+            if recursive:
+                # Use ** pattern for recursive search if not already in the pattern
+                if '**' not in glob_pattern:
+                    # Check if the pattern already has a directory component
+                    if os.path.sep in pattern or '/' in pattern:
+                        # Pattern already has directory component, keep as is
+                        pass
+                    else:
+                        # Add ** to search in all subdirectories
+                        glob_pattern = os.path.join(abs_root, '**', pattern)
+                
+                # Use recursive=True for Python 3.5+ glob
+                glob_files = glob.glob(glob_pattern, recursive=True)
+            else:
+                # Non-recursive mode - only search in the specified directory
+                glob_files = glob.glob(glob_pattern)
+            
+            # Process matching files
+            for file_path in glob_files:
+                # Skip directories and already processed files
+                if not os.path.isfile(file_path) or file_path in matching_files:
+                    continue
                     
-                    # Skip ignored files
-                    if _is_ignored(file_path, ignored_patterns, abs_root):
-                        continue
-                    
-                    # Skip if already processed this file
-                    if file_path in matching_files:
-                        continue
-                    
-                    if os.path.isfile(file_path):
-                        file_matches = _search_file(file_path, regex, abs_root)
-                        if file_matches:
-                            matching_files.append(file_path)
-                            match_count += len(file_matches)
-                            results.append(f"\n{os.path.relpath(file_path, abs_root)} ({len(file_matches)} matches):")
-                            results.extend(file_matches)
+                # Skip ignored files
+                if _is_ignored(file_path, ignored_patterns, abs_root):
+                    continue
+                
+                file_matches = _search_file(file_path, regex, abs_root)
+                if file_matches:
+                    matching_files.append(file_path)
+                    match_count += len(file_matches)
+                    results.append(f"\n{os.path.relpath(file_path, abs_root)} ({len(file_matches)} matches):")
+                    results.extend(file_matches)
         
         if matching_files:
             # Only print the count summary, not the full results

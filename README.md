@@ -11,7 +11,6 @@ Janito is a powerful AI-assisted command-line interface (CLI) tool built with Py
 - 🔍 Smart code search and editing
 - 💻 Interactive terminal interface with rich formatting
 - 📊 Detailed token usage tracking and cost reporting with cache savings analysis
-- 🛑 Token and tool usage reporting even when interrupted with Ctrl+C
 - 🌐 Web page fetching with content extraction capabilities
 - 🔄 Parameter profiles for optimizing Claude's behavior for different tasks
 - 📋 Line delta tracking to monitor net changes in files
@@ -100,14 +99,16 @@ janito --continue "Please add one more line"
 
 # Continue a specific conversation using its message ID
 # (Janito displays the message ID after each conversation)
-janito --continue abc123def "Let's refine that code"
+janito --continue 'abc123def' 'Let's refine that code'
+
+# Alternative way to continue a specific conversation
+janito --continue-id abc123def "Let's refine that code"
 
 # Show current configuration and available profiles
 janito --show-config
 
 # You can press Ctrl+C at any time to interrupt a query
-# Janito will still display token and tool usage information
-# Even interrupted conversations can be continued with --continue
+# Interrupted conversations can be continued with --continue
 ```
 
 ## 🔧 Available Tools

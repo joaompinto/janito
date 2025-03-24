@@ -54,6 +54,7 @@ class Config:
             # Chat history context feature has been removed
             cls._instance._ask_mode = False
             cls._instance._trust_mode = False  # New trust mode setting
+            cls._instance._no_tools = False  # New no-tools mode setting
             # Set technical profile as default
             profile_data = PROFILES["technical"]
             cls._instance._temperature = profile_data["temperature"]
@@ -285,6 +286,21 @@ class Config:
         # Don't save to config file - this is a per-session setting
         
     @property
+    def no_tools(self) -> bool:
+        """Get the no-tools mode status."""
+        return self._no_tools
+        
+    @no_tools.setter
+    def no_tools(self, value: bool) -> None:
+        """Set the no-tools mode status.
+        
+        Note: This setting is not persisted to config file
+        as it's meant to be a per-session setting.
+        """
+        self._no_tools = value
+        # Don't save to config file - this is a per-session setting
+        
+    @property
     def temperature(self) -> float:
         """Get the temperature value for model generation."""
         return self._temperature
@@ -343,6 +359,7 @@ class Config:
             # Chat history context feature has been removed
             self._ask_mode = False
             self._trust_mode = False
+            self._no_tools = False
             # Set technical profile as default
             profile_data = PROFILES["technical"]
             self._temperature = profile_data["temperature"]

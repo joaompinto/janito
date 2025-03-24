@@ -26,12 +26,17 @@ def main(ctx: typer.Context,
          reset_config: bool = typer.Option(False, "--reset-config", help="Reset configuration by removing the config file"),
          set_api_key: Optional[str] = typer.Option(None, "--set-api-key", help="Set the Anthropic API key globally in the user's home directory"),
          ask: bool = typer.Option(False, "--ask", help="Enable ask mode which disables tools that perform changes"),
-         trust: bool = typer.Option(False, "--trust", "-t", help="Enable trust mode which suppresses tool outputs for a more concise execution (per-session setting)"),
+         trust: bool = typer.Option(False, "--trust", "-t", help="Enable trust mode which suppresses tool outputs for a more concise execution"),
+         no_tools: bool = typer.Option(False, "--no-tools", help="Disable all tools for this session (per-session setting, not saved to config)"),
          temperature: float = typer.Option(0.0, "--temperature", help="Set the temperature for model generation (0.0 to 1.0)"),
          profile: Optional[str] = typer.Option(None, "--profile", help="Use a predefined parameter profile (precise, balanced, conversational, creative, technical)"),
          role: Optional[str] = typer.Option(None, "--role", help="Set the assistant's role (default: 'software engineer')"),
+         system: Optional[str] = typer.Option(None, "--system", "-s", help="Provide custom system instructions, bypassing the default file load method"),
          version: bool = typer.Option(False, "--version", help="Show the version and exit"),
-         continue_conversation: Optional[str] = typer.Option(None, "--continue", "-c", help="Continue a previous conversation, optionally with a specific message ID")):
+         continue_id: Optional[str] = typer.Option(None, "--continue-id", help="Continue a specific conversation with the given ID"),
+         continue_flag: Optional[str] = typer.Option(None, "--continue", "-c", help="Continue a conversation. Can be used as: 1) --continue (to continue most recent), 2) --continue 123 (to continue conversation with ID 123), or 3) --continue \"query\" (to continue most recent with new query)"),
+         history_count: Optional[int] = typer.Option(None, "--history-count", "-n", help="Show a summary of the specified number of conversations"),
+         history_flag: bool = typer.Option(False, "--history", help="Show a summary of conversations. Use --history for default (20) or --history n to specify count")):
     """
     Janito CLI tool. If a query is provided without a command, it will be sent to the claudine agent.
     """    
@@ -44,13 +49,20 @@ def main(ctx: typer.Context,
     # Set trust mode in config
     get_config().trust_mode = trust
     
+    # Set no-tools mode in config
+    get_config().no_tools = no_tools
+    
     # Show a message if ask mode is enabled
     if ask:
         console.print("[bold yellow]⚠️ Ask Mode enabled:[/bold yellow] 🔒 Tools that perform changes are disabled")
         
     # Show a message if trust mode is enabled
     if trust:
-        console.print("[bold blue]⚡ Trust Mode enabled:[/bold blue] Tool outputs are suppressed for concise execution (per-session setting)")
+        console.print("[bold blue]⚡ Trust Mode enabled:[/bold blue] Tool outputs are suppressed for concise execution")
+        
+    # Show a message if no-tools mode is enabled
+    if no_tools:
+        console.print("[bold magenta]🚫 No-Tools Mode enabled:[/bold magenta] All tools are disabled for this session")
     
     # Show version and exit if requested
     if version:
@@ -64,6 +76,82 @@ def main(ctx: typer.Context,
     # Validate temperature
     validate_parameters(temperature)
     
+    # Process continue flags before handling other options
+    continue_conversation = None
+    
+    # First, parse continue_flag and continue_id from original sys.argv to avoid typer issues
+    # This is necessary because typer has trouble with quotes in some edge cases
+    try:
+        # Check if --continue or -c is in sys.argv
+        args = sys.argv
+        
+        # Handle the --history flag with optional count parameter
+        history_count_override = None
+        if "--history" in args:
+            history_idx = args.index("--history")
+            history_flag = True
+            
+            # Check if there's a number after --history and it's not another flag
+            if history_idx + 1 < len(args) and not args[history_idx + 1].startswith("-"):
+                try:
+                    # Try to convert to int - if successful, it's a count
+                    history_count_override = int(args[history_idx + 1])
+                except ValueError:
+                    # Not a number, ignore it
+                    pass
+        
+        if "--continue" in args or "-c" in args:
+            continue_idx = args.index("--continue") if "--continue" in args else args.index("-c")
+            
+            # Check if there's at least one argument after --continue
+            if continue_idx + 1 < len(args) and not args[continue_idx + 1].startswith("-"):
+                # If next arg doesn't start with "-", it's our continue value
+                continue_value = args[continue_idx + 1]
+                
+                # Check if continue_value is a numeric ID or a query
+                if continue_value.isdigit():
+                    # It's an ID
+                    continue_conversation = continue_value
+                    
+                    # Check if there's a query after the ID
+                    if continue_idx + 2 < len(args) and not args[continue_idx + 2].startswith("-"):
+                        query = args[continue_idx + 2]
+                else:
+                    # It's a query string for the most recent conversation
+                    continue_conversation = ""  # Empty string means continue most recent
+                    query = continue_value
+                    
+                    if verbose:
+                        console.print(f"[bold blue]🔄 Continuing most recent conversation[/bold blue]")
+                        console.print(f"[dim]📝 Query: {query}[/dim]")
+            else:
+                # --continue with no args means continue most recent conversation
+                continue_conversation = ""
+        
+        # Handle explicit --continue-id if specified (this takes precedence)
+        if "--continue-id" in args:
+            continue_id_idx = args.index("--continue-id")
+            if continue_id_idx + 1 < len(args) and not args[continue_id_idx + 1].startswith("-"):
+                continue_conversation = args[continue_id_idx + 1]
+    except Exception as e:
+        if verbose:
+            console.print(f"[bold yellow]⚠️ Error parsing continue arguments: {str(e)}[/bold yellow]")
+    
+    # Fall back to typer-processed args if our parsing failed
+    if continue_conversation is None:
+        # Handle the --continue-id option
+        if continue_id is not None:
+            continue_conversation = continue_id
+        # Handle the --continue flag option (processed by typer)
+        elif continue_flag is not None:
+            if continue_flag == "":
+                continue_conversation = ""  # Empty string means continue most recent
+            elif continue_flag.isdigit():
+                continue_conversation = continue_flag
+            else:
+                continue_conversation = ""  # Empty string means continue most recent
+                query = continue_flag  # Use the continue_flag as the query
+    
     # Handle configuration-related commands
     exit_after_config = handle_config_commands(
         ctx, 
@@ -75,7 +163,10 @@ def main(ctx: typer.Context,
         set_api_key, 
         config_str, 
         query,
-        continue_conversation
+        continue_id,
+        continue_flag,
+        history_flag,
+        history_count if history_count_override is None else history_count_override
     )
     
     if exit_after_config:
@@ -84,6 +175,7 @@ def main(ctx: typer.Context,
     # Handle query if no subcommand was invoked
     if ctx.invoked_subcommand is None:
         # If no query provided in command line, read from stdin
+        # Only prompt for stdin if query is still None after processing --continue flag
         if not query:
             console.print("[bold blue]📝 No query provided in command line. Reading from stdin...[/bold blue]")
             console.print(get_stdin_termination_hint())
@@ -91,4 +183,4 @@ def main(ctx: typer.Context,
             
         # Only proceed if we have a query (either from command line or stdin)
         if query:
-            handle_query(query, temperature, verbose, show_tokens, continue_conversation)
+            handle_query(query, temperature, verbose, show_tokens, continue_conversation, system)

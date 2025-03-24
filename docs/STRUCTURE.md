@@ -5,13 +5,25 @@
   - `__init__.py`: Package initialization with version information
   - `__main__.py`: Entry point for the package
   - `callbacks.py`: Callback functions
-  - `config.py`: Configuration settings including trust mode
+  - `config.py`: Configuration settings including trust mode and no-tools mode
   - `token_report.py`: Token reporting functionality
   - `cli/`: Command-line interface components
     - `__init__.py`: Package initialization
-    - `agent.py`: Agent initialization and query handling
-    - `app.py`: Main CLI application with command-line options including trust mode messages
-    - `commands.py`: Command handling logic
+    - `agent.py`: Compatibility layer for agent functionality
+    - `agent/`: Reorganized agent module
+      - `__init__.py`: Package initialization and public API exports
+      - `initialization.py`: Agent initialization functionality
+      - `conversation.py`: Conversation management functionality with save/load functionality
+      - `query.py`: Query handling functionality
+    - `app.py`: Main CLI application with command-line options including trust mode, no-tools mode, history display (with --history flag that exits after displaying history, and --history-count that can be combined with queries), and custom system instructions with short aliases, with support for flags that can be used with or without arguments, including the --continue flag that can be used in multiple ways: 1) as a flag without arguments to continue the most recent conversation, 2) with a numeric chat_id and optional request text, or 3) with a non-numeric query to continue the most recent conversation
+    - `commands.py`: Command handling logic including history command implementation
+    - `commands/`: Reorganized command handling modules
+      - `__init__.py`: Package initialization and re-exports
+      - `history.py`: History command implementation for displaying conversation history
+      - `config.py`: Configuration command handling
+      - `profile.py`: Profile management
+      - `validation.py`: Parameter validation
+      - `workspace.py`: Workspace management
     - `output.py`: Output formatting
     - `utils.py`: Utility functions
   - `data/`: Data files and resources
@@ -22,15 +34,15 @@
     - `replace_file.py`: Tool to replace file contents
     - `move_file.py`: Tool to move files
     - `prompt_user.py`: Tool to prompt for user input
+    - `think.py`: Tool to record thoughts for complex reasoning without changing the database
     - `rich_console.py`: Utility for formatted console output with emoji support and trust mode (suppresses all output in trust mode)
     - `str_replace_editor/`: String replacement editor implementation with trust mode support
     - `bash/`: Bash command execution with trust mode support
-    - `fetch_webpage/`: Web page fetching functionality
+    - `fetch_webpage/`: Web page fetching functionality with browser-like headers
 - `.janito/`: Local configuration and data directory
   - `config.json`: Local configuration file
   - `last_messages/`: Directory storing all conversation history
     - `{timestamp}.json`: Individual conversation files with timestamp-based IDs
-- `tests/`: Test files
 - `tools/`: Project utility scripts
 - `docs/`: Documentation files
   - `STRUCTURE.md`: This file, documenting the project structure

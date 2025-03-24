@@ -33,6 +33,7 @@ class ToolUsageTracker:
         self.search_operations = 0
         self.file_views = 0
         self.partial_file_views = 0
+        self.thoughts = 0  # Track the number of thoughts recorded
     
     def increment(self, counter_name: str, value: int = 1):
         """Increment a specific counter by the given value."""
