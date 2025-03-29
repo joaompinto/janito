@@ -25,7 +25,6 @@ def main(ctx: typer.Context,
          set_local_config: Optional[str] = typer.Option(None, "--set-local-config", help="Set a local configuration value in format 'key=value' (overrides global config)"),
          set_global_config: Optional[str] = typer.Option(None, "--set-global-config", help="Set a global configuration value in format 'key=value' (used as default)"),
          show_config: bool = typer.Option(False, "--show-config", help="Show current configuration"),
-         reset_config: bool = typer.Option(False, "--reset-config", help="Reset local configuration by removing the local config file"),
          reset_local_config: bool = typer.Option(False, "--reset-local-config", help="Reset local configuration by removing the local config file"),
          reset_global_config: bool = typer.Option(False, "--reset-global-config", help="Reset global configuration by removing the global config file"),
          set_api_key: Optional[str] = typer.Option(None, "--set-api-key", help="Set the Anthropic API key globally in the user's home directory"),
@@ -154,7 +153,7 @@ def main(ctx: typer.Context,
     # Handle configuration-related commands
     exit_after_config = handle_config_commands(
         ctx, 
-        reset_config,
+        False,  # reset_config is removed, passing False for backward compatibility
         reset_local_config,
         reset_global_config,
         workspace, 

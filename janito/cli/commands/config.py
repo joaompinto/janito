@@ -17,34 +17,25 @@ console = Console()
 
 def handle_reset_config(reset_config: bool, ctx: typer.Context, query: Optional[str]) -> bool:
     """
-    Handle the --reset-config parameter (resets local config for backward compatibility).
+    Handle the --reset-config parameter (deprecated, kept for backward compatibility).
+    This function now does nothing as --reset-config has been replaced by --reset-local-config and --reset-global-config.
     
     Args:
-        reset_config: Whether to reset the configuration
+        reset_config: Whether to reset the configuration (ignored)
         ctx: Typer context
         query: Query string
         
     Returns:
-        bool: True if the program should exit after this operation
+        bool: Always returns False
     """
-    if reset_config:
-        try:
-            config_path = Path(Config().workspace_dir) / ".janito" / "config.json"
-            if Config().reset_local_config():
-                console.print(f"[bold green]✅ Local configuration file removed: {config_path}[/bold green]")
-            else:
-                console.print(f"[bold yellow]⚠️ Local configuration file does not exist: {config_path}[/bold yellow]")
-        except Exception as e:
-            console.print(f"[bold red]Error removing configuration file:[/bold red] {str(e)}")
-        
-        # Exit after resetting config if no other operation is requested
-        return ctx.invoked_subcommand is None and not query
-    
+    # This function is kept for backward compatibility but does nothing
+    # Users should use --reset-local-config or --reset-global-config instead
     return False
 
 def handle_reset_local_config(reset_local_config: bool, ctx: typer.Context, query: Optional[str]) -> bool:
     """
     Handle the --reset-local-config parameter.
+    This removes the local configuration file (.janito/config.json) in the current workspace.
     
     Args:
         reset_local_config: Whether to reset the local configuration
@@ -72,6 +63,7 @@ def handle_reset_local_config(reset_local_config: bool, ctx: typer.Context, quer
 def handle_reset_global_config(reset_global_config: bool, ctx: typer.Context, query: Optional[str]) -> bool:
     """
     Handle the --reset-global-config parameter.
+    This removes the global configuration file (~/.janito/config.json) in the user's home directory.
     
     Args:
         reset_global_config: Whether to reset the global configuration
@@ -369,7 +361,7 @@ def handle_config_commands(
     
     Args:
         ctx: Typer context
-        reset_config: Whether to reset the configuration (local config for backward compatibility)
+        reset_config: Deprecated parameter kept for backward compatibility
         reset_local_config: Whether to reset the local configuration
         reset_global_config: Whether to reset the global configuration
         workspace: Workspace directory path
