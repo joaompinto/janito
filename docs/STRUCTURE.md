@@ -7,10 +7,20 @@
   - `callbacks.py`: Callback functions
   - `config/`: Configuration package with modular structure
     - `__init__.py`: Package initialization and re-exports with backward compatibility
-    - `core.py`: Core Config class implementation
-    - `file_operations.py`: Configuration file operations
-    - `profiles.py`: Predefined parameter profiles
-    - `properties.py`: Property getters and setters
+    - `README.md`: Documentation for the configuration system
+    - `core/`: Core configuration functionality
+      - `__init__.py`: Package initialization and re-exports
+      - `singleton.py`: Singleton implementation of Config class
+      - `properties.py`: Property getters and setters
+      - `file_operations.py`: Configuration file operations
+    - `profiles/`: Profile management
+      - `__init__.py`: Package initialization and re-exports
+      - `definitions.py`: Predefined parameter profiles
+      - `manager.py`: Profile management functions
+    - `cli/`: CLI integration
+      - `__init__.py`: Package initialization and re-exports
+      - `commands.py`: Command handling functions
+      - `validators.py`: Input validation functions
   - `token_report.py`: Token reporting functionality
   - `cli/`: Command-line interface components
     - `__init__.py`: Package initialization

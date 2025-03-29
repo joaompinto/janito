@@ -6,7 +6,12 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 
 def get_global_config_path() -> Path:
-    """Get the path to the global configuration file."""
+    """
+    Get the path to the global configuration file.
+    
+    Returns:
+        Path object pointing to the global configuration file (~/.janito/config.json)
+    """
     return Path.home() / ".janito" / "config.json"
 
 def get_local_config_path(workspace_dir: str) -> Path:
@@ -17,7 +22,7 @@ def get_local_config_path(workspace_dir: str) -> Path:
         workspace_dir: Current workspace directory
         
     Returns:
-        Path to the local configuration file
+        Path object pointing to the local configuration file (.janito/config.json)
     """
     return Path(workspace_dir) / ".janito" / "config.json"
 

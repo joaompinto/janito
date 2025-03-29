@@ -110,7 +110,7 @@ janito --continue "Please add one more line"
 
 # Continue a specific conversation using its message ID
 # (Janito displays the message ID after each conversation)
-janito --continue 'abc123def' 'Let's refine that code'
+janito --continue "abc123def" "Let's refine that code"
 
 # Alternative way to continue a specific conversation
 janito --continue-id abc123def "Let's refine that code"

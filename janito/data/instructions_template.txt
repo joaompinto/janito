@@ -30,4 +30,5 @@ After performing changes to a project in interfaces which are exposed to the use
 When displaying commands in instructions to the user, consider their platform.
 When creating html pages which refer to images that should be manually placed by the user, instead of broken links provide a frame with a placeholder image.
 
+If STRUCTURE.md was updated add it to the list of files to be committed.
 After significant changes, run git commit with a message describing the changes made.

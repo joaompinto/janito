@@ -36,27 +36,3 @@ PROFILES = {
         "description": "Code generation, debugging, decision analysis, technical problem-solving"
     }
 }
-
-def get_available_profiles() -> Dict[str, Dict[str, Any]]:
-    """Get all available predefined profiles."""
-    return PROFILES
-
-def get_profile(profile_name: str) -> Dict[str, Any]:
-    """
-    Get a specific profile by name.
-    
-    Args:
-        profile_name: Name of the profile to retrieve
-        
-    Returns:
-        Dict containing the profile settings
-        
-    Raises:
-        ValueError: If the profile name is not recognized
-    """
-    profile_name = profile_name.lower()
-    if profile_name not in PROFILES:
-        valid_profiles = ", ".join(PROFILES.keys())
-        raise ValueError(f"Unknown profile: {profile_name}. Valid profiles are: {valid_profiles}")
-    
-    return PROFILES[profile_name]

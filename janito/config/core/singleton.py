@@ -1,9 +1,10 @@
 """
-Core configuration class for Janito.
+Singleton implementation of the Config class for Janito.
 """
 import os
 from typing import Dict, Any, Optional, Union
 
+from .properties import ConfigProperties
 from .file_operations import (
     get_global_config_path,
     get_local_config_path,
@@ -11,8 +12,8 @@ from .file_operations import (
     save_config_file,
     merge_configs
 )
-from .profiles import PROFILES, get_profile
-from .properties import ConfigProperties
+from ..profiles.manager import get_profile
+from ..profiles.definitions import PROFILES
 
 class Config(ConfigProperties):
     """Singleton configuration class for Janito."""
@@ -128,7 +129,8 @@ class Config(ConfigProperties):
     @staticmethod
     def get_available_profiles() -> Dict[str, Dict[str, Any]]:
         """Get all available predefined profiles."""
-        return PROFILES
+        from ..profiles.manager import get_available_profiles
+        return get_available_profiles()
     
     def set_local_config(self, key: str, value: Any) -> None:
         """
