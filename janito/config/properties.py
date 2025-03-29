@@ -206,3 +206,28 @@ class ConfigProperties:
     def profile(self) -> Optional[str]:
         """Get the current profile name."""
         return self._profile
+        
+    @property
+    def max_view_lines(self) -> int:
+        """Get the maximum number of lines to display before showing a warning."""
+        return self._merged_config.get("max_view_lines", 500)
+        
+    @max_view_lines.setter
+    def max_view_lines(self, value: int, config_type: str = "local") -> None:
+        """
+        Set the maximum number of lines to display before showing a warning.
+        
+        Args:
+            value: Maximum number of lines (must be positive)
+            config_type: Type of configuration to update ("local" or "global")
+            
+        Raises:
+            ValueError: If the value is not a positive integer
+        """
+        if not isinstance(value, int) or value <= 0:
+            raise ValueError("max_view_lines must be a positive integer")
+            
+        if config_type == "local":
+            self.set_local_config("max_view_lines", value)
+        else:
+            self.set_global_config("max_view_lines", value)

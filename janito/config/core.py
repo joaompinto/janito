@@ -33,6 +33,7 @@ class Config(ConfigProperties):
             cls._instance._profile = "technical"
             cls._instance._role = "software engineer"
             cls._instance._gitbash_path = None  # Default to None for auto-detection
+            # Default max_view_lines will be retrieved from merged_config
             
             # Initialize configuration storage
             cls._instance._global_config = {}
@@ -84,6 +85,7 @@ class Config(ConfigProperties):
             self._role = config_data["role"]
         if "gitbash_path" in config_data:
             self._gitbash_path = config_data["gitbash_path"]
+        # max_view_lines is accessed directly from merged_config
     
     def _save_local_config(self) -> None:
         """Save local configuration to file."""

@@ -139,19 +139,18 @@ def handle_view(args: Dict[str, Any]) -> Tuple[str, bool]:
             line_num_str = f"{line_number:6d}\t{line}"
             numbered_content.append(line_num_str)
         
-        # Check if we need to truncate the output
-        MAX_LINES = 500  # Arbitrary limit for demonstration
+        # Check if we need to show a warning about large file
+        MAX_LINES = get_config().max_view_lines
         if len(numbered_content) > MAX_LINES:
-            truncated_content = "".join(numbered_content[:MAX_LINES])
-            
-            # Only print line count if not in trust mode
+            # Only print warning if not in trust mode
             if not get_config().trust_mode:
                 console.print("(", style="default", end="")
-                console.print(f"{MAX_LINES}", style="cyan", end="")
-                console.print(f" of {len(numbered_content)} lines returned - response clipped)")
+                console.print(f"{len(numbered_content)}", style="cyan", end="")
+                console.print(f" lines returned - warning: file exceeds recommended size of {MAX_LINES} lines)")
                 
-            # Return the truncated content with a clipped message
-            return (truncated_content + "\n<response clipped>", False)
+            # Return the full content without truncation
+            content_to_print = "".join(numbered_content)
+            return (content_to_print, False)
         
         content_to_print = "".join(numbered_content)
         
