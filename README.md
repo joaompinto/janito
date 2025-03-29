@@ -142,13 +142,14 @@ janito --reset-global-config
 ## 🔧 Available Tools
 
 Janito comes with several built-in tools:
-- 📄 `str_replace_editor` - View, create, and edit files
+- 📄 `str_replace_editor` - View, create, and edit files with configurable display limits
 - 🔎 `find_files` - Find files matching patterns
 - 🗑️ `delete_file` - Delete files
 - 🔍 `search_text` - Search for text patterns in files
 - 🌐 `fetch_webpage` - Fetch and extract content from web pages
 - 📋 `move_file` - Move files from one location to another
 - 💻 `bash` - Execute bash commands with real-time output display
+- 🧠 `think` - Tool to record thoughts for complex reasoning
 
 ## 📊 Usage Tracking
 
@@ -161,6 +162,24 @@ Janito includes a comprehensive token usage tracking system that helps you monit
   - Precise cost calculations
   - Cache performance metrics with savings analysis
   - Line delta tracking for file modifications
+
+## 📄 Enhanced File Viewing
+
+The str_replace_editor tool now includes improved file viewing capabilities:
+
+- **Configurable Display Limits**: Set the maximum number of lines to display before showing a warning
+- **Warning Instead of Truncation**: When a file exceeds the configured line limit, a warning is shown but the full content is still displayed
+- **Customizable Limits**: Configure the `max_view_lines` setting to adjust the threshold (default: 500 lines)
+
+```bash
+# Set a custom maximum view lines threshold globally
+janito --set-global-config "max_view_lines=1000"
+
+# Set a project-specific threshold
+janito --set-local-config "max_view_lines=250"
+```
+
+This improvement ensures you always see the complete file content while still being warned about potentially large files.
 
 ```bash
 # Show detailed token usage and cost information
@@ -402,6 +421,7 @@ You can configure various settings including:
 - `temperature`: Model temperature (0.0 to 1.0)
 - `role`: Assistant's role (default: 'software engineer')
 - `ask_mode`: Enable/disable ask mode (true/false)
+- `max_view_lines`: Maximum number of lines to display before showing a warning (default: 500)
 
 ## 🔑 API Key Configuration
 
