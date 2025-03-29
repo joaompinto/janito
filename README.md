@@ -123,6 +123,18 @@ janito -s "You are a poetry expert who speaks in rhymes" "Write about coding"
 # Show current configuration and available profiles
 janito --show-config
 
+# Set a local configuration value (applies to current workspace only)
+janito --set-local-config "temperature=0.7"
+
+# Set a global configuration value (applies to all workspaces by default)
+janito --set-global-config "profile=creative"
+
+# Reset local configuration
+janito --reset-local-config
+
+# Reset global configuration
+janito --reset-global-config
+
 # You can press Ctrl+C at any time to interrupt a query
 # Interrupted conversations can be continued with --continue
 ```
@@ -330,9 +342,12 @@ Janito offers a variety of command-line options to customize its behavior:
 --verbose, -v                 Enable verbose mode with detailed output
 --show-tokens                 Show detailed token usage and pricing information
 --workspace, -w TEXT          Set the workspace directory
---set-config TEXT             Configuration string in format 'key=value', e.g., 'temperature=0.7'
+--set-local-config TEXT       Set a local configuration value in format 'key=value' (overrides global config)
+--set-global-config TEXT      Set a global configuration value in format 'key=value' (used as default)
 --show-config                 Show current configuration
---reset-config                Reset configuration by removing the config file
+--reset-config                Reset local configuration by removing the local config file (for backward compatibility)
+--reset-local-config          Reset local configuration by removing the local config file
+--reset-global-config         Reset global configuration by removing the global config file
 --set-api-key TEXT            Set the Anthropic API key globally in the user's home directory
 --ask                         Enable ask mode which disables tools that perform changes
 --trust, -t                   Enable trust mode which suppresses tool outputs for concise execution
@@ -349,6 +364,44 @@ Janito offers a variety of command-line options to customize its behavior:
 --history                     Show a summary of conversations. Use --history for default (20) or --history n to specify count
 --help                        Show the help message and exit
 ```
+
+## ⚙️ Configuration System
+
+Janito uses a two-level configuration system with local and global settings:
+
+### Local vs Global Configuration
+
+- **Local Configuration**: Stored in `.janito/config.json` in your current workspace directory
+- **Global Configuration**: Stored in `~/.janito/config.json` in your home directory
+- Local settings override global settings when both are present
+- Use `--set-local-config` for project-specific settings and `--set-global-config` for user-wide defaults
+
+### Setting Configuration Values
+
+```bash
+# Set a local configuration value (applies to current workspace only)
+janito --set-local-config "temperature=0.7"
+
+# Set a global configuration value (applies to all workspaces by default)
+janito --set-global-config "profile=creative"
+
+# Reset local configuration
+janito --reset-local-config
+
+# Reset global configuration
+janito --reset-global-config
+
+# View current configuration (shows both local and global settings)
+janito --show-config
+```
+
+### Configurable Settings
+
+You can configure various settings including:
+- `profile`: Parameter profile (precise, balanced, conversational, creative, technical)
+- `temperature`: Model temperature (0.0 to 1.0)
+- `role`: Assistant's role (default: 'software engineer')
+- `ask_mode`: Enable/disable ask mode (true/false)
 
 ## 🔑 API Key Configuration
 
