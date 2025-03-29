@@ -5,7 +5,13 @@
   - `__init__.py`: Package initialization with version information
   - `__main__.py`: Entry point for the package
   - `callbacks.py`: Callback functions
-  - `config.py`: Configuration settings including trust mode and no-tools mode
+  - `config.py`: Backward compatibility wrapper for the config package
+  - `config/`: Configuration package with modular structure
+    - `__init__.py`: Package initialization and re-exports
+    - `core.py`: Core Config class implementation
+    - `file_operations.py`: Configuration file operations
+    - `profiles.py`: Predefined parameter profiles
+    - `properties.py`: Property getters and setters
   - `token_report.py`: Token reporting functionality
   - `cli/`: Command-line interface components
     - `__init__.py`: Package initialization
@@ -15,12 +21,12 @@
       - `initialization.py`: Agent initialization functionality
       - `conversation.py`: Conversation management functionality with save/load functionality
       - `query.py`: Query handling functionality
-    - `app.py`: Main CLI application with command-line options including trust mode, no-tools mode, history display (with --history flag that exits after displaying history, which can be used as --history for default count or --history n for specific count), and custom system instructions with short aliases, with support for flags that can be used with or without arguments, including the --continue flag that can be used in multiple ways: 1) as a flag without arguments to continue the most recent conversation, 2) with a numeric chat_id and optional request text, or 3) with a non-numeric query to continue the most recent conversation, and --version flag that displays the current version from __init__.py
+    - `app.py`: Main CLI application with command-line options including trust mode, no-tools mode, history display (with --history flag that exits after displaying history, which can be used as --history for default count or --history n for specific count), and custom system instructions with short aliases, with support for flags that can be used with or without arguments, including the --continue flag that can be used in multiple ways: 1) as a flag without arguments to continue the most recent conversation, 2) with a numeric chat_id and optional request text, or 3) with a non-numeric query to continue the most recent conversation, and --version flag that displays the current version from __init__.py. Also includes support for local and global configurations with --set-local-config and --set-global-config options, where local config overrides global config.
     - `commands.py`: Command handling logic including history command implementation
     - `commands/`: Reorganized command handling modules
       - `__init__.py`: Package initialization and re-exports
       - `history.py`: History command implementation for displaying conversation history
-      - `config.py`: Configuration command handling
+      - `config.py`: Configuration command handling with support for local and global configurations
       - `profile.py`: Profile management
       - `validation.py`: Parameter validation
       - `workspace.py`: Workspace management
@@ -40,7 +46,9 @@
     - `bash/`: Bash command execution with trust mode support
     - `fetch_webpage/`: Web page fetching functionality with browser-like headers
 - `.janito/`: Local configuration and data directory
-  - `config.json`: Local configuration file
+  - `config.json`: Local configuration file (overrides global configuration)
+- `~/.janito/`: Global configuration directory in user's home
+  - `config.json`: Global configuration file (used as default)
   - `last_messages/`: Directory storing all conversation history
     - `{timestamp}.json`: Individual conversation files with timestamp-based IDs
 - `tools/`: Project utility scripts
