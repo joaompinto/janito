@@ -5,9 +5,8 @@
   - `__init__.py`: Package initialization with version information
   - `__main__.py`: Entry point for the package
   - `callbacks.py`: Callback functions
-  - `config.py`: Backward compatibility wrapper for the config package
   - `config/`: Configuration package with modular structure
-    - `__init__.py`: Package initialization and re-exports
+    - `__init__.py`: Package initialization and re-exports with backward compatibility
     - `core.py`: Core Config class implementation
     - `file_operations.py`: Configuration file operations
     - `profiles.py`: Predefined parameter profiles
