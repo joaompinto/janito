@@ -8,7 +8,7 @@ from rich.console import Console
 import importlib.metadata
 
 from janito import __version__
-from janito.config import get_config
+from janito.config import Config
 from janito.cli.commands import handle_config_commands, validate_parameters
 from janito.cli.agent import handle_query
 from janito.cli.utils import get_stdin_termination_hint
@@ -22,9 +22,12 @@ def main(ctx: typer.Context,
          verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose mode with detailed output"),
          show_tokens: bool = typer.Option(False, "--show-tokens", "--tokens", help="Show detailed token usage and pricing information"),
          workspace: Optional[str] = typer.Option(None, "--workspace", "-w", help="Set the workspace directory"),
-         config_str: Optional[str] = typer.Option(None, "--set-config", help="Configuration string in format 'key=value', e.g., 'temperature=0.7' or 'profile=technical'"),
+         set_local_config: Optional[str] = typer.Option(None, "--set-local-config", help="Set a local configuration value in format 'key=value' (overrides global config)"),
+         set_global_config: Optional[str] = typer.Option(None, "--set-global-config", help="Set a global configuration value in format 'key=value' (used as default)"),
          show_config: bool = typer.Option(False, "--show-config", help="Show current configuration"),
-         reset_config: bool = typer.Option(False, "--reset-config", help="Reset configuration by removing the config file"),
+         reset_config: bool = typer.Option(False, "--reset-config", help="Reset local configuration by removing the local config file"),
+         reset_local_config: bool = typer.Option(False, "--reset-local-config", help="Reset local configuration by removing the local config file"),
+         reset_global_config: bool = typer.Option(False, "--reset-global-config", help="Reset global configuration by removing the global config file"),
          set_api_key: Optional[str] = typer.Option(None, "--set-api-key", help="Set the Anthropic API key globally in the user's home directory"),
          ask: bool = typer.Option(False, "--ask", help="Enable ask mode which disables tools that perform changes"),
          trust: bool = typer.Option(False, "--trust", "-t", help="Enable trust mode which suppresses tool outputs for a more concise execution"),
@@ -41,16 +44,16 @@ def main(ctx: typer.Context,
     Janito CLI tool. If a query is provided without a command, it will be sent to the claudine agent.
     """    
     # Set verbose mode in config
-    get_config().verbose = verbose
+    Config().verbose = verbose
     
     # Set ask mode in config
-    get_config().ask_mode = ask
+    Config().ask_mode = ask
     
     # Set trust mode in config
-    get_config().trust_mode = trust
+    Config().trust_mode = trust
     
     # Set no-tools mode in config
-    get_config().no_tools = no_tools
+    Config().no_tools = no_tools
     
     # Show a message if ask mode is enabled
     if ask:
@@ -151,13 +154,16 @@ def main(ctx: typer.Context,
     # Handle configuration-related commands
     exit_after_config = handle_config_commands(
         ctx, 
-        reset_config, 
+        reset_config,
+        reset_local_config,
+        reset_global_config,
         workspace, 
         show_config, 
         profile, 
         role, 
-        set_api_key, 
-        config_str, 
+        set_api_key,
+        set_local_config,
+        set_global_config,
         query,
         continue_id,
         continue_flag,

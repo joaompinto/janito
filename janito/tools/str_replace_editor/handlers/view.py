@@ -97,9 +97,9 @@ def handle_view(args: Dict[str, Any]) -> Tuple[str, bool]:
             
             # Only print count if not in trust mode
             if not get_config().trust_mode:
-                console.print(f"Found ", style="default", end="")
+                console.print(f"(", style="default", end="")
                 console.print(f"{file_dir_count}", style="cyan", end="")
-                console.print(" files and directories")
+                console.print(" files and directories returned)")
             return (output, False)
         except Exception as e:
             return (f"Error listing directory {path}: {str(e)}", True)
@@ -143,7 +143,14 @@ def handle_view(args: Dict[str, Any]) -> Tuple[str, bool]:
         MAX_LINES = 500  # Arbitrary limit for demonstration
         if len(numbered_content) > MAX_LINES:
             truncated_content = "".join(numbered_content[:MAX_LINES])
-            print(truncated_content + "\n<response clipped>")
+            
+            # Only print line count if not in trust mode
+            if not get_config().trust_mode:
+                console.print("(", style="default", end="")
+                console.print(f"{MAX_LINES}", style="cyan", end="")
+                console.print(f" of {len(numbered_content)} lines returned - response clipped)")
+                
+            # Return the truncated content with a clipped message
             return (truncated_content + "\n<response clipped>", False)
         
         content_to_print = "".join(numbered_content)
@@ -152,7 +159,7 @@ def handle_view(args: Dict[str, Any]) -> Tuple[str, bool]:
         if not get_config().trust_mode:
             console.print("(", style="default", end="")
             console.print(f"{len(numbered_content)}", style="cyan", end="")
-            console.print(")")
+            console.print(" lines returned)")
         # Return the content as a string without any Rich objects
         return (content_to_print, False)
     except Exception as e:

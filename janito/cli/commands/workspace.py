@@ -5,7 +5,7 @@ import sys
 from typing import Optional
 from rich.console import Console
 
-from janito.config import get_config
+from janito.config import Config
 
 console = Console()
 
@@ -22,8 +22,8 @@ def handle_workspace(workspace: Optional[str]) -> bool:
     if workspace:
         try:
             console.print(f"[bold]📂 Setting workspace directory to: {workspace}[/bold]")
-            get_config().workspace_dir = workspace
-            console.print(f"[bold green]✅ Workspace directory set to: {get_config().workspace_dir}[/bold green]")
+            Config().workspace_dir = workspace
+            console.print(f"[bold green]✅ Workspace directory set to: {Config().workspace_dir}[/bold green]")
         except ValueError as e:
             console.print(f"[bold red]Error:[/bold red] {str(e)}")
             sys.exit(1)
