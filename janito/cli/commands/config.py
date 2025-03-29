@@ -351,7 +351,6 @@ def handle_config_commands(
     set_local_config: Optional[str] = None,
     set_global_config: Optional[str] = None,
     query: Optional[str] = None,
-    continue_id: Optional[str] = None,
     continue_flag: Optional[str] = None,
     history_flag: bool = False,
     history_count: Optional[int] = None
@@ -372,7 +371,6 @@ def handle_config_commands(
         set_local_config: Configuration string in format 'key=value' for local config
         set_global_config: Configuration string in format 'key=value' for global config
         query: Query string
-        continue_id: Optional message ID to continue a specific conversation
         continue_flag: Optional string that can be empty (flag only) or contain a chat ID
         history_flag: Whether to show conversation history (--history flag)
         history_count: Number of history entries to display (value after --history)

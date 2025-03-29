@@ -36,7 +36,6 @@ def main(ctx: typer.Context,
          role: Optional[str] = typer.Option(None, "--role", help="Set the assistant's role (default: 'software engineer')"),
          system: Optional[str] = typer.Option(None, "--system", "-s", help="Provide custom system instructions, bypassing the default file load method"),
          version: bool = typer.Option(False, "--version", help="Show the version and exit"),
-         continue_id: Optional[str] = typer.Option(None, "--continue-id", help="Continue a specific conversation with the given ID"),
          continue_flag: Optional[str] = typer.Option(None, "--continue", "-c", help="Continue a conversation. Can be used as: 1) --continue (to continue most recent), 2) --continue 123 (to continue conversation with ID 123), or 3) --continue \"query\" (to continue most recent with new query)"),
          history_flag: bool = typer.Option(False, "--history", help="Show a summary of conversations. Use --history for default (20) or --history n to specify count")):
     """
@@ -126,22 +125,15 @@ def main(ctx: typer.Context,
                 # --continue with no args means continue most recent conversation
                 continue_conversation = ""
         
-        # Handle explicit --continue-id if specified (this takes precedence)
-        if "--continue-id" in args:
-            continue_id_idx = args.index("--continue-id")
-            if continue_id_idx + 1 < len(args) and not args[continue_id_idx + 1].startswith("-"):
-                continue_conversation = args[continue_id_idx + 1]
+        # --continue-id has been removed in favor of --continue
     except Exception as e:
         if verbose:
             console.print(f"[bold yellow]⚠️ Error parsing continue arguments: {str(e)}[/bold yellow]")
     
     # Fall back to typer-processed args if our parsing failed
     if continue_conversation is None:
-        # Handle the --continue-id option
-        if continue_id is not None:
-            continue_conversation = continue_id
         # Handle the --continue flag option (processed by typer)
-        elif continue_flag is not None:
+        if continue_flag is not None:
             if continue_flag == "":
                 continue_conversation = ""  # Empty string means continue most recent
             elif continue_flag.isdigit():
@@ -164,7 +156,6 @@ def main(ctx: typer.Context,
         set_local_config,
         set_global_config,
         query,
-        continue_id,
         continue_flag,
         history_flag,
         history_count_override
