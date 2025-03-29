@@ -2,12 +2,9 @@
 Configuration module for Janito.
 Provides a singleton Config class to access configuration values.
 Supports both local and global configuration with merging functionality.
-
-This file is maintained for backward compatibility.
-The actual implementation has been moved to the config/ package.
 """
-from .config.core import Config
-from .config.profiles import PROFILES
+from .core import Config
+from .profiles import PROFILES, get_available_profiles, get_profile
 
 # Re-export the Config class for backward compatibility
 __all__ = ["Config", "PROFILES"]
