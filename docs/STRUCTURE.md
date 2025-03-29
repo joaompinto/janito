@@ -41,7 +41,7 @@
     - `prompt_user.py`: Tool to prompt for user input
     - `think.py`: Tool to record thoughts for complex reasoning without changing the database
     - `rich_console.py`: Utility for formatted console output with emoji support and trust mode (suppresses all output in trust mode)
-    - `str_replace_editor/`: String replacement editor implementation with trust mode support
+    - `str_replace_editor/`: String replacement editor implementation with trust mode support and configurable max_view_lines warning
     - `bash/`: Bash command execution with trust mode support
     - `fetch_webpage/`: Web page fetching functionality with browser-like headers
 - `.janito/`: Local configuration and data directory
