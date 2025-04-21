@@ -573,7 +573,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../architecture/" class="md-nav__link">
+      <a href="../architecture.md" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1334,7 +1334,13 @@
 </ul>
 <h3 id="janitoagentconversation">janito.agent.conversation</h3>
 <ul>
-<li><strong>ConversationHandler</strong>: Manages conversation state and flow.</li>
+<li><strong>ConversationHandler</strong>: Manages conversation state and flow.<ul>
+<li><code>__init__</code>: Initializes the handler with configuration and state.</li>
+<li><code>handle_conversation</code>: Processes a conversation turn and updates state.</li>
+<li><code>get_stream</code>: Retrieves a streaming response from the agent.</li>
+<li><code>api_call</code>: Makes a direct API call for conversation handling.</li>
+</ul>
+</li>
 </ul>
 <h3 id="janitoagentconversation_exceptions">janito.agent.conversation_exceptions</h3>
 <ul>
@@ -1348,11 +1354,23 @@
 </ul>
 <h3 id="janitoagentopenai_client">janito.agent.openai_client</h3>
 <ul>
-<li><strong>Agent</strong>: Main agent class for OpenAI integration.</li>
+<li><strong>Agent</strong>: Main agent class for OpenAI integration.<ul>
+<li><code>__init__</code>: Initializes the agent with model and API settings.</li>
+<li><code>chat</code>: Sends a list of messages to the LLM and returns the response.</li>
+<li><code>usage_history</code>: Tracks and returns usage statistics.</li>
+</ul>
+</li>
 </ul>
 <h3 id="janitoagentprofile_manager">janito.agent.profile_manager</h3>
 <ul>
-<li><strong>AgentProfileManager</strong>: Manages agent profiles.</li>
+<li><strong>AgentProfileManager</strong>: Manages agent profiles and prompt templates.<ul>
+<li><code>__init__</code>: Loads and initializes profile data.</li>
+<li><code>set_role</code>: Sets the current agent role.</li>
+<li><code>parse_style_string</code>: Parses style configuration for prompts.</li>
+<li><code>render_prompt</code>: Renders the prompt template for the agent.</li>
+<li><code>refresh_prompt</code>: Reloads and refreshes the prompt template.</li>
+</ul>
+</li>
 </ul>
 <h3 id="janitoagentqueued_message_handler">janito.agent.queued_message_handler</h3>
 <ul>
