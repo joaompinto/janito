@@ -14,7 +14,7 @@
         <link rel="prev" href="../azure-openai/">
       
       
-        <link rel="next" href="../tools-reference/">
+        <link rel="next" href="../rich-message-handler/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -22,7 +22,7 @@
     
     
       
-        <title>Message Handler Model - Janito Documentation</title>
+        <title>Overview - Janito Documentation</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#unified-message-handler-model" class="md-skip">
+        <a href="#message-handler-model" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Message Handler Model
+              Overview
             
           </span>
         </div>
@@ -484,11 +484,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/USING_DEV_VERSION/" class="md-nav__link">
+      <a href="../../guides/tools_developer_guide/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Using Dev Version
+    Tools Developer Guide
     
   </span>
   
@@ -506,11 +506,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../meta/README_DEV/" class="md-nav__link">
+      <a href="../../meta/developer_toolchain/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Developer Meta Guide
+    Developer Toolchain Guide
     
   </span>
   
@@ -578,28 +578,6 @@
   
   <span class="md-ellipsis">
     Supported Models
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../alternatives/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Alternatives
     
   </span>
   
@@ -706,6 +684,44 @@
   
   
   
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Message Handler Model
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5_6">
+            <span class="md-nav__icon md-icon"></span>
+            Message Handler Model
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
     <li class="md-nav__item md-nav__item--active">
       
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
@@ -718,7 +734,7 @@
           
   
   <span class="md-ellipsis">
-    Message Handler Model
+    Overview
     
   </span>
   
@@ -730,7 +746,7 @@
         
   
   <span class="md-ellipsis">
-    Message Handler Model
+    Overview
     
   </span>
   
@@ -867,6 +883,36 @@
   
   
     <li class="md-nav__item">
+      <a href="../rich-message-handler/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Rich Message Handler
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../tools-reference/" class="md-nav__link">
         
   
@@ -972,6 +1018,27 @@
           </ul>
         </nav>
       
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../alternatives/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Alternatives
+    
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -1120,8 +1187,8 @@
   
 
 
-<h1 id="unified-message-handler-model">Unified Message Handler Model</h1>
-<p>This document describes the unified message handler model used in Janito for both CLI and web output. The model ensures that all output—whether from tools or from assistant/LLM content—is routed through a single, consistent API, simplifying both backend and frontend logic.</p>
+<h1 id="message-handler-model">Message Handler Model</h1>
+<p>This document describes the message handler model used in Janito for both CLI and web output. For details on the styled terminal output, see the <a href="../rich-message-handler/">Rich Message Handler</a>. The model ensures that all output—whether from tools or from assistant/LLM content—is routed through a single, consistent API, simplifying both backend and frontend logic.</p>
 <h2 id="overview">Overview</h2>
 <ul>
 <li><strong>Single handler</strong> for all output: tools, assistant, or system messages.</li>
@@ -1177,7 +1244,6 @@
 </ul>
 <h2 id="benefits">Benefits</h2>
 <ul>
-<li><strong>Unified</strong>: One code path for all output.</li>
 <li><strong>Consistent</strong>: Same styling and logic everywhere.</li>
 <li><strong>Extensible</strong>: Add more message types or custom styles easily.</li>
 <li><strong>Simple</strong>: Less boilerplate, easier to maintain.</li>

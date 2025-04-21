@@ -1,0 +1,42 @@
+# 🛠️ Installation Guide
+
+Welcome to Janito! Follow these steps to install Janito and get started quickly.
+
+## Requirements
+
+- Python 3.10 or newer
+- pip (Python package manager)
+- (Optional) Git, for installing the latest development version
+
+## Install from PyPI (Recommended)
+
+```bash
+pip install janito
+```
+
+## Install from Source (Development Version)
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/janito-ai/janito.git
+   cd janito
+   ```
+2. Install dependencies:
+   ```bash
+   pip install -e .
+   ```
+
+## Verify Installation
+
+Run the following command to check that Janito is installed:
+
+```bash
+janito --help
+```
+
+You should see the Janito CLI help message.
+
+---
+
+- For usage instructions, see [Usage Guide](using.md).
+- For development setup, see [Developing & Extending](developing.md).

@@ -340,15 +340,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#install-from-source-development-version" class="md-nav__link">
-    <span class="md-ellipsis">
-      Install from Source (Development Version)
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#verify-installation" class="md-nav__link">
     <span class="md-ellipsis">
       Verify Installation
@@ -561,11 +552,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../USING_DEV_VERSION/" class="md-nav__link">
+      <a href="../tools_developer_guide/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Using Dev Version
+    Tools Developer Guide
     
   </span>
   
@@ -583,11 +574,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../meta/README_DEV/" class="md-nav__link">
+      <a href="../../meta/developer_toolchain/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Developer Meta Guide
+    Developer Toolchain Guide
     
   </span>
   
@@ -653,28 +644,6 @@
   
   <span class="md-ellipsis">
     Supported Models
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../alternatives/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Alternatives
     
   </span>
   
@@ -779,9 +748,19 @@
   
   
   
-    <li class="md-nav__item">
-      <a href="../../reference/message-handler-model/" class="md-nav__link">
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
         
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+            
   
   <span class="md-ellipsis">
     Message Handler Model
@@ -789,7 +768,63 @@
   </span>
   
 
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5_6">
+            <span class="md-nav__icon md-icon"></span>
+            Message Handler Model
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/message-handler-model/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
       </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reference/rich-message-handler/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Rich Message Handler
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
     </li>
   
 
@@ -911,6 +946,27 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../alternatives/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Alternatives
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -956,15 +1012,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#install-from-source-development-version" class="md-nav__link">
-    <span class="md-ellipsis">
-      Install from Source (Development Version)
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#verify-installation" class="md-nav__link">
     <span class="md-ellipsis">
       Verify Installation
@@ -998,22 +1045,14 @@
 <ul>
 <li>Python 3.10 or newer</li>
 <li>pip (Python package manager)</li>
-<li>(Optional) Git, for installing the latest development version</li>
 </ul>
 <h2 id="install-from-pypi-recommended">Install from PyPI (Recommended)</h2>
 <div class="codehilite"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>janito
 </code></pre></div>
 
-<h2 id="install-from-source-development-version">Install from Source (Development Version)</h2>
-<ol>
-<li>Clone the repository:
-   <code>bash
-   git clone https://github.com/janito-ai/janito.git
-   cd janito</code></li>
-<li>Install dependencies:
-   <code>bash
-   pip install -e .</code></li>
-</ol>
+<blockquote>
+<p>⚙️ For installing the latest development version from source, see <a href="../developing/">Developing &amp; Extending</a>.</p>
+</blockquote>
 <h2 id="verify-installation">Verify Installation</h2>
 <p>Run the following command to check that Janito is installed:</p>
 <div class="codehilite"><pre><span></span><code>janito<span class="w"> </span>--help

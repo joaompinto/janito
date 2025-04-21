@@ -13,10 +13,6 @@
          <lastmod>2025-04-21</lastmod>
     </url>
     <url>
-         <loc>https://joaompinto.github.io/janito/guides/USING_DEV_VERSION/</loc>
-         <lastmod>2025-04-21</lastmod>
-    </url>
-    <url>
          <loc>https://joaompinto.github.io/janito/guides/costs/</loc>
          <lastmod>2025-04-21</lastmod>
     </url>
@@ -30,6 +26,10 @@
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/guides/terminal_shell/</loc>
+         <lastmod>2025-04-21</lastmod>
+    </url>
+    <url>
+         <loc>https://joaompinto.github.io/janito/guides/tools_developer_guide/</loc>
          <lastmod>2025-04-21</lastmod>
     </url>
     <url>
@@ -49,7 +49,7 @@
          <lastmod>2025-04-21</lastmod>
     </url>
     <url>
-         <loc>https://joaompinto.github.io/janito/meta/README_DEV/</loc>
+         <loc>https://joaompinto.github.io/janito/meta/developer_toolchain/</loc>
          <lastmod>2025-04-21</lastmod>
     </url>
     <url>
@@ -70,6 +70,10 @@
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/reference/message-handler-model/</loc>
+         <lastmod>2025-04-21</lastmod>
+    </url>
+    <url>
+         <loc>https://joaompinto.github.io/janito/reference/rich-message-handler/</loc>
          <lastmod>2025-04-21</lastmod>
     </url>
     <url>
