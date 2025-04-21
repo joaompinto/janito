@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://joaompinto.github.io/janito/</loc>
+         <lastmod>2025-04-21</lastmod>
+    </url>
+    <url>
+         <loc>https://joaompinto.github.io/janito/ARCHITECTURE/</loc>
+         <lastmod>2025-04-21</lastmod>
+    </url>
+    <url>
+         <loc>https://joaompinto.github.io/janito/AZURE_OPENAI/</loc>
+         <lastmod>2025-04-21</lastmod>
+    </url>
+    <url>
+         <loc>https://joaompinto.github.io/janito/CONFIGURATION/</loc>
+         <lastmod>2025-04-21</lastmod>
+    </url>
+    <url>
+         <loc>https://joaompinto.github.io/janito/MESSAGE_HANDLER_MODEL/</loc>
+         <lastmod>2025-04-21</lastmod>
+    </url>
+    <url>
+         <loc>https://joaompinto.github.io/janito/README_DEV/</loc>
+         <lastmod>2025-04-21</lastmod>
+    </url>
+    <url>
+         <loc>https://joaompinto.github.io/janito/TOOLS_REFERENCE/</loc>
+         <lastmod>2025-04-21</lastmod>
+    </url>
+    <url>
+         <loc>https://joaompinto.github.io/janito/USING_DEV_VERSION/</loc>
+         <lastmod>2025-04-21</lastmod>
+    </url>
+</urlset>

@@ -1,0 +1,3 @@
+- Please analyze all tools in the functions namespace and check, for each tool:
+    - The actual tool description in the code (specifically in tool class and call method docstrings) matches the code logic
+    - The actual return format in the code (specifically in the call method), and provide a summary table listing the tool name and its return format. Show Namespace vs Code"

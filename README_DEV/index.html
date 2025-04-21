@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://joaompinto.github.io/janito/README_DEV/">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Developer Guide - Janito Documentation</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">Janito Documentation</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href=".." class="nav-link">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../ARCHITECTURE/" class="nav-link">Architecture</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../AZURE_OPENAI/" class="nav-link">Azure OpenAI</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../CONFIGURATION/" class="nav-link">Configuration</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../MESSAGE_HANDLER_MODEL/" class="nav-link">Message Handler Model</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="./" class="nav-link active" aria-current="page">Developer Guide</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../USING_DEV_VERSION/" class="nav-link">Using Dev Version</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../TOOLS_REFERENCE/" class="nav-link">Tools Reference</a>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../MESSAGE_HANDLER_MODEL/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../USING_DEV_VERSION/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/joaompinto/janito/edit/master/docs/README_DEV.md" class="nav-link"><i class="fa-brands fa-github"></i> Edit on GitHub</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="1"><a href="#developer-guide-creating-a-new-tool-class-based" class="nav-link">Developer Guide: Creating a New Tool (Class-Based)</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-bs-level="2"><a href="#requirements" class="nav-link">Requirements</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#example-creating-a-tool" class="nav-link">Example: Creating a Tool</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#steps-to-add-a-tool" class="nav-link">Steps to Add a Tool</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#docstring-style" class="nav-link">Docstring Style</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#what-happens-if-you-omit-a-description" class="nav-link">What Happens If You Omit a Description?</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#tool-reference" class="nav-link">Tool Reference</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#tool-call-limits" class="nav-link">Tool Call Limits</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#system-prompt-precedence" class="nav-link">System Prompt Precedence</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#interactive-shell-config-commands" class="nav-link">Interactive Shell Config Commands</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#installing-the-development-version" class="nav-link">Installing the Development Version</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#summary" class="nav-link">Summary</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-bs-level="2"><a href="#code-style-linting-and-pre-commit-hooks" class="nav-link">Code Style, Linting, and Pre-commit Hooks</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="developer-guide-creating-a-new-tool-class-based">Developer Guide: Creating a New Tool (Class-Based)</h1>
+<p>This guide explains how to add a new tool (functionality) to the project so it can be exposed to the agent and OpenAI-compatible APIs.</p>
+<p>For a list of all built-in tools and their usage, see the <a href="../TOOLS_REFERENCE/">Tools Reference</a>.
+For a technical overview of the system, see the <a href="../ARCHITECTURE/">Architecture Guide</a>.</p>
+<h2 id="requirements">Requirements</h2>
+<ul>
+<li><strong>Class-based tools:</strong> All tools must be implemented as classes inheriting from <code>ToolBase</code> (see <code>janito/agent/tool_base.py</code>).</li>
+<li><strong>Type hints:</strong> All parameters to the <code>call</code> method must have Python type hints.</li>
+<li><strong>Docstrings:</strong></li>
+<li>The tool class must have a class-level docstring summarizing its purpose and behavior. This is user-facing.</li>
+<li>The <code>call</code> method must have a Google-style docstring with a description for each parameter under an <code>Args:</code> section.</li>
+<li><strong>Parameter descriptions:</strong> Every parameter must have a corresponding description in the docstring. If any are missing, registration will fail.</li>
+</ul>
+<h2 id="example-creating-a-tool">Example: Creating a Tool</h2>
+<pre><code class="language-python">from janito.agent.tool_base import ToolBase
+from janito.agent.tool_registry import register_tool
+
+@register_tool
+class MyTool(ToolBase):
+    &quot;&quot;&quot;
+    Processes a file a given number of times.
+    &quot;&quot;&quot;
+
+    def call(self, filename: str, count: int) -&gt; None:
+        &quot;&quot;&quot;
+        Processes the specified file repeatedly.
+
+        Args:
+            filename (str): The path to the file to process.
+            count (int): How many times to process the file.
+        &quot;&quot;&quot;
+        # Implementation here
+</code></pre>
+<h2 id="steps-to-add-a-tool">Steps to Add a Tool</h2>
+<ol>
+<li><strong>Define your tool as a class</strong> inheriting from <code>ToolBase</code>.</li>
+<li><strong>Add a class-level docstring</strong> summarizing the tool's purpose (user-facing).</li>
+<li><strong>Implement the <code>call</code> method</strong> with type hints and a Google-style docstring, including an <code>Args:</code> section describing every parameter.</li>
+<li><strong>Register your tool</strong> by decorating the class with <code>@register_tool</code> from <code>janito.agent.tool_registry</code>.</li>
+<li><strong>Document your tool</strong>: Update <code>janito/agent/tools/README.md</code> with a short description and usage for your new tool.</li>
+</ol>
+<h2 id="docstring-style">Docstring Style</h2>
+<ul>
+<li>Use the <strong>Google style</strong> for docstrings:</li>
+</ul>
+<pre><code class="language-python">&quot;&quot;&quot;
+Function summary.
+
+Args:
+    param1 (type): Description of param1.
+    param2 (type): Description of param2.
+&quot;&quot;&quot;
+</code></pre>
+<ul>
+<li>The <code>Args:</code> section must list each parameter, its type, and a description.</li>
+<li>The class docstring is prepended to the tool's description in the OpenAI schema and is user-facing.</li>
+</ul>
+<h2 id="what-happens-if-you-omit-a-description">What Happens If You Omit a Description?</h2>
+<p>If you forget to document a parameter, you will see an error like:</p>
+<pre><code>ValueError: Parameter 'count' in tool 'MyTool' is missing a description in the docstring.
+</code></pre>
+<h2 id="tool-reference">Tool Reference</h2>
+<p>See <a href="../TOOLS_REFERENCE/">janito/agent/tools/README.md</a> for a list of built-in tools and their usage.</p>
+<h2 id="tool-call-limits">Tool Call Limits</h2>
+<ul>
+<li>You can use <code>--max-tools</code> to limit the total number of tool calls allowed in a chat session. If the limit is reached, further tool calls will be prevented.</li>
+</ul>
+<h2 id="system-prompt-precedence">System Prompt Precedence</h2>
+<ul>
+<li>If <code>--system-file</code> is provided, the file's content is used as the system prompt (highest priority).</li>
+<li>Otherwise, if <code>--system</code> or the config value is set, that string is used.</li>
+<li>Otherwise, a default prompt is used from the template at <code>janito/agent/templates/system_prompt_template.j2</code>.</li>
+</ul>
+<h2 id="interactive-shell-config-commands">Interactive Shell Config Commands</h2>
+<p>Within the interactive chat shell, you can use special commands:
+- <code>/config show</code> — Show effective configuration (local, global, defaults)
+- <code>/config set local key=value</code> — Set a local config value
+- <code>/config set global key=value</code> — Set a global config value
+- <code>/continue</code> — Restore the last saved conversation
+- <code>/reset</code> — Reset conversation history
+- <code>/system</code> — Show the current system prompt
+- <code>/help</code> — Show help message</p>
+<h2 id="installing-the-development-version">Installing the Development Version</h2>
+<p>See <a href="../USING_DEV_VERSION/">USING_DEV_VERSION.md</a> for system_prompt_template on installing and using the latest development version of this project from GitHub.</p>
+<h2 id="summary">Summary</h2>
+<ul>
+<li>Always implement tools as classes inheriting from <code>ToolBase</code>.</li>
+<li>Provide type hints and parameter descriptions for the <code>call</code> method.</li>
+<li>Use Google-style docstrings for both the class and the <code>call</code> method.</li>
+<li>Registration will fail if any parameter is undocumented.</li>
+<li>Update the tools README after adding a new tool.</li>
+</ul>
+<p>Happy coding!</p>
+<h2 id="code-style-linting-and-pre-commit-hooks">Code Style, Linting, and Pre-commit Hooks</h2>
+<p>This project uses <a href="https://pre-commit.com/">pre-commit</a> to enforce code style and linting automatically using <a href="https://black.readthedocs.io/en/stable/">Black</a> (formatter) and <a href="https://docs.astral.sh/ruff/">Ruff</a> (linter).</p>
+<h3 id="setup">Setup</h3>
+<ol>
+<li>Install pre-commit if you haven't already:
+   <code>bash
+   pip install pre-commit</code></li>
+<li>Install the hooks:
+   <code>bash
+   pre-commit install</code></li>
+</ol>
+<h3 id="usage">Usage</h3>
+<ul>
+<li>Hooks will run automatically on <code>git commit</code>.</li>
+<li>To manually check all files:
+   <code>bash
+   pre-commit run --all-files</code></li>
+<li>If any issues are found, pre-commit will attempt to fix them or display errors to resolve.</li>
+</ul>
+<h3 id="notes">Notes</h3>
+<ul>
+<li>Always run the hooks before pushing code to ensure consistent style and linting.</li>
+<li>See <code>.pre-commit-config.yaml</code> for configuration details.</li>
+</ul>
+<hr />
+<p><em>generated by janito.dev</em></p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
