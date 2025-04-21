@@ -8,22 +8,28 @@
       
       
       
+        <link rel="canonical" href="https://joaompinto.github.io/janito/reference/ARCHITECTURE/">
       
       
+        <link rel="prev" href="../../meta/README_DEV/">
       
-      <link rel="icon" href="/janito/assets/images/favicon.png">
+      
+        <link rel="next" href="../MESSAGE_HANDLER_MODEL/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.5">
     
     
       
-        <title>Janito Documentation</title>
+        <title>Architecture - Janito Documentation</title>
       
     
     
-      <link rel="stylesheet" href="/janito/assets/stylesheets/main.8608ea7d.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.8608ea7d.min.css">
       
         
-        <link rel="stylesheet" href="/janito/assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -42,7 +48,7 @@
       
     
     
-    <script>__md_scope=new URL("/janito/",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -67,6 +73,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#janito-architecture-overview" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -79,7 +90,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="/janito/." title="Janito Documentation" class="md-header__button md-logo" aria-label="Janito Documentation" data-md-component="logo">
+    <a href="../.." title="Janito Documentation" class="md-header__button md-logo" aria-label="Janito Documentation" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -99,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              
+              Architecture
             
           </span>
         </div>
@@ -212,7 +223,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="/janito/." title="Janito Documentation" class="md-nav__button md-logo" aria-label="Janito Documentation" data-md-component="logo">
+    <a href="../.." title="Janito Documentation" class="md-nav__button md-logo" aria-label="Janito Documentation" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -242,7 +253,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/." class="md-nav__link">
+      <a href="../.." class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -299,7 +310,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/guides/using/" class="md-nav__link">
+      <a href="../../guides/using/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -321,7 +332,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/guides/terminal_shell/" class="md-nav__link">
+      <a href="../../guides/terminal_shell/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -379,7 +390,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/reference/CONFIGURATION/" class="md-nav__link">
+      <a href="../CONFIGURATION/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -401,7 +412,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/reference/AZURE_OPENAI/" class="md-nav__link">
+      <a href="../AZURE_OPENAI/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -431,7 +442,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/guides/USING_DEV_VERSION/" class="md-nav__link">
+      <a href="../../guides/USING_DEV_VERSION/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -457,17 +468,19 @@
       
   
   
+    
   
   
+  
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
           <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
@@ -482,7 +495,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Developing Janito
@@ -496,7 +509,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/guides/developing/" class="md-nav__link">
+      <a href="../../guides/developing/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -518,7 +531,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/meta/README_DEV/" class="md-nav__link">
+      <a href="../../meta/README_DEV/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -537,10 +550,31 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="/janito/reference/ARCHITECTURE/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Architecture
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -550,6 +584,80 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#high-level-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      High-Level Structure
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#main-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      Main Components
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#message-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Message Flow
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extensibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      Extensibility
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-technologies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Technologies
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notable-design-decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Notable Design Decisions
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -562,7 +670,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/reference/MESSAGE_HANDLER_MODEL/" class="md-nav__link">
+      <a href="../MESSAGE_HANDLER_MODEL/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -584,7 +692,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/reference/TOOLS_REFERENCE/" class="md-nav__link">
+      <a href="../TOOLS_REFERENCE/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -606,7 +714,7 @@
   
   
     <li class="md-nav__item">
-      <a href="/janito/reference/CLI_OPTIONS/" class="md-nav__link">
+      <a href="../CLI_OPTIONS/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -645,6 +753,70 @@
   
   
   
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#high-level-structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      High-Level Structure
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#main-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      Main Components
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#message-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      Message Flow
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#extensibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      Extensibility
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#key-technologies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Key Technologies
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notable-design-decisions" class="md-nav__link">
+    <span class="md-ellipsis">
+      Notable Design Decisions
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -656,8 +828,69 @@
             <div class="md-content" data-md-component="content">
               <article class="md-content__inner md-typeset">
                 
-  <h1>404 - Not found</h1>
+                  
 
+
+  
+  
+
+
+<h1 id="janito-architecture-overview">Janito Architecture Overview</h1>
+<h2 id="high-level-structure">High-Level Structure</h2>
+<p>Janito is a modular, extensible agent framework designed for interactive command-line and web-based chat environments. It emphasizes reliability, clear output, and easy extensibility through a tool/plugin system.</p>
+<hr />
+<h2 id="main-components">Main Components</h2>
+<ul>
+<li><strong>Agent Core</strong>: Manages conversation state, message handling, and tool invocation.</li>
+<li><strong>Tools System</strong>: Tools are registered via decorators and implement a standard interface for agent calls (see the <a href="../TOOLS_REFERENCE/">Tools Reference</a>).</li>
+<li><strong>Message Handling</strong>: All user and agent output is routed through a unified Rich-based message handler for consistent, styled output across CLI and web interfaces.</li>
+<li><strong>CLI Chat Shell</strong>: Provides an interactive prompt using <code>prompt_toolkit</code>, with session management, command parsing, and real-time output.</li>
+<li><strong>Web App (optional)</strong>: Shares the same agent and message handler logic for a consistent experience in browser-based chat.</li>
+</ul>
+<hr />
+<h2 id="message-flow">Message Flow</h2>
+<ol>
+<li><strong>User Input</strong>: Captured via CLI or web UI.</li>
+<li><strong>Agent Processing</strong>: Agent receives input, updates conversation state, and determines if a tool should be invoked.</li>
+<li><strong>Tool Invocation</strong>: If needed, the agent calls a registered tool, passing arguments and receiving output.</li>
+<li><strong>Output Routing</strong>: All outputs (including tool results, errors, and info) are sent through the Rich message handler, which formats and displays them appropriately.</li>
+<li><strong>History &amp; State</strong>: Conversation and input history are saved for session continuity.</li>
+</ol>
+<hr />
+<h2 id="extensibility">Extensibility</h2>
+<ul>
+<li><strong>Adding Tools</strong>: Implement a subclass of <code>ToolBase</code> and register it with <code>@register_tool</code>. Tools can report info, success, error, stdout, and stderr via the message handler. See the <a href="../../meta/README_DEV/">Developer Guide</a> for details.</li>
+<li><strong>Output Customization</strong>: The Rich message handler can be extended for new message types or output styles.</li>
+</ul>
+<hr />
+<h2 id="key-technologies">Key Technologies</h2>
+<ul>
+<li><strong>Python</strong> (core language)</li>
+<li><strong>Rich</strong> (for styled console output)</li>
+<li><strong>prompt_toolkit</strong> (for advanced CLI interactivity)</li>
+</ul>
+<hr />
+<h2 id="notable-design-decisions">Notable Design Decisions</h2>
+<ul>
+<li>Unified output handling with Rich for both CLI and web.</li>
+<li>Process tracking and robust error handling in tools (e.g., Bash tool).</li>
+<li>Simple, decorator-based tool registration for easy extensibility.</li>
+</ul>
+<hr />
+<p>For more details, see <code>README.md</code> and <code>janito/agent/</code> source files.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
               </article>
             </div>
           
@@ -691,10 +924,10 @@
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "/janito/", "features": [], "search": "/janito/assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.f8cc74c7.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
     
     
-      <script src="/janito/assets/javascripts/bundle.f1b6f286.min.js"></script>
+      <script src="../../assets/javascripts/bundle.f1b6f286.min.js"></script>
       
     
   </body>

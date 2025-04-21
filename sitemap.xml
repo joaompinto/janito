@@ -5,31 +5,47 @@
          <lastmod>2025-04-21</lastmod>
     </url>
     <url>
-         <loc>https://joaompinto.github.io/janito/ARCHITECTURE/</loc>
+         <loc>https://joaompinto.github.io/janito/guides/USING_DEV_VERSION/</loc>
          <lastmod>2025-04-21</lastmod>
     </url>
     <url>
-         <loc>https://joaompinto.github.io/janito/AZURE_OPENAI/</loc>
+         <loc>https://joaompinto.github.io/janito/guides/developing/</loc>
          <lastmod>2025-04-21</lastmod>
     </url>
     <url>
-         <loc>https://joaompinto.github.io/janito/CONFIGURATION/</loc>
+         <loc>https://joaompinto.github.io/janito/guides/terminal_shell/</loc>
          <lastmod>2025-04-21</lastmod>
     </url>
     <url>
-         <loc>https://joaompinto.github.io/janito/MESSAGE_HANDLER_MODEL/</loc>
+         <loc>https://joaompinto.github.io/janito/guides/using/</loc>
          <lastmod>2025-04-21</lastmod>
     </url>
     <url>
-         <loc>https://joaompinto.github.io/janito/README_DEV/</loc>
+         <loc>https://joaompinto.github.io/janito/meta/README_DEV/</loc>
          <lastmod>2025-04-21</lastmod>
     </url>
     <url>
-         <loc>https://joaompinto.github.io/janito/TOOLS_REFERENCE/</loc>
+         <loc>https://joaompinto.github.io/janito/reference/ARCHITECTURE/</loc>
          <lastmod>2025-04-21</lastmod>
     </url>
     <url>
-         <loc>https://joaompinto.github.io/janito/USING_DEV_VERSION/</loc>
+         <loc>https://joaompinto.github.io/janito/reference/AZURE_OPENAI/</loc>
+         <lastmod>2025-04-21</lastmod>
+    </url>
+    <url>
+         <loc>https://joaompinto.github.io/janito/reference/CLI_OPTIONS/</loc>
+         <lastmod>2025-04-21</lastmod>
+    </url>
+    <url>
+         <loc>https://joaompinto.github.io/janito/reference/CONFIGURATION/</loc>
+         <lastmod>2025-04-21</lastmod>
+    </url>
+    <url>
+         <loc>https://joaompinto.github.io/janito/reference/MESSAGE_HANDLER_MODEL/</loc>
+         <lastmod>2025-04-21</lastmod>
+    </url>
+    <url>
+         <loc>https://joaompinto.github.io/janito/reference/TOOLS_REFERENCE/</loc>
          <lastmod>2025-04-21</lastmod>
     </url>
 </urlset>
