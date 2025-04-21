@@ -1,17 +1,32 @@
-# 🚀 Using Janito
+# 🚀 Using Janito: Quickstart & Basic Usage
 
-Welcome to Janito! This guide will help you get started and make the most of its features.
+This guide shows you how to start using Janito after installation. For an overview of Janito, see the [Introduction](../index.md). For setup instructions, see the [Installation Guide](installation.md).
 
-## 🛠️ Installation
+## 💡 Quickstart
 
-... (installation instructions go here) ...
+After installing Janito, you can use it from the command line or launch the web interface:
 
-## 💡 Basic Usage
+### Run a One-Off Prompt
+```bash
+janito "Refactor the data processing module to improve readability."
+```
 
-... (basic usage instructions go here) ...
+### Start the Interactive Chat Shell
+```bash
+janito
+```
+
+### Launch the Web Interface
+```bash
+janito --web
+```
+
+## 📝 Basic Usage Tips
+- Use natural language to describe what you want Janito to do (e.g., "Add type hints to all functions in utils.py").
+- In the chat shell, use `/help` for available commands.
+- Use CLI flags to customize behavior (see [CLI Options](../reference/cli-options.md)).
 
 ## 📚 More Resources
-
 - See [How Janito Uses Tools](using_tools.md) for details on automatic tool selection.
-- See [Supported Models](../supported-models.md) for information on LLM compatibility.
+- See the Supported Models page in the documentation navigation for information on LLM compatibility.
 - See [Costs & Value Transparency](costs.md) for details on pricing and efficiency.
