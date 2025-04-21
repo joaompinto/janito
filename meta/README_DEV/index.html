@@ -14,7 +14,7 @@
         <link rel="prev" href="../../guides/developing/">
       
       
-        <link rel="next" href="../../reference/ARCHITECTURE/">
+        <link rel="next" href="../../reference/message-handler-model/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -478,7 +478,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/CONFIGURATION/" class="md-nav__link">
+      <a href="../../reference/azure-openai/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -500,11 +500,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/AZURE_OPENAI/" class="md-nav__link">
+      <a href="../../reference/cli-options/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Azure OpenAI
+    CLI Options
     
   </span>
   
@@ -823,29 +823,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/ARCHITECTURE/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Architecture
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../reference/MESSAGE_HANDLER_MODEL/" class="md-nav__link">
+      <a href="../../reference/message-handler-model/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -867,33 +845,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/TOOLS_REFERENCE/" class="md-nav__link">
+      <a href="../../reference/tools-reference/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
     Tools Reference
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../reference/CLI_OPTIONS/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    CLI Runtime Options
     
   </span>
   
@@ -918,32 +874,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../SUPPORTED_MODELS/" class="md-nav__link">
+      <a href="../../supported-models/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
     Supported Models
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../ALTERNATIVES/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Alternatives
     
   </span>
   
@@ -1141,8 +1076,8 @@
 
 <h1 id="developer-guide-creating-a-new-tool-class-based">Developer Guide: Creating a New Tool (Class-Based)</h1>
 <p>This guide explains how to add a new tool (functionality) to the project so it can be exposed to the agent and OpenAI-compatible APIs.</p>
-<p>For a list of all built-in tools and their usage, see the <a href="../../reference/TOOLS_REFERENCE/">Tools Reference</a>.
-For a technical overview of the system, see the <a href="../../reference/ARCHITECTURE/">Architecture Guide</a>.</p>
+<p>For a list of all built-in tools and their usage, see the <a href="../../reference/tools-reference/">Tools Reference</a>.
+For a technical overview of the system, see the Architecture Guide in the documentation navigation.</p>
 <h2 id="requirements">Requirements</h2>
 <ul>
 <li><strong>Class-based tools:</strong> All tools must be implemented as classes inheriting from <code>ToolBase</code> (see <code>janito/agent/tool_base.py</code>).</li>
@@ -1204,7 +1139,7 @@ For a technical overview of the system, see the <a href="../../reference/ARCHITE
 </code></pre></div>
 
 <h2 id="tool-reference">Tool Reference</h2>
-<p>See <a href="../../reference/TOOLS_REFERENCE/">janito/agent/tools/README.md</a> for a list of built-in tools and their usage.</p>
+<p>See the Tools Reference page in the documentation navigation for a list of built-in tools and their usage.</p>
 <h2 id="tool-call-limits">Tool Call Limits</h2>
 <ul>
 <li>You can use <code>--max-tools</code> to limit the total number of tool calls allowed in a chat session. If the limit is reached, further tool calls will be prevented.</li>
@@ -1225,7 +1160,7 @@ For a technical overview of the system, see the <a href="../../reference/ARCHITE
 - <code>/system</code> — Show the current system prompt
 - <code>/help</code> — Show help message</p>
 <h2 id="installing-the-development-version">Installing the Development Version</h2>
-<p>See <a href="../../guides/USING_DEV_VERSION/">USING_DEV_VERSION.md</a> for system_prompt_template on installing and using the latest development version of this project from GitHub.</p>
+<p>See the Using Dev Version page in the documentation navigation for instructions on installing and using the latest development version of this project from GitHub.</p>
 <h2 id="summary">Summary</h2>
 <ul>
 <li>Always implement tools as classes inheriting from <code>ToolBase</code>.</li>

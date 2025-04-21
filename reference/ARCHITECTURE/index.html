@@ -8,13 +8,9 @@
       
       
       
-        <link rel="canonical" href="https://joaompinto.github.io/janito/reference/ARCHITECTURE/">
+        <link rel="canonical" href="https://joaompinto.github.io/janito/reference/architecture/">
       
       
-        <link rel="prev" href="../../meta/README_DEV/">
-      
-      
-        <link rel="next" href="../MESSAGE_HANDLER_MODEL/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -22,7 +18,7 @@
     
     
       
-        <title>Architecture - Janito Documentation</title>
+        <title>Janito Architecture Overview - Janito Documentation</title>
       
     
     
@@ -110,7 +106,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Architecture
+              Janito Architecture Overview
             
           </span>
         </div>
@@ -478,7 +474,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../CONFIGURATION/" class="md-nav__link">
+      <a href="../azure-openai/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -500,11 +496,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../AZURE_OPENAI/" class="md-nav__link">
+      <a href="../cli-options/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
-    Azure OpenAI
+    CLI Options
     
   </span>
   
@@ -556,19 +552,17 @@
       
   
   
-    
   
   
-  
     
     
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
         
           
           <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
@@ -583,7 +577,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Developing Janito
@@ -638,127 +632,10 @@
                 
   
   
-    
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Architecture
-    
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
-        
-  
-  <span class="md-ellipsis">
-    Architecture
-    
-  </span>
-  
-
-      </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#high-level-structure" class="md-nav__link">
-    <span class="md-ellipsis">
-      High-Level Structure
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#main-components" class="md-nav__link">
-    <span class="md-ellipsis">
-      Main Components
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#message-flow" class="md-nav__link">
-    <span class="md-ellipsis">
-      Message Flow
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#extensibility" class="md-nav__link">
-    <span class="md-ellipsis">
-      Extensibility
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#key-technologies" class="md-nav__link">
-    <span class="md-ellipsis">
-      Key Technologies
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#notable-design-decisions" class="md-nav__link">
-    <span class="md-ellipsis">
-      Notable Design Decisions
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
   
   
     <li class="md-nav__item">
-      <a href="../MESSAGE_HANDLER_MODEL/" class="md-nav__link">
+      <a href="../message-handler-model/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -780,33 +657,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../TOOLS_REFERENCE/" class="md-nav__link">
+      <a href="../tools-reference/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
     Tools Reference
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../CLI_OPTIONS/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    CLI Runtime Options
     
   </span>
   
@@ -831,32 +686,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../SUPPORTED_MODELS/" class="md-nav__link">
+      <a href="../../supported-models/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
     Supported Models
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../ALTERNATIVES/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Alternatives
     
   </span>
   
@@ -972,7 +806,7 @@
 <h2 id="main-components">Main Components</h2>
 <ul>
 <li><strong>Agent Core</strong>: Manages conversation state, message handling, and tool invocation.</li>
-<li><strong>Tools System</strong>: Tools are registered via decorators and implement a standard interface for agent calls (see the <a href="../TOOLS_REFERENCE/">Tools Reference</a>).</li>
+<li><strong>Tools System</strong>: Tools are registered via decorators and implement a standard interface for agent calls (see the Tools Reference).</li>
 <li><strong>Message Handling</strong>: All user and agent output is routed through a unified Rich-based message handler for consistent, styled output across CLI and web interfaces.</li>
 <li><strong>CLI Chat Shell</strong>: Provides an interactive prompt using <code>prompt_toolkit</code>, with session management, command parsing, and real-time output.</li>
 <li><strong>Web App (optional)</strong>: Shares the same agent and message handler logic for a consistent experience in browser-based chat.</li>
@@ -989,7 +823,7 @@
 <hr />
 <h2 id="extensibility">Extensibility</h2>
 <ul>
-<li><strong>Adding Tools</strong>: Implement a subclass of <code>ToolBase</code> and register it with <code>@register_tool</code>. Tools can report info, success, error, stdout, and stderr via the message handler. See the <a href="../../meta/README_DEV/">Developer Guide</a> for details.</li>
+<li><strong>Adding Tools</strong>: Implement a subclass of <code>ToolBase</code> and register it with <code>@register_tool</code>. Tools can report info, success, error, stdout, and stderr via the message handler.</li>
 <li><strong>Output Customization</strong>: The Rich message handler can be extended for new message types or output styles.</li>
 </ul>
 <hr />
@@ -1007,7 +841,7 @@
 <li>Simple, decorator-based tool registration for easy extensibility.</li>
 </ul>
 <hr />
-<p>For more details, see <code>README.md</code> and <code>janito/agent/</code> source files.</p>
+<p>For more details, see the Developer Guide and janito/agent/ source files.</p>
 
 
 
