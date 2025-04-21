@@ -8,13 +8,13 @@
       
       
       
-        <link rel="canonical" href="https://joaompinto.github.io/janito/reference/tools-reference/">
+        <link rel="canonical" href="https://joaompinto.github.io/janito/reference/api/">
       
       
-        <link rel="prev" href="../rich-message-handler/">
+        <link rel="prev" href="../tools-reference/">
       
       
-        <link rel="next" href="../api/">
+        <link rel="next" href="../../about/why/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -22,7 +22,7 @@
     
     
       
-        <title>Tools Reference - Janito Documentation</title>
+        <title>API Reference - Janito Documentation</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#tools-reference" class="md-skip">
+        <a href="#api-reference" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Tools Reference
+              API Reference
             
           </span>
         </div>
@@ -746,6 +746,28 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools-reference/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tools Reference
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -758,30 +780,19 @@
         
       
       
-      <a href="./" class="md-nav__link md-nav__link--active">
-        
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
   
   <span class="md-ellipsis">
-    Tools Reference
+    API Reference
     
   </span>
   
 
-      </a>
+          <span class="md-nav__icon md-icon"></span>
+        </label>
       
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../api/" class="md-nav__link">
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -791,6 +802,182 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#core-modules-and-main-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core Modules and Main Classes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Modules and Main Classes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#janitoagentconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.agent.config
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#janitoagentconversation" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.agent.conversation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#janitoagentconversation_exceptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.agent.conversation_exceptions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#janitoagentmessage_handler" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.agent.message_handler
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#janitoagentopenai_client" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.agent.openai_client
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#janitoagentprofile_manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.agent.profile_manager
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#janitoagentqueued_message_handler" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.agent.queued_message_handler
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#janitoagentrich_live" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.agent.rich_live
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#janitoagentrich_message_handler" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.agent.rich_message_handler
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#janitoagentruntime_config" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.agent.runtime_config
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#janitoagenttool_base" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.agent.tool_base
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tool-implementations-janitoagenttools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tool Implementations (janito.agent.tools)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cli-and-web-interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      CLI and Web Interface
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="CLI and Web Interface">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#janitocli" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.cli
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#janitowebapp" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.web.app
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -953,6 +1140,170 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#core-modules-and-main-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Core Modules and Main Classes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Core Modules and Main Classes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#janitoagentconfig" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.agent.config
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#janitoagentconversation" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.agent.conversation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#janitoagentconversation_exceptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.agent.conversation_exceptions
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#janitoagentmessage_handler" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.agent.message_handler
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#janitoagentopenai_client" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.agent.openai_client
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#janitoagentprofile_manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.agent.profile_manager
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#janitoagentqueued_message_handler" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.agent.queued_message_handler
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#janitoagentrich_live" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.agent.rich_live
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#janitoagentrich_message_handler" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.agent.rich_message_handler
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#janitoagentruntime_config" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.agent.runtime_config
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#janitoagenttool_base" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.agent.tool_base
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tool-implementations-janitoagenttools" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tool Implementations (janito.agent.tools)
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cli-and-web-interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      CLI and Web Interface
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="CLI and Web Interface">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#janitocli" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.cli
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#janitowebapp" class="md-nav__link">
+    <span class="md-ellipsis">
+      janito.web.app
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -970,128 +1321,93 @@
   
 
 
-<h1 id="tools-reference">🧰 Tools Reference</h1>
-<p>Janito uses these tools automatically based on your prompt and context. This table is for transparency and to help you understand what the agent can do.</p>
-<table>
-<thead>
-<tr>
-<th>🛠️ Tool</th>
-<th>📝 Description</th>
-<th>🗝️ Key Arguments</th>
-<th>🔁 Returns</th>
-<th>🗒️ Notes</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>create_file</strong></td>
-<td>Create a new file with content. Fails if file exists.</td>
-<td><code>path</code> (str): file path<br><code>content</code> (str): file content<br><code>backup</code> (bool, optional)</td>
-<td>Success or error message</td>
-<td>Will NOT overwrite existing files unless backup is specified.</td>
-</tr>
-<tr>
-<td><strong>replace_file</strong></td>
-<td>Overwrite or create a file with new content.</td>
-<td><code>path</code> (str): file path<br><code>content</code> (str): file content<br><code>backup</code> (bool, optional)</td>
-<td>Success message</td>
-<td>Creates file if it does not exist.</td>
-</tr>
-<tr>
-<td><strong>fetch_url</strong></td>
-<td>Fetch and extract text from a web page.</td>
-<td><code>url</code> (str): web page URL<br><code>search_strings</code> (list of str, optional)</td>
-<td>Extracted text or warning</td>
-<td>Useful for research or referencing online resources.</td>
-</tr>
-<tr>
-<td><strong>run_bash_command</strong></td>
-<td>Run a bash command and capture output.</td>
-<td><code>command</code> (str): bash command<br><code>timeout</code> (int, optional)<br><code>require_confirmation</code> (bool, opt.)</td>
-<td>File paths and line counts for output</td>
-<td>Requires bash (e.g., WSL or Git Bash on Windows). Use with caution.</td>
-</tr>
-<tr>
-<td><strong>find_files</strong></td>
-<td>Search for files matching a pattern.</td>
-<td><code>directories</code> (list)<br><code>pattern</code> (str)<br><code>recursive</code> (bool, optional)</td>
-<td>List of matching file paths</td>
-<td>Respects .gitignore.</td>
-</tr>
-<tr>
-<td><strong>get_file_outline</strong></td>
-<td>Get outline of a file's structure (classes, functions, etc.).</td>
-<td><code>file_path</code> (str)</td>
-<td>Outline summary</td>
-<td>Useful for code navigation and analysis.</td>
-</tr>
-<tr>
-<td><strong>get_lines</strong></td>
-<td>Read lines or full content from a file.</td>
-<td><code>file_path</code> (str)<br><code>from_line</code> (int, optional)<br><code>to_line</code> (int, optional)</td>
-<td>File content</td>
-<td>Specify line range or omit for full file.</td>
-</tr>
-<tr>
-<td><strong>move_file</strong></td>
-<td>Move a file to a new location.</td>
-<td><code>src_path</code> (str)<br><code>dest_path</code> (str)<br><code>overwrite</code> (bool, optional)<br><code>backup</code> (bool, optional)</td>
-<td>Success or error message</td>
-<td>Can create backup before moving.</td>
-</tr>
-<tr>
-<td><strong>remove_file</strong></td>
-<td>Remove a file.</td>
-<td><code>file_path</code> (str)<br><code>backup</code> (bool, optional)</td>
-<td>Success or error message</td>
-<td>Can create backup before removing.</td>
-</tr>
-<tr>
-<td><strong>remove_directory</strong></td>
-<td>Remove a directory (optionally recursively).</td>
-<td><code>directory</code> (str)<br><code>recursive</code> (bool, optional)<br><code>backup</code> (bool, optional)</td>
-<td>Success or error message</td>
-<td>Use recursive for non-empty dirs.</td>
-</tr>
-<tr>
-<td><strong>replace_text_in_file</strong></td>
-<td>Replace exact text in a file.</td>
-<td><code>file_path</code> (str)<br><code>search_text</code> (str)<br><code>replacement_text</code> (str)<br><code>replace_all</code> (bool, opt.)</td>
-<td>Success or warning message</td>
-<td>Can replace all or first occurrence.</td>
-</tr>
-<tr>
-<td><strong>py_compile_file</strong></td>
-<td>Validate a Python file by compiling it.</td>
-<td><code>file_path</code> (str)</td>
-<td>Compilation status message</td>
-<td>Checks for syntax errors.</td>
-</tr>
-<tr>
-<td><strong>run_python_command</strong></td>
-<td>Execute Python code in a subprocess and capture output.</td>
-<td><code>code</code> (str)<br><code>timeout</code> (int, optional)</td>
-<td>Output or file paths for output</td>
-<td>Useful for automation and testing.</td>
-</tr>
-<tr>
-<td><strong>search_files</strong></td>
-<td>Search for a text pattern in files.</td>
-<td><code>directories</code> (list)<br><code>pattern</code> (str)<br><code>recursive</code> (bool, optional)</td>
-<td>Matching lines from files</td>
-<td>Respects .gitignore.</td>
-</tr>
-<tr>
-<td><strong>ask_user</strong></td>
-<td>Request clarification or input from the user interactively.</td>
-<td><code>question</code> (str)</td>
-<td>User response as a string</td>
-<td>Used when agent needs explicit user input.</td>
-</tr>
-</tbody>
-</table>
+<h1 id="api-reference">API Reference</h1>
+<p>Welcome to the API reference for this project. This document provides an overview of the main classes and their locations within the codebase. Use this as a starting point for understanding and extending the core functionality.</p>
 <hr />
-<p>For more details, see the codebase or tool docstrings.</p>
+<h2 id="core-modules-and-main-classes">Core Modules and Main Classes</h2>
+<h3 id="janitoagentconfig">janito.agent.config</h3>
+<ul>
+<li><strong>SingletonMeta</strong>: Metaclass for singleton pattern.</li>
+<li><strong>BaseConfig</strong>: Base configuration class.</li>
+<li><strong>FileConfig</strong>: File-based configuration.</li>
+<li><strong>EffectiveConfig</strong>: Represents the effective configuration.</li>
+</ul>
+<h3 id="janitoagentconversation">janito.agent.conversation</h3>
+<ul>
+<li><strong>ConversationHandler</strong>: Manages conversation state and flow.</li>
+</ul>
+<h3 id="janitoagentconversation_exceptions">janito.agent.conversation_exceptions</h3>
+<ul>
+<li><strong>MaxRoundsExceededError</strong>: Raised when conversation round limit is exceeded.</li>
+<li><strong>EmptyResponseError</strong>: Raised when no response is generated.</li>
+<li><strong>ProviderError</strong>: Raised for provider-specific errors.</li>
+</ul>
+<h3 id="janitoagentmessage_handler">janito.agent.message_handler</h3>
+<ul>
+<li><strong>QueueMessageHandler</strong>: Handles message queuing.</li>
+</ul>
+<h3 id="janitoagentopenai_client">janito.agent.openai_client</h3>
+<ul>
+<li><strong>Agent</strong>: Main agent class for OpenAI integration.</li>
+</ul>
+<h3 id="janitoagentprofile_manager">janito.agent.profile_manager</h3>
+<ul>
+<li><strong>AgentProfileManager</strong>: Manages agent profiles.</li>
+</ul>
+<h3 id="janitoagentqueued_message_handler">janito.agent.queued_message_handler</h3>
+<ul>
+<li><strong>QueuedMessageHandler</strong>: Handles queued messages.</li>
+</ul>
+<h3 id="janitoagentrich_live">janito.agent.rich_live</h3>
+<ul>
+<li><strong>LiveMarkdownDisplay</strong>: Displays live markdown output.</li>
+</ul>
+<h3 id="janitoagentrich_message_handler">janito.agent.rich_message_handler</h3>
+<ul>
+<li><strong>RichMessageHandler</strong>: Handles rich message formatting.</li>
+</ul>
+<h3 id="janitoagentruntime_config">janito.agent.runtime_config</h3>
+<ul>
+<li><strong>RuntimeConfig</strong>: Runtime configuration derived from BaseConfig.</li>
+<li><strong>UnifiedConfig</strong>: Unified configuration interface.</li>
+</ul>
+<h3 id="janitoagenttool_base">janito.agent.tool_base</h3>
+<ul>
+<li><strong>ToolBase</strong>: Abstract base class for all tools.</li>
+</ul>
+<hr />
+<h2 id="tool-implementations-janitoagenttools">Tool Implementations (janito.agent.tools)</h2>
+<p>Each tool inherits from <code>ToolBase</code> and implements a specific function:
+- <strong>AskUserTool</strong>
+- <strong>CreateDirectoryTool</strong>
+- <strong>CreateFileTool</strong>
+- <strong>FetchUrlTool</strong>
+- <strong>FindFilesTool</strong>
+- <strong>GetFileOutlineTool</strong>
+- <strong>GetLinesTool</strong>
+- <strong>StoreMemoryTool</strong>
+- <strong>RetrieveMemoryTool</strong>
+- <strong>MoveFileTool</strong>
+- <strong>PyCompileFileTool</strong>
+- <strong>RemoveDirectoryTool</strong>
+- <strong>RemoveFileTool</strong>
+- <strong>ReplaceFileTool</strong>
+- <strong>ReplaceTextInFileTool</strong>
+- <strong>RunBashCommandTool</strong>
+- <strong>RunPythonCommandTool</strong>
+- <strong>SearchFilesTool</strong></p>
+<hr />
+<h2 id="cli-and-web-interface">CLI and Web Interface</h2>
+<h3 id="janitocli">janito.cli</h3>
+<ul>
+<li>CLI entry points and utilities for command-line usage.</li>
+</ul>
+<h3 id="janitowebapp">janito.web.app</h3>
+<ul>
+<li>Flask web application entry point.</li>
+</ul>
+<hr />
+<p>For detailed class and method documentation, see the source code or future expanded API docs.</p>
 
 
 
