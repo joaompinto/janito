@@ -8,13 +8,13 @@
       
       
       
-        <link rel="canonical" href="https://joaompinto.github.io/janito/meta/developer_toolchain/">
+        <link rel="canonical" href="https://joaompinto.github.io/janito/guides/prompt_profiles/">
       
       
-        <link rel="prev" href="../../guides/tools_developer_guide/">
+        <link rel="prev" href="../terminal_shell/">
       
       
-        <link rel="next" href="../../supported-models/">
+        <link rel="next" href="../developing/">
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
@@ -22,7 +22,7 @@
     
     
       
-        <title>Developer Toolchain Guide - Janito Documentation</title>
+        <title>Prompt Profiles & Styles - Janito Documentation</title>
       
     
     
@@ -74,7 +74,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#developer-toolchain-guide" class="md-skip">
+        <a href="#janito-system-prompt-profiles-jinja2" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +110,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Developer Toolchain Guide
+              Prompt Profiles & Styles
             
           </span>
         </div>
@@ -278,7 +278,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/installation/" class="md-nav__link">
+      <a href="../installation/" class="md-nav__link">
         
   
   
@@ -297,18 +297,20 @@
       
   
   
+    
   
   
+  
     
     
     
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
           <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
@@ -324,7 +326,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             Using Janito
@@ -338,7 +340,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/using/" class="md-nav__link">
+      <a href="../using/" class="md-nav__link">
         
   
   
@@ -361,7 +363,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/using_tools/" class="md-nav__link">
+      <a href="../using_tools/" class="md-nav__link">
         
   
   
@@ -384,128 +386,12 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guides/terminal_shell/" class="md-nav__link">
+      <a href="../terminal_shell/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     Terminal Shell
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../guides/prompt_profiles/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Prompt Profiles & Styles
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-    
-  
-  
-  
-    
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
-        
-          
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
-            
-  
-  
-  <span class="md-ellipsis">
-    Developing & Extending
-    
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_4">
-            <span class="md-nav__icon md-icon"></span>
-            Developing & Extending
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../guides/developing/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Developer Guide
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../guides/tools_developer_guide/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Tools Developer Guide
     
   </span>
   
@@ -537,7 +423,7 @@
   
   
   <span class="md-ellipsis">
-    Developer Toolchain Guide
+    Prompt Profiles & Styles
     
   </span>
   
@@ -550,7 +436,7 @@
   
   
   <span class="md-ellipsis">
-    Developer Toolchain Guide
+    Prompt Profiles & Styles
     
   </span>
   
@@ -573,37 +459,64 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#code-style-linting-and-pre-commit-hooks" class="md-nav__link">
+  <a href="#format" class="md-nav__link">
     <span class="md-ellipsis">
-      Code Style, Linting, and Pre-commit Hooks
+      Format
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Code Style, Linting, and Pre-commit Hooks">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Structure
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inheritance-dynamic-composition" class="md-nav__link">
+    <span class="md-ellipsis">
+      Inheritance &amp; Dynamic Composition
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#location" class="md-nav__link">
+    <span class="md-ellipsis">
+      Location
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#available-profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      Available Profiles
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Available Profiles">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#setup" class="md-nav__link">
+  <a href="#communication-styles" class="md-nav__link">
     <span class="md-ellipsis">
-      Setup
+      Communication Styles
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
+  <a href="#operational-styles" class="md-nav__link">
     <span class="md-ellipsis">
-      Usage
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#notes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Notes
+      Operational Styles
     </span>
   </a>
   
@@ -618,6 +531,120 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Developing & Extending
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Developing & Extending
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../developing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Developer Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools_developer_guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tools Developer Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../meta/developer_toolchain/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Developer Toolchain Guide
+    
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -1091,37 +1118,64 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#code-style-linting-and-pre-commit-hooks" class="md-nav__link">
+  <a href="#format" class="md-nav__link">
     <span class="md-ellipsis">
-      Code Style, Linting, and Pre-commit Hooks
+      Format
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Code Style, Linting, and Pre-commit Hooks">
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#structure" class="md-nav__link">
+    <span class="md-ellipsis">
+      Structure
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inheritance-dynamic-composition" class="md-nav__link">
+    <span class="md-ellipsis">
+      Inheritance &amp; Dynamic Composition
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#location" class="md-nav__link">
+    <span class="md-ellipsis">
+      Location
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#available-profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      Available Profiles
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Available Profiles">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#setup" class="md-nav__link">
+  <a href="#communication-styles" class="md-nav__link">
     <span class="md-ellipsis">
-      Setup
+      Communication Styles
     </span>
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
+  <a href="#operational-styles" class="md-nav__link">
     <span class="md-ellipsis">
-      Usage
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#notes" class="md-nav__link">
-    <span class="md-ellipsis">
-      Notes
+      Operational Styles
     </span>
   </a>
   
@@ -1151,39 +1205,103 @@
   
 
 
-<h1 id="developer-toolchain-guide">Developer Toolchain Guide</h1>
-<p>For tool development, see the <a href="../../guides/tools_developer_guide/">Tools Developer Guide</a>.</p>
-<h2 id="code-style-linting-and-pre-commit-hooks">Code Style, Linting, and Pre-commit Hooks</h2>
-<p>This project uses <a href="https://pre-commit.com/">pre-commit</a> to enforce code style and linting automatically using <a href="https://black.readthedocs.io/en/stable/">Black</a> (formatter) and <a href="https://docs.astral.sh/ruff/">Ruff</a> (linter).</p>
-<h3 id="setup">Setup</h3>
-<ol>
-<li>Install pre-commit if you haven't already:</li>
-</ol>
-<div class="codehilite"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>pre-commit
+<h1 id="janito-system-prompt-profiles-jinja2">Janito System Prompt Profiles (Jinja2)</h1>
+<p>Janito now uses Jinja2 TXT files for all system prompt profiles and agent instructions. This replaces the previous Jinja2 template system.</p>
+<h2 id="format">Format</h2>
+<ul>
+<li>All prompt profiles are written in Jinja2 TXT (<code>.txt.j2</code>) files.</li>
+<li>Profiles are modular, supporting reusable fragments for operational and communication profiles.</li>
+</ul>
+<h2 id="structure">Structure</h2>
+<p>Profiles now support two main sections:
+- <strong>Operational Styles:</strong> How the agent approaches tasks and operations.
+- <strong>Communication Styles:</strong> How the agent interacts and communicates with users.</p>
+<p>Fragments for these sections are defined in:
+- <code>operational_profile_*.txt.j2</code>
+- <code>communication_profile_*.txt.j2</code></p>
+<p>Profiles are composed dynamically: the profile manager selects the operational and communication profile fragments based on the profile name (e.g., <code>technical-concise</code>).</p>
+<h2 id="inheritance-dynamic-composition">Inheritance &amp; Dynamic Composition</h2>
+<ul>
+<li>Only one base template is needed: <code>system_prompt_template_base.txt.j2</code>.</li>
+<li>The base template includes profile fragments dynamically using variables:</li>
+</ul>
+<div class="codehilite"><pre><span></span><code><span class="cp">{%</span> <span class="k">block</span> <span class="nv">operational_profiles</span> <span class="cp">%}</span>
+<span class="x">    </span><span class="cp">{%</span> <span class="k">include</span> <span class="nv">operational_profile_fragment</span> <span class="cp">%}</span>
+<span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
+
+<span class="cp">{%</span> <span class="k">block</span> <span class="nv">communication_profiles</span> <span class="cp">%}</span>
+<span class="x">    </span><span class="cp">{%</span> <span class="k">include</span> <span class="nv">communication_profile_fragment</span> <span class="cp">%}</span>
+<span class="cp">{%</span> <span class="k">endblock</span> <span class="cp">%}</span>
 </code></pre></div>
 
-<ol>
-<li>Install the hooks:</li>
-</ol>
-<div class="codehilite"><pre><span></span><code>pre-commit<span class="w"> </span>install
+<ul>
+<li>The profile manager sets <code>operational_profile_fragment</code> and <code>communication_profile_fragment</code> to the correct fragment filenames (e.g., <code>operational_profile_technical.txt.j2</code>, <code>communication_profile_concise.txt.j2</code>).</li>
+</ul>
+<h2 id="location">Location</h2>
+<p>Prompt profiles and fragments are stored in <code>janito/agent/templates/profiles/</code>.</p>
+<h2 id="available-profiles">Available Profiles</h2>
+<p>Profiles are composed by combining a communication style and an operational style:</p>
+<div class="codehilite"><pre><span></span><code>&lt;communication&gt;-&lt;operational&gt;
 </code></pre></div>
 
-<h3 id="usage">Usage</h3>
-<ul>
-<li>Hooks will run automatically on <code>git commit</code>.</li>
-<li>To manually check all files:</li>
-</ul>
-<div class="codehilite"><pre><span></span><code>pre-commit<span class="w"> </span>run<span class="w"> </span>--all-files
-</code></pre></div>
-
-<ul>
-<li>If any issues are found, pre-commit will attempt to fix them or display errors to resolve.</li>
-</ul>
-<h3 id="notes">Notes</h3>
-<ul>
-<li>Always run the hooks before pushing code to ensure consistent style and linting.</li>
-<li>See <code>.pre-commit-config.yaml</code> for configuration details.</li>
-</ul>
+<p>For example: <code>concise-technical</code>, <code>friendly-minimal</code>, <code>formal-default</code>, etc.</p>
+<h3 id="communication-styles">Communication Styles</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>concise</strong> ✂️</td>
+<td>Uses brief, direct, and actionable language.<br>Avoids unnecessary elaboration.</td>
+</tr>
+<tr>
+<td><strong>formal</strong> 🏛️</td>
+<td>Maintains a professional, neutral, and precise tone.<br>Avoids colloquialisms.</td>
+</tr>
+<tr>
+<td><strong>friendly</strong> 😊</td>
+<td>Uses approachable, positive, and encouraging language.<br>Offers help and suggestions.</td>
+</tr>
+<tr>
+<td><strong>inquisitive</strong> ❓</td>
+<td>Frequently asks clarifying questions.<br>Encourages user input and checks for understanding.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="operational-styles">Operational Styles</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>default</strong> ⚖️</td>
+<td>Follows standard procedures, balances safety and efficiency.<br>Cites relevant files and lines in responses.</td>
+</tr>
+<tr>
+<td><strong>exploratory</strong> 🔬</td>
+<td>Encourages hypothesis-driven exploration.<br>Logs assumptions and documents findings.</td>
+</tr>
+<tr>
+<td><strong>minimal</strong> 🧹</td>
+<td>Performs only essential steps.<br>Avoids unnecessary checks or verbosity.</td>
+</tr>
+<tr>
+<td><strong>technical</strong> 🛠️</td>
+<td>Prioritizes validation and explicit error handling.<br>Maintains traceability and documents all actions.<br>Performs detailed technical workflow steps.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><em>Update any custom prompt profiles to use the new dynamic fragment structure.</em></p>
+<p><em>See the profile fragments in <code>janito/agent/templates/profiles/</code> for reference.</em></p>
 <hr />
 <p><em>generated by janito.dev</em></p>
 
