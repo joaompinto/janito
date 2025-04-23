@@ -2,7 +2,7 @@
 
 This guide explains how to add a new tool (functionality) to the project so it can be exposed to the agent and OpenAI-compatible APIs.
 
-For a list of all built-in tools and their usage, see the [Tools Reference](../reference/tools-reference.md).
+For a list of all built-in tools and their usage, see the [Tools Reference](../tools/tools-reference.md).
 For a technical overview of the system, see the Architecture Guide in the documentation navigation.
 
 ## Requirements
