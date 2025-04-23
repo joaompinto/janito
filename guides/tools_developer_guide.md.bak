@@ -82,7 +82,7 @@ See the Tools Reference page in the documentation navigation for a list of built
 
 - If `--system-file` is provided, the file's content is used as the system prompt (highest priority).
 - Otherwise, if `--system` or the config value is set, that string is used.
-- Otherwise, a default prompt is used from the template at `janito/agent/templates/system_prompt_template.j2`.
+- Otherwise, a default prompt is used from the template at `janito/agent/templates/prompt_prompt_template.j2`.
 
 ## Interactive Shell Config Commands
 
@@ -92,7 +92,7 @@ Within the interactive chat shell, you can use special commands:
 - `/config set global key=value` — Set a global config value
 - `/continue` — Restore the last saved conversation
 - `/reset` — Reset conversation history
-- `/system` — Show the current system prompt
+- `/prompt` — Show the current system prompt
 - `/help` — Show help message
 
 ## Summary
