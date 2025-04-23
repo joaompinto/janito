@@ -5,6 +5,7 @@ There are many tools for AI-powered code assistance and project automation. Here
 | Category | Name | Description | Link |
 |----------|------|-------------|------|
 | 🟢 Open Source CLI | aider | Fast, open-source GPT coding in your terminal. | [aider.chat](https://aider.chat) |
+| 🟢 Open Source CLI | RA.Aid | Autonomous software development agent with multi-step planning, research, and implementation. CLI-based, supports shell command execution, web research, and integration with aider. | [github.com/ai-christianson/RA.Aid](https://github.com/ai-christianson/RA.Aid) |
 | 🟢 Open Source CLI | OpenAI Codex CLI | Lightweight, open-source coding agent that runs in your terminal. | [github.com/openai/codex](https://github.com/openai/codex) |
 | 🟢 Open Source CLI | Continue | Open-source autopilot for software development. Integrates with VS Code and JetBrains, supports multiple models, and enables conversational coding and project-wide edits. | [continue.dev](https://continue.dev) |
 | 🟩 VS Code Extension | roo code | Open-source, model-agnostic AI coding assistant for VS Code. Supports multi-file edits, guarded command execution, and deep project context. | [roocode.com](https://roocode.com) |

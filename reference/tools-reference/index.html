@@ -521,6 +521,29 @@
   
   
     <li class="md-nav__item">
+      <a href="../../guides/code_generation_observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Code Generation Observability
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../meta/developer_toolchain/" class="md-nav__link">
         
   
@@ -975,7 +998,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../alternatives/" class="md-nav__link">
+      <a href="../../ALTERNATIVES/" class="md-nav__link">
         
   
   
@@ -1042,10 +1065,10 @@
 <tbody>
 <tr>
 <td><strong>create_file</strong></td>
-<td>Create a new file with content. Fails if file exists.</td>
-<td><code>path</code> (str): file path<br><code>content</code> (str): file content<br><code>backup</code> (bool, optional)</td>
+<td>Create a new file, or overwrite if specified.</td>
+<td><code>path</code> (str): file path<br><code>content</code> (str): file content<br><code>overwrite</code> (bool, optional)<br><code>backup</code> (bool, optional)</td>
 <td>Success or error message</td>
-<td>Will NOT overwrite existing files unless backup is specified.</td>
+<td>If <code>overwrite=True</code>, updates file if it exists. Can create backup before overwriting.</td>
 </tr>
 <tr>
 <td><strong>create_directory</strong></td>
@@ -1053,13 +1076,6 @@
 <td><code>path</code> (str): directory path<br><code>overwrite</code> (bool, optional)</td>
 <td>Success or error message</td>
 <td>Fails if directory exists unless overwrite is True.</td>
-</tr>
-<tr>
-<td><strong>replace_file</strong></td>
-<td>Overwrite or create a file with new content.</td>
-<td><code>path</code> (str): file path<br><code>content</code> (str): file content<br><code>backup</code> (bool, optional)</td>
-<td>Success message</td>
-<td>Creates file if it does not exist.</td>
 </tr>
 <tr>
 <td><strong>fetch_url</strong></td>
