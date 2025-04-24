@@ -91,7 +91,7 @@ Within the interactive chat shell, you can use special commands:
 - `/config set local key=value` — Set a local config value
 - `/config set global key=value` — Set a global config value
 - `/continue` — Restore the last saved conversation
-- `/reset` — Reset conversation history
+- `/start` — Reset conversation history
 - `/prompt` — Show the current system prompt
 - `/help` — Show help message
 

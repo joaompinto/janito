@@ -16,4 +16,4 @@ The following tools are listed for transparency and to help you understand how J
 
 ## 📖 Full Reference
 
-For a detailed list of all available tools and their options, see the [Tools Reference](../reference/tools-reference.md).
+For a detailed list of all available tools and their options, see the [Tools Reference](../tools/tools-reference.md).
