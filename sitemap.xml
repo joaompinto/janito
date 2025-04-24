@@ -2,194 +2,202 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://joaompinto.github.io/janito/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/ALTERNATIVES/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/supported-models/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/about/costs/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/about/vs_webchats/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/about/why/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/code_intelligence/agentic_frameworks_comparison/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/code_intelligence/code_generation_challenges/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/code_intelligence/code_generation_observability/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/code_intelligence/our_approach/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/guides/developing/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/guides/installation/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
-         <loc>https://joaompinto.github.io/janito/guides/prompt_engineering_condition_before_action/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <loc>https://joaompinto.github.io/janito/guides/one_shot_terminal/</loc>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/guides/prompt_profiles/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/guides/terminal_shell/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/guides/tools_developer_guide/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/guides/using/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/guides/using_tools/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
+    </url>
+    <url>
+         <loc>https://joaompinto.github.io/janito/guides/prompting/</loc>
+         <lastmod>2025-04-24</lastmod>
+    </url>
+    <url>
+         <loc>https://joaompinto.github.io/janito/guides/prompting/analysis_style/</loc>
+         <lastmod>2025-04-24</lastmod>
+    </url>
+    <url>
+         <loc>https://joaompinto.github.io/janito/guides/prompting/prompt_design_style/</loc>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/meta/developer_toolchain/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/reference/api/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/reference/architecture/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/reference/azure-openai/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/reference/cli-options/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/reference/configuration/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/reference/message-handler-model/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/reference/rich-message-handler/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/tools/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/tools/ask_user/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/tools/create_directory/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/tools/create_file/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/tools/fetch_url/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/tools/find_files/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/tools/get_file_outline/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/tools/get_lines/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/tools/move_file/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/tools/present_choices/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/tools/remove_directory/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/tools/remove_file/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/tools/replace_text_in_file/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/tools/retrieve_memory/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/tools/run_bash_command/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/tools/run_powershell_command/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/tools/run_python_command/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/tools/search_files/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/tools/search_text/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/tools/store_memory/</loc>
-         <lastmod>2025-04-23</lastmod>
-    </url>
-    <url>
-         <loc>https://joaompinto.github.io/janito/tools/tools-reference/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
     <url>
          <loc>https://joaompinto.github.io/janito/tools/validate_file_syntax/</loc>
-         <lastmod>2025-04-23</lastmod>
+         <lastmod>2025-04-24</lastmod>
     </url>
 </urlset>

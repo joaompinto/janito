@@ -51,6 +51,27 @@ Each of these helps set context and prevent errors—essential in instructive wr
 
 ---
 
+### Qualifiers, Determinism, and LLM Behavior
+
+#### Are "Always" and "Never" Conditions?
+
+Words like "Always" and "Never" are absolute qualifiers, not true conditions. While they may appear to set clear, deterministic boundaries, their interpretation by large language models (LLMs) is not guaranteed to be consistent. LLMs operate probabilistically, so even instructions with absolute qualifiers can yield unexpected or inconsistent results.
+
+#### Are Qualifiers Ambiguous?
+
+Qualifiers such as "if possible," "always," or "never" can introduce ambiguity, especially in the context of LLMs. While these words are often clear to humans, LLMs may interpret or prioritize them differently depending on context, training data, and prompt structure. This means that even deterministic-sounding qualifiers may not produce deterministic outcomes.
+
+#### Preferred Strategies for Prompt Engineering
+
+Given the non-deterministic, probabilistic nature of LLMs, it is advisable to:
+- Prefer explicit, context-setting conditions (e.g., "Before you do X, ensure Y") over absolute or vague modifiers.
+- Avoid relying solely on words like "always" or "never" to enforce strict behavior.
+- Structure prompts to minimize ambiguity and maximize clarity, aligning with the sequential logic that LLMs are most likely to follow reliably.
+
+This approach reduces the risk of unexpected results and improves the reliability of LLM outputs.
+
+---
+
 ### Conclusion
 
 Whether you're writing documentation, crafting conversational prompts for AI, or giving instructions, placing conditions before actions is an effective way to convey clear, sequential logic. Not only does this habit align with natural linguistic expectations, but it also optimizes your communication for language models trained on human language patterns. In both human communication and AI prompting, condition before action is a foundational principle that promotes understanding and successful outcomes.

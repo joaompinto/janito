@@ -9,7 +9,7 @@ Janito uses these tools automatically based on your prompt and context. This tab
 | **fetch_url**         | Fetch and extract text from a web page.                          | `url` (str): web page URL<br>`search_strings` (list of str, optional)                               | Extracted text or warning                 | Useful for research or referencing online resources.                                    |
 | **run_bash_command**  | Run a bash command and capture output.                           | `command` (str): bash command<br>`timeout` (int, optional)<br>`require_confirmation` (bool, opt.)   | File paths and line counts for output     | Requires bash (e.g., WSL or Git Bash on Windows). Use with caution.                     |
 | **find_files**        | Search for files matching a pattern.                             | `directories` (list)<br>`pattern` (str)<br>`recursive` (bool, optional)                            | List of matching file paths               | Respects .gitignore.                                                                  |
-| **outline_file**  | Get outline of a file's structure (classes, functions, etc.).    | `file_path` (str)                                                                                   | Outline summary                           | Useful for code navigation and analysis.                                               |
+| **get_file_outline**  | Get outline of a file's structure (classes, functions, etc.).    | `file_path` (str)                                                                                   | Outline summary                           | Useful for code navigation and analysis.                                               |
 | **get_lines**         | Read lines or full content from a file.                          | `file_path` (str)<br>`from_line` (int, optional)<br>`to_line` (int, optional)                      | File content                              | Specify line range or omit for full file.                                              |
 | **move_file**         | Move a file to a new location.                                   | `src_path` (str)<br>`dest_path` (str)<br>`overwrite` (bool, optional)<br>`backup` (bool, optional) | Success or error message                  | Can create backup before moving.                                                       |
 | **remove_file**       | Remove a file.                                                   | `file_path` (str)<br>`backup` (bool, optional)                                                     | Success or error message                  | Can create backup before removing.                                                     |
@@ -19,7 +19,37 @@ Janito uses these tools automatically based on your prompt and context. This tab
 | **run_python_command**| Execute Python code in a subprocess and capture output.          | `code` (str)<br>`timeout` (int, optional)                                                          | Output or file paths for output           | Useful for automation and testing.                                                     |
 | **search_files**      | Search for a text pattern in files.                              | `directories` (list)<br>`pattern` (str)<br>`recursive` (bool, optional)                            | Matching lines from files                 | Respects .gitignore.                                                                  |
 | **ask_user**          | Request clarification or input from the user interactively.      | `question` (str)                                                                                   | User response as a string                 | Used when agent needs explicit user input.                                              |
-| **memory**            | Store and retrieve values for later use.                         | `key` (str): identifier<br>`value` (str, optional): value to store                                 | Success message or stored value           | Used for session memory and recall.                                                    |
+| **present_choices**   | Present a list of options to the user and return the selection.  | `prompt` (str)<br>`choices` (list)<br>`multi_select` (bool, optional)                              | Selected option(s)                        | Useful for interactive workflows.                                                      |
+| **retrieve_memory**   | Retrieve a value previously stored using a key.                  | `key` (str)                                                                                        | Stored value or warning                   | Used for session memory and recall.                                                    |
+| **store_memory**      | Store a value for later retrieval using a key.                   | `key` (str)<br>`value` (str)                                                                        | Success message or error                  | Used for session memory and recall.                                                    |
+| **run_powershell_command** | Run a PowerShell command and capture output.                  | `command` (str)<br>`timeout` (int, optional)<br>`require_confirmation` (bool, optional)            | Output or file paths for output           | Windows only.                                                                         |
+
+---
+
+## Individual Tool Documentation
+
+| Tool | Purpose |
+|------|---------|
+| [Ask User](ask_user.md) | Interactive user input |
+| [Create Directory](create_directory.md) | Create a new directory |
+| [Create File](create_file.md) | Create or overwrite a file |
+| [Fetch URL](fetch_url.md) | Fetch and extract web page text |
+| [Find Files](find_files.md) | Search for files matching a pattern |
+| [Get File Outline](get_file_outline.md) | Outline of file structure |
+| [Get Lines](get_lines.md) | Read lines or full file content |
+| [Move File](move_file.md) | Move a file |
+| [Present Choices](present_choices.md) | Present options to user |
+| [Remove Directory](remove_directory.md) | Remove a directory |
+| [Remove File](remove_file.md) | Remove a file |
+| [Replace Text In File](replace_text_in_file.md) | Replace exact text in a file |
+| [Retrieve Memory](retrieve_memory.md) | Retrieve stored value |
+| [Run Bash Command](run_bash_command.md) | Run a bash command |
+| [Run PowerShell Command](run_powershell_command.md) | Run a PowerShell command |
+| [Run Python Command](run_python_command.md) | Run Python code |
+| [Search Files](search_files.md) | Search for text in files |
+| [Search Text](search_text.md) | Search for text (deprecated/alias) |
+| [Store Memory](store_memory.md) | Store a value for later |
+| [Validate File Syntax](validate_file_syntax.md) | Validate file syntax |
 
 ---
 
