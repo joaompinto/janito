@@ -3,13 +3,10 @@
 **Description:**
 Retrieve a value previously stored using a key. Use this tool to recall information remembered earlier in the session.
 
-**Parameters:**
-- `key` (str): The identifier for the value to retrieve.
-
-**Returns:**
-- The stored value, or a warning message if not found. Examples:
-  - "🔎 Retrieved value for key: 'foo': bar"
-  - "⚠️ No value found for key: 'notfound'"
+| Argument   | Type | Description |
+|------------|------|-------------|
+| key        | str  | The identifier for the value to retrieve. |
+| **Returns**| str  | The stored value, or a warning message if not found. |
 
 **Example usage:**
 retrieve_memory(key="session_id")

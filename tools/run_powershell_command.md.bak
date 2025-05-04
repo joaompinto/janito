@@ -3,15 +3,13 @@
 **Description:**
 Execute a non-interactive command using the PowerShell shell and capture live output. Uses 'powershell.exe' (Windows) or 'pwsh' (other platforms).
 
-**Parameters:**
-- `command` (str): The PowerShell command to execute.
-- `timeout` (int, optional): Timeout in seconds for the command. Defaults to 60.
-- `require_confirmation` (bool, optional): If True, require user confirmation before running. Defaults to False.
-- `interactive` (bool, optional): If True, warns that the command may require user interaction. Defaults to False.
-
-**Returns:**
-- Output and status message, or file paths/line counts if output is large.
-- If command is empty: "Warning: Empty command provided. Operation skipped."
+| Argument   | Type | Description |
+|------------|------|-------------|
+| command    | str  | The PowerShell command to execute. |
+| timeout    | int, optional | Timeout in seconds for the command. Defaults to 60. |
+| require_confirmation | bool, optional | If True, require user confirmation before running. Defaults to False. |
+| interactive | bool, optional | If True, warns that the command may require user interaction. Defaults to False. |
+| **Returns**| str  | Output and status message, or file paths/line counts if output is large, or warning if command is empty. |
 
 **Example usage:**
 run_powershell_command(command="Get-Process", timeout=30)

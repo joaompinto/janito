@@ -2,16 +2,16 @@
 
 This guide explains how to add a new tool (functionality) to the project so it can be exposed to the agent and OpenAI-compatible APIs.
 
-For a list of all built-in tools and their usage, see the [Tools Reference](../tools/tools-reference.md).
+For a list of all built-in tools and their usage, see the [Tools Reference](../tools/index.md).
 For a technical overview of the system, see the Architecture Guide in the documentation navigation.
 
 ## Requirements
 
 - **Class-based tools:** All tools must be implemented as classes inheriting from `ToolBase` (see `janito/agent/tool_base.py`).
-- **Type hints:** All parameters to the `call` method must have Python type hints.
+- **Type hints:** All parameters to the `run` method must have Python type hints.
 - **Docstrings:**
   - The tool class must have a class-level docstring summarizing its purpose and behavior. This is user-facing.
-  - The `call` method must have a Google-style docstring with a description for each parameter under an `Args:` section.
+  - The `run` method must have a Google-style docstring with a description for each parameter under an `Args:` section.
 - **Parameter descriptions:** Every parameter must have a corresponding description in the docstring. If any are missing, registration will fail.
 
 ## Example: Creating a Tool
@@ -26,7 +26,7 @@ class MyTool(ToolBase):
     Processes a file a given number of times.
     """
 
-    def call(self, filename: str, count: int) -> None:
+    def run(self, filename: str, count: int) -> None:
         """
         Processes the specified file repeatedly.
 
@@ -41,7 +41,7 @@ class MyTool(ToolBase):
 
 1. **Define your tool as a class** inheriting from `ToolBase`.
 2. **Add a class-level docstring** summarizing the tool's purpose (user-facing).
-3. **Implement the `call` method** with type hints and a Google-style docstring, including an `Args:` section describing every parameter.
+3. **Implement the `run` method** with type hints and a Google-style docstring, including an `Args:` section describing every parameter.
 4. **Register your tool** by decorating the class with `@register_tool` from `janito.agent.tool_registry`.
 5. **Document your tool**: Update `janito/agent/tools/README.md` with a short description and usage for your new tool.
 
@@ -76,7 +76,7 @@ See the Tools Reference page in the documentation navigation for a list of built
 
 ## Tool Call Limits
 
-- You can use `--max-tools` to limit the total number of tool calls allowed in a chat session. If the limit is reached, further tool calls will be prevented.
+- You can use `--max-tools` to limit the total number of tool runs allowed in a chat session. If the limit is reached, further tool runs will be prevented.
 
 ## System Prompt Precedence
 
@@ -98,8 +98,8 @@ Within the interactive chat shell, you can use special commands:
 ## Summary
 
 - Always implement tools as classes inheriting from `ToolBase`.
-- Provide type hints and parameter descriptions for the `call` method.
-- Use Google-style docstrings for both the class and the `call` method.
+- Provide type hints and parameter descriptions for the `run` method.
+- Use Google-style docstrings for both the class and the `run` method.
 - Registration will fail if any parameter is undocumented.
 - Update the tools README after adding a new tool.
 

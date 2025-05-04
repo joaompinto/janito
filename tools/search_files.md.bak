@@ -3,14 +3,12 @@
 **Description:**
 Search for a text pattern in all files within a directory and return matching lines. Respects .gitignore.
 
-**Parameters:**
-- `directories` (list[str]): List of directories to search in.
-- `pattern` (str): Plain text substring to search for in files. (Not a regular expression or glob pattern.)
-- `recursive` (bool): Whether to search recursively in subdirectories. Defaults to True.
-
-**Returns:**
-- Matching lines from files as a newline-separated string, each formatted as 'filepath:lineno: line'.
-- If pattern is empty: "Warning: Empty search pattern provided. Operation skipped."
+| Argument     | Type           | Description |
+|--------------|----------------|-------------|
+| directories  | list[str]      | List of directories to search in. |
+| pattern      | str            | Plain text substring to search for in files. (Not a regular expression or glob pattern.) |
+| recursive    | bool           | Whether to search recursively in subdirectories. Defaults to True. |
+| **Returns**  | str            | Matching lines from files as a newline-separated string, or warning if pattern is empty. |
 
 **Example usage:**
 search_files(directories=["src"], pattern="def ", recursive=True)

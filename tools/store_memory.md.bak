@@ -3,14 +3,11 @@
 **Description:**
 Store a value for later retrieval using a key. Use this tool to remember information that may be useful in future steps or requests.
 
-**Parameters:**
-- `key` (str): The identifier for the value to store.
-- `value` (str): The value to store for later retrieval.
-
-**Returns:**
-- Status message indicating success or error. Examples:
-  - "✅ Stored value for key: 'foo'"
-  - "❗ Error storing value: ..."
+| Argument   | Type | Description |
+|------------|------|-------------|
+| key        | str  | The identifier for the value to store. |
+| value      | str  | The value to store for later retrieval. |
+| **Returns**| str  | Status message indicating success or error. |
 
 **Example usage:**
 store_memory(key="session_id", value="12345")

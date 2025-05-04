@@ -1,0 +1,5 @@
+import cairosvg
+
+# Convert SVG to PNG
+cairosvg.svg2png(url='happy-programmer.svg', write_to='happy-programmer.png')
+print('Conversion complete: happy-programmer.png')

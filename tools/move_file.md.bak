@@ -3,18 +3,13 @@
 **Description:**
 Move a file from src_path to dest_path.
 
-**Parameters:**
-- `src_path` (str): Source file path.
-- `dest_path` (str): Destination file path.
-- `overwrite` (bool, optional): Whether to overwrite if the destination exists. Defaults to False.
-- `backup` (bool, optional): If True, create a backup (.bak) of the destination before moving if it exists. Defaults to False.
-
-**Returns:**
-- Status message indicating the result. Examples:
-  - "✅ Successfully moved the file to ..."
-  - "❗ Source file ... does not exist."
-  - "❗ Path ... is not a file."
-  - "❗ Destination ... already exists (overwrite=False)"
+| Argument   | Type | Description |
+|------------|------|-------------|
+| src_path   | str  | Source file path. |
+| dest_path  | str  | Destination file path. |
+| overwrite  | bool, optional | Whether to overwrite if the destination exists. Defaults to False. |
+| backup     | bool, optional | If True, create a backup (.bak) of the destination before moving if it exists. Defaults to False. |
+| **Returns**| str  | Status message indicating the result, or error message. |
 
 **Example usage:**
 move_file(src_path="a.txt", dest_path="b.txt", overwrite=True)

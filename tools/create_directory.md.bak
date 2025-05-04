@@ -3,16 +3,11 @@
 **Description:**
 Create a new directory at the specified path.
 
-**Parameters:**
-- `path` (str): Path for the new directory.
-- `overwrite` (bool, optional): Whether to overwrite if the directory exists. Defaults to False.
-
-**Returns:**
-- Status message indicating the result. Examples:
-  - "✅ Successfully created the directory at ..."
-  - "❗ Cannot create directory: ..."
-  - "❌ Path ... exists and is not a directory."
-  - "❗ Directory ... already exists (overwrite=False)"
+| Argument   | Type    | Description                                   |
+|------------|---------|-----------------------------------------------|
+| path       | str     | Path for the new directory                    |
+| overwrite  | bool, optional | Overwrite if directory exists (default: False) |
+| **Returns**| str     | Status message indicating the result          |
 
 **Example usage:**
 create_directory(path="output/results", overwrite=False)

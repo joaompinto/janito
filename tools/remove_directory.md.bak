@@ -3,15 +3,12 @@
 **Description:**
 Remove a directory. If recursive=False and directory not empty, raises error.
 
-**Parameters:**
-- `directory` (str): Path to the directory to remove.
-- `recursive` (bool, optional): Remove recursively if True. Defaults to False.
-- `backup` (bool, optional): If True, create a backup (.bak.zip) before removing. Defaults to False.
-
-**Returns:**
-- Status message indicating result. Examples:
-  - "Directory removed: /path/to/dir"
-  - "Error removing directory: <error message>"
+| Argument   | Type | Description |
+|------------|------|-------------|
+| directory  | str  | Path to the directory to remove. |
+| recursive  | bool, optional | Remove recursively if True. Defaults to False. |
+| backup     | bool, optional | If True, create a backup (.bak.zip) before removing. Defaults to False. |
+| **Returns**| str  | Status message indicating result, or error message. |
 
 **Example usage:**
 remove_directory(directory="build/", recursive=True, backup=True)
