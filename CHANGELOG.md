@@ -8,11 +8,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased](https://github.com/joaompinto/janito/compare/v4.41.0...HEAD)
 
 Changes since `v4.41.0` (2026-09-16).
-
-## [v4.41.0](https://github.com/joaompinto/janito/compare/v4.40.0...v4.41.0) - 2026-09-16
-
-Changes since `v4.40.0` (2026-09-10).
-
-### Added
-
-- New built-in `atria` provider (`Atria-Dawn-Preview`, `https://api.atria-asi.ai/v1`, Responses default, stateless). Closes #146.
