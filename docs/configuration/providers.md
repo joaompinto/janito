@@ -34,6 +34,7 @@ The API type is selected per provider with `--set api-type=...` (see the
 | `zai` | Z.AI (GLM models) |
 | `xai` | xAI (Grok models) |
 | `anthropic` | Anthropic (Claude models) |
+| `atria` | Atria (Atria-Dawn-Preview) |
 | `openrouter` | OpenRouter (aggregator of many models) |
 
 !!! note
@@ -880,6 +881,44 @@ janito --provider anthropic --api-type Anthropic "Explain quantum computing"
 janito --set provider=anthropic --set model=claude-sonnet-5
 # Step 2: Store API key
 janito --set-api-key="your-anthropic-api-key" --provider anthropic
+# Step 3: Run prompt
+janito "Explain quantum computing"
+```
+
+## Atria
+
+Use Atria to access `Atria-Dawn-Preview` (256K context, text-only).
+
+> **Get an API key:** Visit the [Atria console](https://api.atria-asi.ai/docs) to create an API key (`ATRIA_API_KEY`).
+
+### Configuration
+
+```bash
+# Step 1: Set provider and model
+janito --set provider=atria --set model=Atria-Dawn-Preview
+# Step 2: Store API key
+janito --set-api-key="your-atria-api-key" --provider atria
+```
+
+### Popular Models
+
+| Model | Description |
+|-------|-------------|
+| `Atria-Dawn-Preview` | Research/coding/agent model, 256K context (default, built-in) |
+
+Model selection is restricted to the built-in models above.
+`janito --list-models` shows the accepted names.
+
+The Responses endpoint is stateless: janito re-sends the conversation
+history on every request.
+
+### Example
+
+```bash
+# Step 1: Set provider and model
+janito --set provider=atria --set model=Atria-Dawn-Preview
+# Step 2: Store API key
+janito --set-api-key="your-atria-api-key" --provider atria
 # Step 3: Run prompt
 janito "Explain quantum computing"
 ```

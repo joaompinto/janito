@@ -37,7 +37,7 @@ keys per provider **and** model (see the note below and
 
 | Option | Scope | Description | Default |
 |--------|-------|-------------|---------|
-| `provider` | flat | Provider name (`openai`, `google`, `custom`, `alibaba`, `deepseek`, `minimax`, `xiaomi`, `moonshot`, `zai`, `xai`, `anthropic`, `openrouter`) | `openai` |
+| `provider` | flat | Provider name (`openai`, `google`, `custom`, `alibaba`, `deepseek`, `minimax`, `xiaomi`, `moonshot`, `zai`, `xai`, `anthropic`, `atria`, `openrouter`) | `openai` |
 | `model` | per provider | Model name | provider's built-in default model |
 | `endpoint` | per provider | API endpoint URL (required for `custom` providers) | provider's built-in default |
 | `max-input-tokens` | per provider/model | Maximum input tokens (context window) | model built-in |

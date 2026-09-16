@@ -16,6 +16,7 @@ every CONFIG option (with example values).
 
 from .alibaba.config import PROVIDER_CONFIG as _ALIBABA_CONFIG
 from .anthropic.config import PROVIDER_CONFIG as _ANTHROPIC_CONFIG
+from .atria.config import PROVIDER_CONFIG as _ATRIA_CONFIG
 from .custom.config import CUSTOM_ENDPOINT_MARKER as CUSTOM_ENDPOINT_MARKER
 from .custom.config import PROVIDER_CONFIG as _CUSTOM_CONFIG
 from .deepseek.config import PROVIDER_CONFIG as _DEEPSEEK_CONFIG
@@ -45,6 +46,7 @@ _PROVIDER_CONFIGS: dict[str, dict] = {
     "deepseek": _DEEPSEEK_CONFIG,
     "xai": _XAI_CONFIG,
     "anthropic": _ANTHROPIC_CONFIG,
+    "atria": _ATRIA_CONFIG,
     # Aggregator provider: proxies many models behind a single
     # OpenAI-compatible endpoint.  Its built-in default model is the
     # "custom" placeholder (no usable default) -- the user must supply a

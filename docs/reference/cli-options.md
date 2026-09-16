@@ -265,7 +265,7 @@ Values stored in `~/.janito/config.json` via `--set`. Keys are scoped:
 
 | Key | Scope | Description | Default |
 |-----|-------|-------------|---------|
-| `provider` | flat | Provider name (`openai`, `google`, `custom`, `alibaba`, `deepseek`, `minimax`, `xiaomi`, `moonshot`, `zai`, `xai`, `anthropic`, `openrouter`) | `openai` |
+| `provider` | flat | Provider name (`openai`, `google`, `custom`, `alibaba`, `deepseek`, `minimax`, `xiaomi`, `moonshot`, `zai`, `xai`, `anthropic`, `atria`, `openrouter`) | `openai` |
 | `model` | provider-scoped | Model name | provider built-in default |
 | `endpoint` | provider-scoped | API endpoint URL (required for `custom`) | provider built-in default |
 | `max-input-tokens` | model-scoped | Maximum input tokens (context window) | model built-in |
