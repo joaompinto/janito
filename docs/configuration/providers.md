@@ -119,8 +119,8 @@ janito --config
 
 The GPT-5.x models support configurable reasoning depth via the
 OpenAI-compatible `reasoning_effort` parameter. The supported levels are
-`low`, `medium` and `high`; the built-in default is the lowest supported
-level (`low`).
+`low`, `medium` and `high`; the built-in default is the standard level
+(`medium`).
 
 ```bash
 # Override the reasoning depth for a single call
@@ -131,7 +131,7 @@ janito --provider openai --set reasoning-effort=medium
 ```
 
 Resolution order: `--reasoning-effort` > per-provider config value
-(`--set reasoning-effort=...`) > the model's own default level (`low` for the
+(`--set reasoning-effort=...`) > the model's own default level (`medium` for the
 GPT-5.x models).
 
 ## Google (Gemini)
@@ -293,7 +293,7 @@ Model selection is restricted to the built-in models above.
 Both Qwen models (`qwen3.8-max` and the default `qwen3.8-flash`) support
 configurable reasoning depth via the OpenAI-compatible `reasoning_effort`
 parameter. The supported levels are `low`, `medium` and `xhigh`; the
-built-in default is the lowest supported level (`low`).
+built-in default is the standard level (`medium`).
 
 ```bash
 # Override the reasoning depth for a single call (qwen3.8-max)
@@ -305,7 +305,7 @@ janito --provider alibaba --set reasoning-effort=medium
 ```
 
 Resolution order: `--reasoning-effort` > per-provider config value
-(`--set reasoning-effort=...`) > built-in default (`low` for the Qwen models).
+(`--set reasoning-effort=...`) > built-in default (`medium` for the Qwen models).
 
 ### Thinking Mode
 
@@ -640,9 +640,7 @@ janito --provider meta --set reasoning-effort=medium
 ```
 
 Resolution order: `--reasoning-effort` > per-provider config value
-(`--set reasoning-effort=...`) > the API's own default (Meta has not
-finalized its default effort, so janito declares none and the API's default
-applies).
+(`--set reasoning-effort=...`) > the built-in default (`medium`).
 
 ### Reasoning Summaries
 

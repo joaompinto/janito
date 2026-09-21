@@ -313,10 +313,10 @@ if pytest is not None:
         assert model_entry["responses_include"] == ["reasoning.encrypted_content"]
         assert get_endpoint_by_api_type("meta") is None
         # No built-in thinking/preserve_thinking flags; the built-in default
-        # reasoning effort is the lowest supported level (minimal).
+        # reasoning effort is the standard level (medium).
         assert "thinking" not in model_entry
         assert "preserve_thinking" not in model_entry
-        assert get_default_reasoning_effort_from_provider("meta") == "minimal"
+        assert get_default_reasoning_effort_from_provider("meta") == "medium"
         # The contributor tier ships the same model capabilities under a
         # separate model ID; only the pricing differs.
         contributor_entry = info["models"]["muse-spark-1.3-contributor"]
@@ -373,12 +373,12 @@ if pytest is not None:
         assert get_default_max_input_tokens_from_provider("google") == 1048576
         assert get_default_max_output_tokens_from_provider("google") == 65536
         # Gemini 3.x models reason by default; reasoning_effort maps to the
-        # model's thinking_level (low/medium/high, default low).
-        assert get_default_reasoning_effort_from_provider("google") == "low"
+        # model's thinking_level (low/medium/high, default medium).
+        assert get_default_reasoning_effort_from_provider("google") == "medium"
         # The built-in default lives under the single
         # "default_reasoning_effort" key (the old "reasoning_level" alias is
         # not supported).
-        assert model_entry["default_reasoning_effort"] == "low"
+        assert model_entry["default_reasoning_effort"] == "medium"
         assert "reasoning_level" not in model_entry
         supported = get_supported_reasoning_efforts_from_provider("google")
         assert supported is not None
@@ -415,20 +415,20 @@ if pytest is not None:
         # Both Alibaba Qwen models (the default qwen3.8-flash and the
         # flagship qwen3.8-max) declare configurable reasoning levels
         # (low/medium/xhigh per the QwenCloud API reference); the built-in
-        # default is the lowest supported level (low) for both.
-        assert get_default_reasoning_effort_from_provider("alibaba") == "low"
+        # default is the standard level (medium) for both.
+        assert get_default_reasoning_effort_from_provider("alibaba") == "medium"
         assert get_supported_reasoning_efforts_from_provider("alibaba") is not None
         assert [entry["effort"] for entry in get_supported_reasoning_efforts_from_provider("alibaba")] == [
             "low",
             "medium",
             "xhigh",
         ]
-        assert get_default_reasoning_effort_from_provider("alibaba", "qwen3.8-max") == "low"
+        assert get_default_reasoning_effort_from_provider("alibaba", "qwen3.8-max") == "medium"
         # The built-in default lives under the single
         # "default_reasoning_effort" key (the old "reasoning_level" alias is
         # not supported).
         qwen_entry = get_provider_config("alibaba")["models"]["qwen3.8-max"]
-        assert qwen_entry["default_reasoning_effort"] == "low"
+        assert qwen_entry["default_reasoning_effort"] == "medium"
         assert "reasoning_level" not in qwen_entry
         supported = get_supported_reasoning_efforts_from_provider("alibaba", "qwen3.8-max")
         assert supported is not None
@@ -464,12 +464,12 @@ if pytest is not None:
             assert "effort" in entry
             assert "description" in entry
         # Case-insensitive lookup works.
-        assert get_default_reasoning_effort_from_provider("Alibaba", "qwen3.8-max") == "low"
+        assert get_default_reasoning_effort_from_provider("Alibaba", "qwen3.8-max") == "medium"
         assert get_supported_reasoning_efforts_from_provider("DeepSeek") is not None
         assert get_supported_reasoning_efforts_from_provider("Moonshot") is not None
         # The OpenAI GPT models declare reasoning levels too
-        # (low/medium/high), with the lowest (low) as the built-in default.
-        assert get_default_reasoning_effort_from_provider("openai") == "low"
+        # (low/medium/high), with medium as the built-in default.
+        assert get_default_reasoning_effort_from_provider("openai") == "medium"
         assert get_supported_reasoning_efforts_from_provider("openai") is not None
         assert [entry["effort"] for entry in get_supported_reasoning_efforts_from_provider("openai")] == [
             "low",
@@ -481,8 +481,8 @@ if pytest is not None:
             assert "description" in entry
         # Meta's Muse Spark models declare reasoning levels too
         # (minimal/low/medium/high per the Meta Model API reasoning
-        # cookbook), with the lowest (minimal) as the built-in default.
-        assert get_default_reasoning_effort_from_provider("meta") == "minimal"
+        # cookbook), with medium as the built-in default.
+        assert get_default_reasoning_effort_from_provider("meta") == "medium"
         assert get_supported_reasoning_efforts_from_provider("meta") is not None
         assert [entry["effort"] for entry in get_supported_reasoning_efforts_from_provider("meta")] == [
             "minimal",

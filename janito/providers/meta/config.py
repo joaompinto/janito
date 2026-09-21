@@ -57,9 +57,9 @@ PROVIDER_CONFIG: dict = {
             # the accepted values run minimal < low < medium < high
             # (xhigh is accepted but maps to the same strength as high,
             # and the string "none" is not reliably available on the
-            # public endpoint yet).  The built-in default is the lowest
-            # supported level (minimal).
-            "default_reasoning_effort": "minimal",
+            # public endpoint yet).  The built-in default is the standard
+            # level (medium).
+            "default_reasoning_effort": "medium",
             "supported_reasoning_efforts": [
                 {
                     "effort": "minimal",
@@ -86,7 +86,7 @@ PROVIDER_CONFIG: dict = {
             # Same API-type surface, stateless Responses handling, context
             # window and reasoning efforts as the standard tier; only the
             # pricing differs (see janito/providers/meta/cost.py).  The
-            # built-in default is the lowest supported level (minimal),
+            # built-in default is the standard level (medium),
             # like the standard tier.
             "supported_api_types": ["Responses", "Completions"],
             "default_api_type": "Responses",
@@ -104,7 +104,7 @@ PROVIDER_CONFIG: dict = {
                 "Responses": [{"type": "web_search"}],
             },
             "max_input_tokens": 1048576,  # 1M (2**20)
-            "default_reasoning_effort": "minimal",
+            "default_reasoning_effort": "medium",
             "supported_reasoning_efforts": [
                 {
                     "effort": "minimal",

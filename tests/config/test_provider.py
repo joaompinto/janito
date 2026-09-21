@@ -31,9 +31,9 @@ if pytest is not None:
         assert p.name == "alibaba"
         assert p.default_model() == "qwen3.8-flash"
         # The default model (qwen3.8-flash) declares configurable reasoning
-        # levels (low/medium/xhigh) with the lowest (low) as the built-in
+        # levels (low/medium/xhigh) with medium as the built-in
         # default (see test_provider_config).
-        assert p.model_config().get("default_reasoning_effort") == "low"
+        assert p.model_config().get("default_reasoning_effort") == "medium"
         assert p.model_config().get("thinking", False) is True
         assert p.model_config().get("supported_api_types") == [
             "Completions",

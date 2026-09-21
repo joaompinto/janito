@@ -59,8 +59,8 @@ PROVIDER_CONFIG: dict = {
             # Gemini 3.x models reason by default and thinking cannot be
             # disabled for them.  Per the Gemini Flash reference,
             # reasoning_effort maps to the model's thinking_level, which
-            # accepts low/medium/high (default low).
-            "default_reasoning_effort": "low",
+            # accepts low/medium/high (default medium).
+            "default_reasoning_effort": "medium",
             "supported_reasoning_efforts": [
                 {
                     "effort": "low",
@@ -90,8 +90,8 @@ PROVIDER_CONFIG: dict = {
             # Gemini 3.x models reason by default and thinking cannot be
             # disabled for them.  Per the Gemini 3.7 Flash reference,
             # reasoning_effort maps to the model's thinking_level, which
-            # accepts low/medium/high (default low).
-            "default_reasoning_effort": "low",
+            # accepts low/medium/high (default medium).
+            "default_reasoning_effort": "medium",
             "supported_reasoning_efforts": [
                 {
                     "effort": "low",

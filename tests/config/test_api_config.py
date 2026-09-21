@@ -158,9 +158,9 @@ def test_build_api_config_config_override_wins_over_builtin():
 
 
 def test_build_api_config_reasoning_falls_back_to_builtin(monkeypatch):
-    """Built-in reasoning default (alibaba low) applies when not configured."""
+    """Built-in reasoning default (alibaba medium) applies when not configured."""
     config = build_api_config(api_type="Responses", cli_provider="alibaba", cli_model="qwen3.8-max")
-    assert config.reasoning_effort == "low"
+    assert config.reasoning_effort == "medium"
     # CLI --reasoning-effort still wins over the built-in default.
     config = build_api_config(
         api_type="Responses",

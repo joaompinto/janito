@@ -248,7 +248,7 @@ if pytest is not None:
         assert not extra_body or "enable_thinking" not in extra_body
         # No thinking_config payload either.
         assert not extra_body or "extra_body" not in extra_body
-        # Explicit reasoning_effort is forwarded (default for gemini is low).
+        # Explicit reasoning_effort is forwarded (default for gemini is medium).
         assert fake_run.captured_kwargs["reasoning_effort"] == "medium"
 
     def test_run_turn_gemini_flavor_forwards_reasoning_effort():

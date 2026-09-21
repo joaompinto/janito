@@ -37,9 +37,9 @@ PROVIDER_CONFIG: dict = {
             "max_input_tokens": 1000000,  # 1M
             "max_output_tokens": 131072,
             # Per the QwenCloud API reference, reasoning_effort accepts
-            # low/medium/xhigh.  The built-in default is the lowest
-            # supported level (low) instead of the API's xhigh.
-            "default_reasoning_effort": "low",
+            # low/medium/xhigh.  The built-in default is the standard
+            # level (medium) instead of the API's xhigh.
+            "default_reasoning_effort": "medium",
             "thinking": True,  # Qwen models reason by default
             # Qwen hybrid-thinking models keep their previous reasoning in
             # multi-turn context: preserve_thinking appends the assistant
@@ -99,9 +99,9 @@ PROVIDER_CONFIG: dict = {
             "max_input_tokens": 1000000,  # 1M
             "max_output_tokens": 131072,
             # Per the QwenCloud API reference, reasoning_effort accepts
-            # low/medium/xhigh.  The built-in default is the lowest
-            # supported level (low) instead of the API's xhigh.
-            "default_reasoning_effort": "low",
+            # low/medium/xhigh.  The built-in default is the standard
+            # level (medium) instead of the API's xhigh.
+            "default_reasoning_effort": "medium",
             "thinking": True,  # Qwen models reason by default
             # Qwen hybrid-thinking models keep their previous reasoning in
             # multi-turn context: preserve_thinking appends the assistant
@@ -162,8 +162,8 @@ PROVIDER_CONFIG: dict = {
             "max_output_tokens": 131072,  # 131K
             # qwen3.8-flash supports the same configurable reasoning depth
             # as qwen3.8-max (low/medium/xhigh per the QwenCloud API
-            # reference); the built-in default is the lowest level (low).
-            "default_reasoning_effort": "low",
+            # reference); the built-in default is the standard level (medium).
+            "default_reasoning_effort": "medium",
             "supported_reasoning_efforts": [
                 {
                     "effort": "low",

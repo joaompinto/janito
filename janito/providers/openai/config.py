@@ -21,8 +21,8 @@ PROVIDER_CONFIG: dict = {
             "max_output_tokens": 128000,
             # GPT-5.x models support configurable reasoning depth via the
             # OpenAI-compatible reasoning_effort parameter.  The built-in
-            # default is the lowest supported level (low).
-            "default_reasoning_effort": "low",
+            # default is the standard level (medium).
+            "default_reasoning_effort": "medium",
             "supported_reasoning_efforts": [
                 {
                     "effort": "low",
@@ -49,8 +49,8 @@ PROVIDER_CONFIG: dict = {
             "max_output_tokens": 128000,
             # GPT-5.x models support configurable reasoning depth via the
             # OpenAI-compatible reasoning_effort parameter.  The built-in
-            # default is the lowest supported level (low).
-            "default_reasoning_effort": "low",
+            # default is the standard level (medium).
+            "default_reasoning_effort": "medium",
             "supported_reasoning_efforts": [
                 {
                     "effort": "low",
@@ -77,8 +77,8 @@ PROVIDER_CONFIG: dict = {
             "max_output_tokens": 128000,
             # GPT-5.x models support configurable reasoning depth via the
             # OpenAI-compatible reasoning_effort parameter.  The built-in
-            # default is the lowest supported level (low).
-            "default_reasoning_effort": "low",
+            # default is the standard level (medium).
+            "default_reasoning_effort": "medium",
             "supported_reasoning_efforts": [
                 {
                     "effort": "low",
@@ -105,8 +105,8 @@ PROVIDER_CONFIG: dict = {
             "max_output_tokens": 128000,
             # GPT-6 models support configurable reasoning depth via the
             # OpenAI-compatible reasoning_effort parameter.  The built-in
-            # default is the lowest supported level (low).
-            "default_reasoning_effort": "low",
+            # default is the standard level (medium).
+            "default_reasoning_effort": "medium",
             "supported_reasoning_efforts": [
                 {
                     "effort": "low",
