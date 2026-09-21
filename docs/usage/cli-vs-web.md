@@ -40,7 +40,7 @@ Legend: ✅ available · — not available
 | Responses printed to the terminal (progress indicator while the API responds) | ✅ | — |
 | Live token streaming over WebSocket | — | ✅ |
 | Thinking mode (`-t` / `--thinking`) | ✅ | ✅ |
-| Reasoning depth (`--reasoning-effort`) | ✅ | — (resolved from the provider's config) |
+| Reasoning depth (`--effort`) | ✅ | — (resolved from the provider's config) |
 | Collapsible "Reasoning" panel | — | ✅ |
 | Tool-call cards with permission badge, spinner, result preview and execution time | — | ✅ |
 | Live tool output streaming into the card (`report_*()`, subprocess stdout/stderr) | — | ✅ |

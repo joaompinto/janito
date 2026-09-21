@@ -8,7 +8,7 @@ the shell's ``history.log`` and the ``changes.jsonl`` tool log) so ``janito
 File format (single JSON object)::
 
     {"version": 1, "cwd", "saved_at", "provider", "model", "model_override",
-     "api_type", "thinking", "reasoning_effort", "system_prompt",
+     "api_type", "thinking", "effort", "system_prompt",
      "messages_history", "history_turns", "previous_response_id",
      "conversation_items", "conversation_turn", "response_chain",
      "response_turn", "mirrored_history", "mirrored_turn"}
@@ -116,7 +116,7 @@ def make_state(
     model_override: str | None,
     api_type: str | None,
     thinking: bool,
-    reasoning_effort: str | None,
+    effort: str | None,
     system_prompt: str | None,
     messages_history: list[Any],
     history_turns: list[int],
@@ -143,7 +143,7 @@ def make_state(
         "model_override": model_override,
         "api_type": api_type,
         "thinking": bool(thinking),
-        "reasoning_effort": reasoning_effort,
+        "effort": effort,
         "system_prompt": system_prompt,
         "messages_history": messages_history,
         "history_turns": history_turns,

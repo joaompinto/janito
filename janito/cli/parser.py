@@ -64,7 +64,7 @@ Examples:
   janito --show-system-prompt                               # Show the resolved system prompt
   janito --log=info,debug "Your prompt"                     # Enable logging
   janito --model gpt-5.6-luna "Your prompt"               # Use specific model
-  janito --reasoning-effort xhigh "Your prompt"               # Set reasoning depth
+  janito --effort xhigh "Your prompt"               # Set reasoning depth
   janito --api-type Completions "Your prompt"                # Force the Chat Completions API
   janito --set model=gpt-5.6-luna                         # Set model for the active provider
   janito --provider openai --set model=gpt-5.6-luna       # Set model for a specific provider
@@ -203,12 +203,12 @@ Note: --set and --set-api-key must be used in separate commands.
         help="Enable thinking mode (sends extra_body={'enable_thinking': True} "
         "to the API). DeepSeek, Alibaba/Qwen and MiniMax-M3 have thinking "
         "enabled by default. Gemini-flavored providers (google) do not accept "
-        "this flag; use --reasoning-effort to control their thinking depth.",
+        "this flag; use --effort to control their thinking depth.",
     )
 
     parser.add_argument(
         "-e",
-        "--reasoning-effort",
+        "--effort",
         metavar="LEVEL",
         choices=["none", "minimal", "low", "medium", "high", "xhigh", "max"],
         help="Reasoning depth for the API call (sends reasoning_effort=<LEVEL>). "

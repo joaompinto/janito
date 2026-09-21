@@ -25,7 +25,7 @@ def _args(**kw):
         provider=None,
         model=None,
         api_type=None,
-        reasoning_effort=None,
+        effort=None,
         thinking=False,
     )
     defaults.update(kw)
@@ -40,7 +40,7 @@ def _snapshot(**kw):
         "model": "gpt-5.6-luna",
         "api_type": "Responses",
         "thinking": True,
-        "reasoning_effort": "high",
+        "effort": "high",
     }
     state.update(kw)
     return state
@@ -89,7 +89,7 @@ def test_apply_resume_backfills_identity(monkeypatch):
     assert args.model == "gpt-5.6-luna"
     assert args.api_type == "Responses"
     assert args.thinking is True
-    assert args.reasoning_effort == "high"
+    assert args.effort == "high"
 
 
 def test_apply_resume_explicit_flags_win(monkeypatch):
@@ -98,14 +98,14 @@ def test_apply_resume_explicit_flags_win(monkeypatch):
         provider="anthropic",
         model="claude-sonnet",
         api_type="Anthropic",
-        reasoning_effort="low",
+        effort="low",
         thinking=True,
     )
     _main._apply_resume_session(args)
     assert args.provider == "anthropic"
     assert args.model == "claude-sonnet"
     assert args.api_type == "Anthropic"
-    assert args.reasoning_effort == "low"
+    assert args.effort == "low"
     assert args.thinking is True
 
 

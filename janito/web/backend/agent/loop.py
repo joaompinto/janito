@@ -25,7 +25,7 @@ from collections.abc import AsyncGenerator, Callable
 from dataclasses import dataclass
 from typing import Any
 
-from janito.config_loaders import load_max_output_tokens, load_reasoning_effort
+from janito.config_loaders import load_effort, load_max_output_tokens
 from janito.general_config import get_active_provider, resolve_api_type
 from janito.llm_adapters.anthropic import accumulator as anthropic_accumulator
 from janito.llm_adapters.anthropic import build_call_kwargs as build_anthropic_kwargs
@@ -65,7 +65,7 @@ logger = logging.getLogger(__name__)
 def _resolve_turn_config(config, effective_provider, model):
     """Resolve max tokens / preserve_thinking / reasoning level for the turn.
 
-    The max-tokens, preserve_thinking and reasoning-effort defaults are
+    The max-tokens, preserve_thinking and effort defaults are
     resolved for the **effective model** (the one returned by
     ``resolve_runtime_config``): a model-scoped config override wins, then
     the model's built-in default from the provider config (falling back to
@@ -85,7 +85,7 @@ def _resolve_turn_config(config, effective_provider, model):
 
     # Reasoning level (reasoning_effort): model-scoped config value first,
     # then the model's built-in default (e.g. "low" for qwen3.8-max).
-    reasoning_effort = load_reasoning_effort(effective_provider, model)
+    reasoning_effort = load_effort(effective_provider, model)
     if reasoning_effort is None:
         reasoning_effort = found.model_config(model).get("default_reasoning_effort") if found is not None else None
 

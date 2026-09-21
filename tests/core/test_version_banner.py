@@ -50,7 +50,7 @@ if pytest is not None:
             thinking = False
             model = None
             provider = None
-            reasoning_effort = None
+            effort = None
             system_prompt = None
             no_system_prompt = False
 

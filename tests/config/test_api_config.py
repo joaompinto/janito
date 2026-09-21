@@ -151,7 +151,7 @@ def test_build_api_config_builtin_token_defaults():
 def test_build_api_config_config_override_wins_over_builtin():
     """A model-scoped config override beats the built-in default."""
     set_config_value("openai.models.gpt-5.6-luna.max-output-tokens", 4096)
-    set_config_value("openai.models.gpt-5.6-luna.reasoning-effort", "low")
+    set_config_value("openai.models.gpt-5.6-luna.effort", "low")
     config = build_api_config(api_type="Responses", cli_provider="openai", cli_model="gpt-5.6-luna")
     assert config.max_output_tokens == 4096
     assert config.reasoning_effort == "low"
@@ -161,7 +161,7 @@ def test_build_api_config_reasoning_falls_back_to_builtin(monkeypatch):
     """Built-in reasoning default (alibaba medium) applies when not configured."""
     config = build_api_config(api_type="Responses", cli_provider="alibaba", cli_model="qwen3.8-max")
     assert config.reasoning_effort == "medium"
-    # CLI --reasoning-effort still wins over the built-in default.
+    # CLI --effort still wins over the built-in default.
     config = build_api_config(
         api_type="Responses",
         cli_provider="alibaba",

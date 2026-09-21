@@ -1268,7 +1268,7 @@ def test_turn_factory_honors_cli_model_for_startup_provider(monkeypatch):
         cli_api_type=None,
         cli_model="gpt-5.6-luna",
         cli_provider="openai",
-        cli_reasoning_effort=None,
+        cli_effort=None,
     )
     send = factory("openai")
     send("hello", previous_messages=[])
@@ -1304,7 +1304,7 @@ def test_turn_factory_resolves_new_provider_model_and_api_type(monkeypatch):
         cli_api_type=None,
         cli_model="gpt-5.6-luna",  # startup --model, belongs to openai
         cli_provider="openai",
-        cli_reasoning_effort=None,
+        cli_effort=None,
     )
     send = factory("moonshot")  # switched provider
     send("hello", previous_messages=[])
@@ -1341,7 +1341,7 @@ def test_turn_factory_resolves_configured_model_for_new_provider(monkeypatch, tm
         cli_api_type=None,
         cli_model=None,
         cli_provider="openai",
-        cli_reasoning_effort=None,
+        cli_effort=None,
     )
     send = factory("deepseek")
     send("hello", previous_messages=[])
@@ -1372,7 +1372,7 @@ def test_turn_factory_resolves_api_type_per_new_provider(monkeypatch):
         cli_api_type=None,
         cli_model=None,
         cli_provider="openai",
-        cli_reasoning_effort=None,
+        cli_effort=None,
     )
     factory("moonshot")
     assert captured["api_type"] == "Completions"

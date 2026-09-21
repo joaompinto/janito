@@ -96,7 +96,7 @@ def build_api_config(
             base URL, e.g. the Anthropic / DashScope / Gemini SDK endpoints).
         cli_provider: Provider passed via ``--provider`` (may be ``None``).
         cli_model: Model passed via ``--model`` (may be ``None``).
-        reasoning_effort: Reasoning depth passed via ``--reasoning-effort``
+        reasoning_effort: Reasoning depth passed via ``--effort``
             (may be ``None``).
         thinking: The ``--thinking`` CLI flag / shell ``/thinking`` override
             (may be ``None``).  ``True`` forces thinking on; ``False`` (or
@@ -112,9 +112,9 @@ def build_api_config(
     """
     # Lazy imports avoid a cycle: completions_api imports APIConfig.
     from janito.config_loaders import (
+        load_effort,
         load_max_input_tokens,
         load_max_output_tokens,
-        load_reasoning_effort,
     )
     from janito.general_config import get_active_provider
     from janito.providers.registry import get_provider
@@ -132,7 +132,7 @@ def build_api_config(
 
     max_output_tokens = load_max_output_tokens(provider, model) or found_max_output or 100_000
     max_input_tokens = load_max_input_tokens(provider, model) or found_max_input
-    reasoning_effort = reasoning_effort or load_reasoning_effort(provider, model) or found_reasoning
+    reasoning_effort = reasoning_effort or load_effort(provider, model) or found_reasoning
     thinking = thinking or found_thinking
 
     return APIConfig(

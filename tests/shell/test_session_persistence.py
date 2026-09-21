@@ -55,7 +55,7 @@ def _write_state(**overrides):
         model_override=None,
         api_type="Completions",
         thinking=False,
-        reasoning_effort=None,
+        effort=None,
         system_prompt="sys",
         messages_history=[
             {"role": "system", "content": "sys"},
@@ -135,7 +135,7 @@ def test_save_never_raises_when_path_blocked(tmp_path, monkeypatch):
             model_override=None,
             api_type="Completions",
             thinking=False,
-            reasoning_effort=None,
+            effort=None,
             system_prompt=None,
             messages_history=[],
             history_turns=[],
@@ -265,7 +265,7 @@ def test_snapshot_records_identity_and_toggles():
     shell = _shell(
         provider="openai",
         api_type="Responses",
-        reasoning_effort="high",
+        effort="high",
         thinking=True,
     )
     shell.initialize_history(system_prompt="sys")
@@ -273,7 +273,7 @@ def test_snapshot_records_identity_and_toggles():
     assert snapshot["provider"] == "openai"
     assert snapshot["model"] == "gpt-5.6-luna"
     assert snapshot["api_type"] == "Responses"
-    assert snapshot["reasoning_effort"] == "high"
+    assert snapshot["effort"] == "high"
     assert snapshot["thinking"] is True
     assert snapshot["system_prompt"] == "sys"
 

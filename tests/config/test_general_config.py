@@ -330,29 +330,29 @@ if pytest is not None:
         # Removing again returns False (already gone)
         assert cc.unset_config_key_from_cli("max-input-tokens", "openai") is False
 
-    def test_set_reasoning_effort_per_provider(monkeypatch, tmp_path):
+    def test_set_effort_per_provider(monkeypatch, tmp_path):
         config_path = _use_temp_config(monkeypatch, tmp_path)
         cc.set_config_from_cli("provider=alibaba")
         # Reasoning-effort is model-scoped, so scope the value to the model
         # explicitly (both Qwen models declare reasoning levels; the
         # configured value is stored under qwen3.8-max).
         cc.set_config_from_cli("model=qwen3.8-max", "alibaba")
-        cc.set_config_from_cli("reasoning-effort=xhigh", "alibaba")
-        cc.set_config_from_cli("reasoning-effort=low", "openai")
-        # Each provider/model pair has its own reasoning-effort.
-        assert cl.load_reasoning_effort("alibaba") == "xhigh"
-        assert cl.load_reasoning_effort("openai") == "low"
+        cc.set_config_from_cli("effort=xhigh", "alibaba")
+        cc.set_config_from_cli("effort=low", "openai")
+        # Each provider/model pair has its own effort.
+        assert cl.load_effort("alibaba") == "xhigh"
+        assert cl.load_effort("openai") == "low"
         # Verify storage structure (model-scoped path).
         config = _read_config(config_path)
-        assert config["providers"]["alibaba"]["models"]["qwen3.8-max"]["reasoning-effort"] == "xhigh"
-        assert config["providers"]["openai"]["models"]["gpt-5.6-luna"]["reasoning-effort"] == "low"
+        assert config["providers"]["alibaba"]["models"]["qwen3.8-max"]["effort"] == "xhigh"
+        assert config["providers"]["openai"]["models"]["gpt-5.6-luna"]["effort"] == "low"
         # Model-scoped set/get round-trips through the CLI helpers.
-        assert cc.get_config_from_cli("reasoning-effort", "alibaba") == "xhigh"
+        assert cc.get_config_from_cli("effort", "alibaba") == "xhigh"
 
-    def test_set_reasoning_effort_without_provider_errors(monkeypatch, tmp_path):
+    def test_set_effort_without_provider_errors(monkeypatch, tmp_path):
         config_path = _use_temp_config(monkeypatch, tmp_path)
         with pytest.raises(ProviderRequiredError):
-            cc.set_config_from_cli("reasoning-effort=medium")
+            cc.set_config_from_cli("effort=medium")
         # Nothing should have been written
         assert _read_config(config_path) == {}
 
@@ -387,23 +387,23 @@ if pytest is not None:
         with pytest.raises(ModelRequiredError):
             cc.set_config_from_cli("max-output-tokens=10000", "custom")
 
-    def test_load_reasoning_effort_unknown_provider_returns_none(monkeypatch, tmp_path):
+    def test_load_effort_unknown_provider_returns_none(monkeypatch, tmp_path):
         _use_temp_config(monkeypatch, tmp_path)
-        cc.set_config_from_cli("reasoning-effort=medium", "alibaba")
+        cc.set_config_from_cli("effort=medium", "alibaba")
         # No provider configured and unknown provider -> None
-        assert cl.load_reasoning_effort("unknown") is None
-        assert cl.load_reasoning_effort() is None
+        assert cl.load_effort("unknown") is None
+        assert cl.load_effort() is None
 
-    def test_unset_reasoning_effort_per_provider(monkeypatch, tmp_path):
+    def test_unset_effort_per_provider(monkeypatch, tmp_path):
         config_path = _use_temp_config(monkeypatch, tmp_path)
-        cc.set_config_from_cli("reasoning-effort=xhigh", "alibaba")
-        cc.set_config_from_cli("reasoning-effort=low", "openai")
-        assert cc.unset_config_key_from_cli("reasoning-effort", "alibaba") is True
+        cc.set_config_from_cli("effort=xhigh", "alibaba")
+        cc.set_config_from_cli("effort=low", "openai")
+        assert cc.unset_config_key_from_cli("effort", "alibaba") is True
         config = _read_config(config_path)
         assert "alibaba" not in config.get("providers", {})
-        assert config["providers"]["openai"]["models"]["gpt-5.6-luna"]["reasoning-effort"] == "low"
+        assert config["providers"]["openai"]["models"]["gpt-5.6-luna"]["effort"] == "low"
         # Removing again returns False (already gone)
-        assert cc.unset_config_key_from_cli("reasoning-effort", "alibaba") is False
+        assert cc.unset_config_key_from_cli("effort", "alibaba") is False
 
     def test_load_max_output_tokens_legacy_keys_ignored(monkeypatch, tmp_path):
         """Legacy provider-scoped context-window-size / underscore-variant

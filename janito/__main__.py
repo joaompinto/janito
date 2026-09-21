@@ -323,7 +323,7 @@ def _apply_resume_session(args) -> None:
     type / thinking / effort are reused so the restored conversation stays
     API-compatible even when the configured defaults changed since it was
     saved.  Explicit ``--provider`` / ``--model`` / ``--api-type`` /
-    ``--thinking`` / ``--reasoning-effort`` flags always win and are never
+    ``--thinking`` / ``--effort`` flags always win and are never
     overridden here -- ``run_interactive_chat`` then starts a fresh
     conversation when they do not match the saved session.
 
@@ -346,8 +346,8 @@ def _apply_resume_session(args) -> None:
         args.model = state["model"]
     if state.get("api_type") and not getattr(args, "api_type", None):
         args.api_type = state["api_type"]
-    if state.get("reasoning_effort") and not getattr(args, "reasoning_effort", None):
-        args.reasoning_effort = state["reasoning_effort"]
+    if state.get("effort") and not getattr(args, "effort", None):
+        args.effort = state["effort"]
     if not getattr(args, "thinking", False):
         args.thinking = bool(state.get("thinking"))
 

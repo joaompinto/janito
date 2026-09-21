@@ -161,7 +161,7 @@ class ModelCmdHandler(CmdHandler):
                     provider,
                     model_override=canonical,
                     thinking_override=getattr(shell, "thinking", None),
-                    effort_override=getattr(shell, "reasoning_effort", None),
+                    effort_override=getattr(shell, "effort", None),
                 )
             shell.initialize_history(system_prompt=getattr(shell, "_system_prompt", None))
             print("Conversation history cleared (model changed).")

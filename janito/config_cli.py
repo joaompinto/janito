@@ -10,7 +10,7 @@ on read/write primitives.
 
 Provider-scoped keys (``model``, ``endpoint``) land under
 ``providers.<provider>.<key>``; model-scoped keys (``max-output-tokens``,
-``max-input-tokens``, ``reasoning-effort``, ``api-type``,
+``max-input-tokens``, ``effort``, ``api-type``,
 ``stateless-mode``) land under
 ``providers.<provider>.models.<model>.<key>``, where the model is the
 provider's configured model or, failing that, its built-in default model.

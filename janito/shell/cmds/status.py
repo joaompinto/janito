@@ -7,10 +7,10 @@ from janito.auth_config import get_api_key
 # Import general configuration handling
 from janito.config_keys import get_masked_api_key
 from janito.config_loaders import (
+    load_effort,
     load_endpoint_from_config,
     load_max_output_tokens,
     load_model_from_config,
-    load_reasoning_effort,
 )
 from janito.general_config import get_active_provider, resolve_api_type
 from janito.llm_clients.openai.responses_state import stateless_mode
@@ -48,7 +48,7 @@ def _print_config_info(
     thinking: bool = False,
     api_type: str | None = None,
     model: str | None = None,
-    reasoning_effort: str | None = None,
+    effort: str | None = None,
 ) -> None:
     """Print current configuration info (provider, model, base_url, masked API key, max output tokens).
 
@@ -74,7 +74,7 @@ def _print_config_info(
             the startup resolution). When None, the provider's configured
             model, else its built-in default model is used and the Model row
             marks the built-in default with ``(default)``.
-        reasoning_effort: The ``--reasoning-effort`` CLI flag for the session
+        effort: The ``--effort`` CLI flag for the session
             (e.g. ``high``), or None when it was not given. Takes priority
             over the model-scoped configured value, then the effective
             model's built-in default -- mirroring ``build_api_config`` so
@@ -127,13 +127,13 @@ def _print_config_info(
             f"{default_max_output_tokens} (default)" if default_max_output_tokens else "(not set)"
         )
 
-    # Resolve the effective reasoning level: the --reasoning-effort CLI flag
+    # Resolve the effective reasoning level: the --effort CLI flag
     # first, otherwise an explicit configuration value, otherwise the
     # effective model's built-in default from the provider config (mirrors
     # build_api_config so /status reports what is actually sent).
-    reasoning_effort = reasoning_effort or load_reasoning_effort(provider, model)
-    if reasoning_effort:
-        reasoning_effort_display = reasoning_effort
+    effort = effort or load_effort(provider, model)
+    if effort:
+        reasoning_effort_display = effort
     else:
         default_reasoning_effort = (
             found.model_config(model).get("default_reasoning_effort") if found is not None else None
@@ -207,7 +207,7 @@ class StatusCmdHandler(CmdHandler):
                 getattr(shell, "thinking", False),
                 getattr(shell, "api_type", None),
                 getattr(shell, "model", None),
-                getattr(shell, "reasoning_effort", None),
+                getattr(shell, "effort", None),
             )
             return True
         return False

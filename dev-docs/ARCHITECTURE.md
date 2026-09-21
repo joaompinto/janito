@@ -563,7 +563,7 @@ Key modules:
   `determine_provider`, `get_active_provider`, `resolve_api_type()`).
   Config keys are scoped: flat keys (e.g. `provider`), **provider-scoped** keys
   (`model`, `endpoint` under `providers.<name>.<key>`) and **model-scoped**
-  keys (`max-input-tokens`, `max-output-tokens`, `reasoning-effort`, `api-type`,
+  keys (`max-input-tokens`, `max-output-tokens`, `effort`, `api-type`,
   `stateless-mode` under `providers.<name>.models.<model>.<key>`).  The
   storage and per-key logic live in the focused modules below.
 - **`config_keys.py`** — key constants (`PROVIDER_SCOPED_KEYS`,

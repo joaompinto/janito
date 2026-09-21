@@ -48,7 +48,7 @@ The API type is selected per provider with `--set api-type=...` (see the
     model entries (every provider except `openrouter` and `custom`), `--model`
     and `--set model=...` accept only the provider's built-in models; an
     unknown name is rejected with the available models listed. Model-scoped
-    settings (`--set max-output-tokens=...`, `--set reasoning-effort=...`, ...)
+    settings (`--set max-output-tokens=...`, `--set effort=...`, ...)
     are likewise only available for those built-in models — arbitrary model
     names cannot be configured for these providers. `openrouter` (an
     aggregator) and `custom` (any OpenAI-compatible endpoint) have no built-in
@@ -124,14 +124,14 @@ OpenAI-compatible `reasoning_effort` parameter. The supported levels are
 
 ```bash
 # Override the reasoning depth for a single call
-janito --reasoning-effort high "Your prompt"
+janito --effort high "Your prompt"
 
 # Set a per-provider default in the config
-janito --provider openai --set reasoning-effort=medium
+janito --provider openai --set effort=medium
 ```
 
-Resolution order: `--reasoning-effort` > per-provider config value
-(`--set reasoning-effort=...`) > the model's own default level (`medium` for the
+Resolution order: `--effort` > per-provider config value
+(`--set effort=...`) > the model's own default level (`medium` for the
 GPT-5.x models).
 
 ## Google (Gemini)
@@ -174,7 +174,7 @@ janito --provider google --set api-type=Gemini
 ```
 
 Gemini 3.x models reason by default on the native API too; reasoning depth is
-controlled through `--reasoning-effort`, sent as `thinking_level`. Thought
+controlled through `--effort`, sent as `thinking_level`. Thought
 summaries stream into the reasoning panel, and function/tool calls work
 exactly like the other API types (MCP included).
 
@@ -197,14 +197,14 @@ model's `thinking_level`, which accepts `minimal`, `low`, `medium` and
 
 ```bash
 # Override the reasoning depth for a single call
-janito --reasoning-effort high "Your prompt"
+janito --effort high "Your prompt"
 
 # Set a per-provider default in the config
-janito --provider google --set reasoning-effort=medium
+janito --provider google --set effort=medium
 ```
 
-Resolution order: `--reasoning-effort` > per-provider config value
-(`--set reasoning-effort=...`) > the model's own default level (`medium` for
+Resolution order: `--effort` > per-provider config value
+(`--set effort=...`) > the model's own default level (`medium` for
 `gemini-3.7-flash`).
 
 ### Thinking Mode
@@ -212,7 +212,7 @@ Resolution order: `--reasoning-effort` > per-provider config value
 The `google` provider is **Gemini-flavored**: the `enable_thinking`
 extra-body flag is **not** sent to Google's OpenAI-compatibility layer
 (because the field does not exist and Gemini 3.x models reason by default).
-Thinking depth is instead controlled through `--reasoning-effort`, sent as
+Thinking depth is instead controlled through `--effort`, sent as
 `reasoning_effort` (the API maps it to the model's `thinking_level`).
 Using `/thinking on` or `-t`/`--thinking` is therefore a no-op for the
 request body.
@@ -297,15 +297,15 @@ built-in default is the standard level (`medium`).
 
 ```bash
 # Override the reasoning depth for a single call (qwen3.8-max)
-janito --model qwen3.8-max --reasoning-effort medium "Your prompt"
+janito --model qwen3.8-max --effort medium "Your prompt"
 
 # Set a per-provider default in the config (qwen3.8-max)
 janito --provider alibaba --set model=qwen3.8-max
-janito --provider alibaba --set reasoning-effort=medium
+janito --provider alibaba --set effort=medium
 ```
 
-Resolution order: `--reasoning-effort` > per-provider config value
-(`--set reasoning-effort=...`) > built-in default (`medium` for the Qwen models).
+Resolution order: `--effort` > per-provider config value
+(`--set effort=...`) > built-in default (`medium` for the Qwen models).
 
 ### Thinking Mode
 
@@ -398,7 +398,7 @@ janito --provider alibaba --api-type DashScope "Explain quantum computing"
 
 Thinking mode is enabled out of the box here too: the native SDK receives
 `enable_thinking=True` (Qwen models reason by default). The `dashscope`
-package does not use `reasoning_effort`, so `--reasoning-effort` is accepted
+package does not use `reasoning_effort`, so `--effort` is accepted
 for parity but not mapped to a DashScope parameter.
 
 The DashScope native API serves models from two generation endpoints:
@@ -470,14 +470,14 @@ only `high`/`max`).
 
 ```bash
 # Override the reasoning depth for a single call
-janito --reasoning-effort max "Your prompt"
+janito --effort max "Your prompt"
 
 # Set a per-provider default in the config
-janito --provider deepseek --set reasoning-effort=high
+janito --provider deepseek --set effort=high
 ```
 
-Resolution order: `--reasoning-effort` > per-provider config value
-(`--set reasoning-effort=...`) > built-in default (none: the API's own default
+Resolution order: `--effort` > per-provider config value
+(`--set effort=...`) > built-in default (none: the API's own default
 `high` applies).
 
 ### Thinking Mode
@@ -633,14 +633,14 @@ same reasoning strength as `high`).
 
 ```bash
 # Override the reasoning depth for a single call
-janito --reasoning-effort high "Your prompt"
+janito --effort high "Your prompt"
 
 # Set a per-provider default in the config
-janito --provider meta --set reasoning-effort=medium
+janito --provider meta --set effort=medium
 ```
 
-Resolution order: `--reasoning-effort` > per-provider config value
-(`--set reasoning-effort=...`) > the built-in default (`medium`).
+Resolution order: `--effort` > per-provider config value
+(`--set effort=...`) > the built-in default (`medium`).
 
 ### Reasoning Summaries
 
@@ -731,14 +731,14 @@ default).
 
 ```bash
 # Override the reasoning depth for a single call
-janito --reasoning-effort low "Your prompt"
+janito --effort low "Your prompt"
 
 # Set a per-provider default in the config
-janito --provider moonshot --set reasoning-effort=high
+janito --provider moonshot --set effort=high
 ```
 
-Resolution order: `--reasoning-effort` > per-provider config value
-(`--set reasoning-effort=...`) > built-in default (`max`).
+Resolution order: `--effort` > per-provider config value
+(`--set effort=...`) > built-in default (`max`).
 
 ### Example
 

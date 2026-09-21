@@ -1,11 +1,11 @@
 """
-Tests for reasoning-effort support in the OpenAI-compatible API calls.
+Tests for effort support in the OpenAI-compatible API calls.
 
 Covers:
 - ``run_turn`` resolving the reasoning level (CLI arg > per-provider config
   > built-in provider-config default) and sending it as ``reasoning_effort``.
 - The web agent's ``build_call_kwargs`` forwarding ``reasoning_effort``.
-- The CLI ``--reasoning-effort`` flag parsing.
+- The CLI ``--effort`` flag parsing.
 """
 
 import sys
@@ -28,7 +28,7 @@ def _isolate_config_dir(monkeypatch, tmp_path):
     """Point the config directory at a temp dir for every test.
 
     ``run_turn`` resolves the reasoning level / thinking from the
-    per-provider config (``<provider>.reasoning-effort``), which lives in the
+    per-provider config (``<provider>.effort``), which lives in the
     real ``~/.janito`` by default, and ``build_api_config`` reads the auth
     store. Without this fixture tests would read/write the developer's actual
     config, making them order- and environment-dependent.
@@ -72,8 +72,8 @@ if pytest is not None:
         assert result == "hi"
         assert fake_run.captured_kwargs["reasoning_effort"] == "xhigh"
 
-    def test_run_turn_cli_reasoning_effort_overrides_default():
-        """The config's resolved reasoning level (--reasoning-effort low) wins
+    def test_run_turn_cli_effort_overrides_default():
+        """The config's resolved reasoning level (--effort low) wins
         over the built-in xhigh default."""
         fake_run = _fake_run_returns("hi")
         config = make_config(
@@ -94,7 +94,7 @@ if pytest is not None:
         set_api_key("alibaba", "sk-test")
         # Scope the value to qwen3.8-max: the config key is model-scoped
         # (both Qwen models declare reasoning levels).
-        set_config_from_cli("reasoning-effort=medium", "alibaba", "qwen3.8-max")
+        set_config_from_cli("effort=medium", "alibaba", "qwen3.8-max")
         fake_run = _fake_run_returns("hi")
         config = build_api_config(
             api_type="Completions",
@@ -253,7 +253,7 @@ if pytest is not None:
 
     def test_run_turn_gemini_flavor_forwards_reasoning_effort():
         """The resolved reasoning level is sent as reasoning_effort for
-        Gemini-flavored providers (e.g. --reasoning-effort high)."""
+        Gemini-flavored providers (e.g. --effort high)."""
         fake_run = _fake_run_returns("hi")
         config = make_config(
             provider="google",
@@ -380,18 +380,18 @@ if pytest is not None:
         kwargs = build_call_kwargs("gpt-4", _Cfg(), 1000, None, None)
         assert "extra_body" not in kwargs
 
-    def test_cli_parser_accepts_reasoning_effort_choices():
+    def test_cli_parser_accepts_effort_choices():
         from janito.cli.parser import create_parser
 
         for level in ("low", "medium", "high", "xhigh", "none", "minimal", "max"):
-            args = create_parser().parse_args(["--reasoning-effort", level, "prompt"])
-            assert args.reasoning_effort == level
+            args = create_parser().parse_args(["--effort", level, "prompt"])
+            assert args.effort == level
 
-    def test_cli_parser_rejects_invalid_reasoning_effort():
+    def test_cli_parser_rejects_invalid_effort():
         from janito.cli.parser import create_parser
 
         with pytest.raises(SystemExit):
-            create_parser().parse_args(["--reasoning-effort", "turbo", "prompt"])
+            create_parser().parse_args(["--effort", "turbo", "prompt"])
 
 else:  # pragma: no cover - fallback runner without pytest
 

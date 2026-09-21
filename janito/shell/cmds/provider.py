@@ -153,7 +153,7 @@ class ProviderCmdHandler(CmdHandler):
                 shell.turn_func = factory(
                     canonical,
                     thinking_override=getattr(shell, "thinking", None),
-                    effort_override=getattr(shell, "reasoning_effort", None),
+                    effort_override=getattr(shell, "effort", None),
                 )
             # A session model switch (/model) was scoped to the previous
             # provider: the new provider resolves its own effective model.

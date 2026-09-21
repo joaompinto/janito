@@ -109,7 +109,7 @@ def _rebind_send_function(shell) -> None:
         getattr(shell, "provider", None),
         model_override=getattr(shell, "model_override", None),
         thinking_override=getattr(shell, "thinking", False),
-        effort_override=getattr(shell, "reasoning_effort", None),
+        effort_override=getattr(shell, "effort", None),
     )
 
 

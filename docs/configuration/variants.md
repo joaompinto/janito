@@ -59,7 +59,7 @@ janito --set-api-key sk-xxx --provider alibaba-tokenplan
 # Per-variant API type / tokens / reasoning
 janito --provider alibaba-tokenplan --set api-type=Responses
 janito --provider alibaba-tokenplan --set max-output-tokens=65536
-janito --provider alibaba-tokenplan --set reasoning-effort=medium
+janito --provider alibaba-tokenplan --set effort=medium
 ```
 
 Everything you don't set falls back to the **base provider's** built-in
@@ -137,7 +137,7 @@ earlier):
 2. Per-variant configuration file values — provider-scoped
    (`providers.<base>-<word>.model` / `.endpoint`) and model-scoped
    (`providers.<base>-<word>.models.<model>.{api-type, max-output-tokens,
-   max-input-tokens, reasoning-effort, stateless-mode}`)
+   max-input-tokens, effort, stateless-mode}`)
 3. Command-line arguments (`--model`, `--provider`, `--set endpoint=...`)
 
 The API key comes from `auth.json` under the variant name. See

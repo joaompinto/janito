@@ -7,7 +7,7 @@ class FakeShell:
         self.model = "gpt-5"
         self.model_override = None
         self.thinking = False
-        self.reasoning_effort = None
+        self.effort = None
         self.calls = []
 
         def factory(
@@ -34,6 +34,6 @@ def test_show_does_not_raise(capsys):
 def test_set_and_clear():
     s = FakeShell()
     assert EffortCmdHandler().handle(s, "/effort high") is True
-    assert s.reasoning_effort == "high"
+    assert s.effort == "high"
     assert EffortCmdHandler().handle(s, "/effort clear") is True
-    assert s.reasoning_effort is None
+    assert s.effort is None

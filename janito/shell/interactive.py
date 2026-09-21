@@ -44,7 +44,7 @@ class InteractiveShell(_SessionMixin):
         provider: str | None = None,
         thinking: bool = False,
         api_type: str | None = None,
-        reasoning_effort: str | None = None,
+        effort: str | None = None,
     ):
         """
         Initialize the interactive shell.
@@ -64,7 +64,7 @@ class InteractiveShell(_SessionMixin):
                 from the provider/model configuration (see
                 :func:`janito.general_config.resolve_api_type`). Surfaced by
                 ``/status`` so it reports the API type actually in use.
-            reasoning_effort: Reasoning depth passed via ``--reasoning-effort``
+            effort: Reasoning depth passed via ``--effort``
                 (may be None). Surfaced by ``/status`` so it reports the
                 reasoning level actually in use (CLI flag first, then the
                 model-scoped configured value, then the built-in default).
@@ -73,7 +73,7 @@ class InteractiveShell(_SessionMixin):
         self.provider = provider
         self.thinking = thinking
         self.api_type = api_type
-        self.reasoning_effort = reasoning_effort
+        self.effort = effort
         # Set by /model for the current session: the explicit model override
         # that the turn_factory (re)built by /provider and /model consults
         # so
@@ -626,7 +626,7 @@ class InteractiveShell(_SessionMixin):
             model_override=self.model_override,
             api_type=self._effective_api_type(),
             thinking=bool(getattr(self, "thinking", False)),
-            reasoning_effort=self.reasoning_effort,
+            effort=self.effort,
             system_prompt=self._system_prompt,
             messages_history=copy.deepcopy(self.messages_history),
             history_turns=list(self.history_turns),

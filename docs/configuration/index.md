@@ -42,7 +42,7 @@ keys per provider **and** model (see the note below and
 | `endpoint` | per provider | API endpoint URL (required for `custom` providers) | provider's built-in default |
 | `max-input-tokens` | per provider/model | Maximum input tokens (context window) | model built-in |
 | `max-output-tokens` | per provider/model | Maximum output tokens | model built-in |
-| `reasoning-effort` | per provider/model | Reasoning depth (`none`…`max`) | model built-in |
+| `effort` | per provider/model | Reasoning depth (`none`…`max`) | model built-in |
 | `api-type` | per provider/model | API type (`Responses`, `Completions`, `Anthropic`, `DashScope`, `Gemini`) | model built-in default |
 | `stateless-mode` | per provider/model | Whether the Responses API keeps conversation state server-side | model built-in default |
 | `disabled-tools` | per provider/model | External tools hidden from the model (e.g. `WebSearch` when native server-side search exists; comma-separated or JSON list) | derived default (`WebSearch` for native-search models) |
@@ -94,7 +94,7 @@ the provider/model's built-in limit (e.g. OpenAI's `gpt-5.6-luna`:
 1,050,000 in / 128,000 out); the generic fallback used when even the model
 has none is `128000` input / `100000` output.
 
-> Provider base URLs are built in for known providers, so you normally only need `endpoint` for the `custom` provider. At runtime the endpoint is used directly as the API base URL. The model-level keys (`max-input-tokens`, `max-output-tokens`, `reasoning-effort`, `api-type`, `stateless-mode`, `disabled-tools`) are stored per provider **and** model, under `providers.<provider>.models.<model>.<key>` in `config.json`.
+> Provider base URLs are built in for known providers, so you normally only need `endpoint` for the `custom` provider. At runtime the endpoint is used directly as the API base URL. The model-level keys (`max-input-tokens`, `max-output-tokens`, `effort`, `api-type`, `stateless-mode`, `disabled-tools`) are stored per provider **and** model, under `providers.<provider>.models.<model>.<key>` in `config.json`.
 
 ### Disabled tools (`disabled-tools`)
 

@@ -73,8 +73,8 @@ See [Provider Variants](../configuration/variants.md) for the full guide.
 | `--no-tools` | Do not load tools (disables built-in, skill, plugin, MCP and server-side tools) |
 | `--no-tasks` | Do not load the tasks toolset (`StartTask`, `StopTask`, `WaitForTask`, `ListTasks`); all other tools stay enabled |
 | `--show-system-prompt` | Display the resolved system prompt and exit |
-| `-t`, `--thinking` | Enable thinking mode (sends `extra_body={'enable_thinking': True}`). DeepSeek, Alibaba/Qwen and MiniMax-M3 have thinking enabled by default. Gemini-flavored providers (google) do not accept this flag; thinking depth is controlled through `--reasoning-effort` instead. |
-| `-e`, `--reasoning-effort <level>` | Set the reasoning depth for the API call (sends `reasoning_effort=<level>`). Overrides the provider's configured value and built-in default. Values: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`. |
+| `-t`, `--thinking` | Enable thinking mode (sends `extra_body={'enable_thinking': True}`). DeepSeek, Alibaba/Qwen and MiniMax-M3 have thinking enabled by default. Gemini-flavored providers (google) do not accept this flag; thinking depth is controlled through `--effort` instead. |
+| `-e`, `--effort <level>` | Set the reasoning depth for the API call (sends `reasoning_effort=<level>`). Overrides the provider's configured value and built-in default. Values: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`. |
 
 ## API Type
 
@@ -270,7 +270,7 @@ Values stored in `~/.janito/config.json` via `--set`. Keys are scoped:
 | `endpoint` | provider-scoped | API endpoint URL (required for `custom`) | provider built-in default |
 | `max-input-tokens` | model-scoped | Maximum input tokens (context window) | model built-in |
 | `max-output-tokens` | model-scoped | Maximum output tokens | model built-in |
-| `reasoning-effort` | model-scoped | Reasoning depth (`none`…`max`) | model built-in |
+| `effort` | model-scoped | Reasoning depth (`none`…`max`) | model built-in |
 | `api-type` | model-scoped | API type (`Responses`, `Completions`, `Anthropic`, `DashScope`, `Gemini`) | model built-in default |
 | `stateless-mode` | model-scoped | Whether the Responses API keeps conversation state server-side (bool) | model built-in default |
 | `used-files` | flat | Whether the end-of-turn `Used files` report is printed by the CLI/shell (bool, opt-in) | `false` |

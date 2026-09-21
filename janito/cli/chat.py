@@ -111,10 +111,9 @@ def _make_turn_factory(
     cli_api_type: str | None,
     cli_model: str | None,
     cli_provider: str | None,
-    cli_reasoning_effort: str | None,
+    cli_effort: str | None,
     verbose: bool = False,
     cli_thinking: bool | None = None,
-    cli_effort: str | None = None,
 ) -> Callable[[str | None, str | None], Callable]:
     """Return a factory that builds the run-turn function for a provider.
 
@@ -144,7 +143,7 @@ def _make_turn_factory(
         cli_api_type: API type passed via ``--api-type`` (may be None).
         cli_model: Model passed via ``--model`` (may be None).
         cli_provider: Provider passed via ``--provider`` (may be None).
-        cli_reasoning_effort: Reasoning depth passed via ``--reasoning-effort``
+        cli_effort: Reasoning depth passed via ``--effort``
             (may be None).
         verbose: Session default for verbose output (captured in the turn
             closure; per-call overrides still possible via
@@ -427,7 +426,7 @@ def run_interactive_chat(args):
     # prompt uses the same configuration without environment variables).
     cli_model = getattr(args, "model", None)
     cli_provider = getattr(args, "provider", None)
-    cli_reasoning_effort = getattr(args, "reasoning_effort", None)
+    cli_effort = getattr(args, "effort", None)
     cli_api_type = getattr(args, "api_type", None)
     try:
         _, _, model = resolve_runtime_config(cli_model, cli_provider)
@@ -473,7 +472,7 @@ def run_interactive_chat(args):
         no_history=args.no_history,
         provider=None if provider == "(not configured)" else provider,
         api_type=cli_api_type,
-        reasoning_effort=cli_reasoning_effort,
+        effort=cli_effort,
     )
     # Factory to (re)build the run-turn function per provider: ``/provider``
     # calls
@@ -485,10 +484,9 @@ def run_interactive_chat(args):
         cli_api_type,
         cli_model,
         cli_provider,
-        cli_reasoning_effort,
+        cli_effort,
         verbose=args.verbose,
         cli_thinking=getattr(args, "thinking", False),
-        cli_effort=cli_reasoning_effort,
     )
     if resume_state is not None:
         # Restore the whole conversation (system prompt included) exactly as
@@ -511,7 +509,7 @@ def run_interactive_chat(args):
     # is not overwritten by the throwaway fresh session.
     shell.persist_history = persist_session
     shell.run(
-        turn_func=shell.turn_factory(cli_provider, effort_override=cli_reasoning_effort),
+        turn_func=shell.turn_factory(cli_provider, effort_override=cli_effort),
         verbose=args.verbose,
         no_tools=no_tools,
         thinking=args.thinking,
@@ -565,7 +563,7 @@ def run_single_prompt(args):
                 ),
                 cli_model=getattr(args, "model", None),
                 cli_provider=getattr(args, "provider", None),
-                reasoning_effort=getattr(args, "reasoning_effort", None),
+                reasoning_effort=getattr(args, "effort", None),
                 thinking=getattr(args, "thinking", False),
             ),
             ui_config=UIConfig(

@@ -95,11 +95,11 @@ class _SessionMixin:
 
         # Effort info (same style as provider)
         try:
-            effort = getattr(self, "reasoning_effort", None)
+            effort = getattr(self, "effort", None)
             if not effort:
-                from janito.config_loaders import load_reasoning_effort
+                from janito.config_loaders import load_effort
 
-                effort = load_reasoning_effort(provider, model)
+                effort = load_effort(provider, model)
             if not effort:
                 from janito.providers.registry import get_provider
 

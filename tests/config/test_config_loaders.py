@@ -2,7 +2,7 @@
 Tests for the ProviderConfigLoader class (janito.config_loaders).
 
 Covers the class-level API (load_model / load_max_output_tokens /
-load_reasoning_effort / load_api_type / load_stateless_mode / load_endpoint)
+load_effort / load_api_type / load_stateless_mode / load_endpoint)
 including the legacy key chain and the boolean-string tolerance.
 """
 
@@ -81,11 +81,11 @@ if pytest is not None:
         assert loader.load_max_input_tokens("missing") is None
         assert loader.load_max_input_tokens() is None
 
-    def test_load_reasoning_effort_coerces_to_str(monkeypatch, tmp_path):
+    def test_load_effort_coerces_to_str(monkeypatch, tmp_path):
         _use_temp_config(monkeypatch, tmp_path)
         loader = ProviderConfigLoader()
-        set_config_from_cli("reasoning-effort=xhigh", "alibaba")
-        assert loader.load_reasoning_effort("alibaba") == "xhigh"
+        set_config_from_cli("effort=xhigh", "alibaba")
+        assert loader.load_effort("alibaba") == "xhigh"
 
     def test_load_api_type_coerces_to_str(monkeypatch, tmp_path):
         _use_temp_config(monkeypatch, tmp_path)
