@@ -21,3 +21,5 @@ Changes since `v4.41.0` (2026-09-16).
 - Default reasoning effort is now `medium` for every model that supports it
   (openai, google, alibaba, meta); moonshot/deepseek unchanged since they do
   not support `medium` (close #147).
+- Corrected Xiaomi `mimo-v2.5` token limits to 1M input / 128K output
+  (was 128K / 120K) to match the official MiMo-V2.5 model page (close #149).

@@ -388,6 +388,24 @@ if pytest is not None:
             "high",
         ]
 
+    def test_xiaomi_provider():
+        info = get_provider_config("xiaomi")
+        assert info is not None
+        assert info["default_model"] == "mimo-v2.5"
+        model_entry = info["models"]["mimo-v2.5"]
+        # 1M context window / 128K output per the MiMo-V2.5 model page.
+        assert model_entry["max_input_tokens"] == 1048576  # 1M (2**20)
+        assert model_entry["max_output_tokens"] == 131072  # 128k
+        assert info["endpoint"] == "https://api.xiaomimimo.com/v1"
+        # OpenAI-compatible Chat Completions only (built-in default).
+        assert model_entry["supported_api_types"] == ["Completions"]
+        assert model_entry["default_api_type"] == "Completions"
+        # Case-insensitive lookups.
+        assert get_provider_config("Xiaomi")["endpoint"] == "https://api.xiaomimimo.com/v1"
+        assert get_default_model_from_provider("xiaomi") == "mimo-v2.5"
+        assert get_default_max_input_tokens_from_provider("xiaomi") == 1048576
+        assert get_default_max_output_tokens_from_provider("xiaomi") == 131072
+
     def test_default_model_and_max_tokens():
         # Providers expose built-in default models / max tokens.
         assert get_default_model_from_provider("openai") == "gpt-5.6-luna"

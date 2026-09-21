@@ -13,8 +13,8 @@ PROVIDER_CONFIG: dict = {
         "mimo-v2.5": {
             "supported_api_types": ["Completions"],
             "default_api_type": "Completions",  # built-in default (the first supported type)
-            "max_input_tokens": 128000,
-            "max_output_tokens": 120000,  # 128k
+            "max_input_tokens": 1048576,  # 1M
+            "max_output_tokens": 131072,  # 128k
         },
     },
 }
