@@ -76,14 +76,29 @@ def test_usage_line_style_spans_the_whole_line():
     assert [(span.start, span.end) for span in text.spans] == [(0, len(text.plain))]
 
 
+def _summary_parts(plain: str) -> dict[str, str]:
+    """Parse the ``=== Time | In | Out | Cached | Cost ===`` line into a
+    ``{label: value}`` dict (Rule 6: assert the composed numbers, pin only
+    the labels)."""
+    assert plain.startswith("=== ") and plain.endswith(" ===")
+    body = plain[len("=== ") : -len(" ===")]
+    return {part.split(": ", 1)[0]: part.split(": ", 1)[1] for part in body.split(" | ")}
+
+
 def test_usage_line_shape_kept():
-    """The line keeps the historical ``=== ... | ... ===`` shape."""
-    text = _render_display_usage()
-    assert text.plain.startswith("=== ")
-    assert "In: 60/65.5k" in text.plain
-    assert "Out: 40" in text.plain
-    assert "Cached: 5" in text.plain
-    assert "Cost:" in text.plain
+    """The line keeps the historical ``=== ... | ... ===`` shape.
+
+    Values are composed from the source-of-truth formatters
+    (:func:`format_tokens`) per dev-docs/testing.md Rule 6 -- numbers over
+    words; only the labels are pinned here.
+    """
+    from janito.llm_adapters.usage import format_tokens
+
+    parts = _summary_parts(_render_display_usage().plain)
+    assert list(parts) == ["In", "Out", "Cached", "Cost"]
+    assert parts["In"] == f"{format_tokens(60)}/{format_tokens(65536)}"
+    assert parts["Out"] == format_tokens(40)
+    assert parts["Cached"] == format_tokens(5)
 
 
 def test_display_turn_usage_uses_the_same_style():

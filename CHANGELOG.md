@@ -18,6 +18,14 @@ Changes since `v4.42.0` (2026-09-21).
 
 ### Changed
 
+- tests: rewrite the usage-line rendering tests to comply with
+  dev-docs/testing.md Rule 6 (numbers over words).  `test_turn_report.py`
+  and `test_usage_line_style.py` now parse the `=== ... ===` summary line
+  into labeled parts and assert values composed from the source-of-truth
+  `format_tokens()` / `format_elapsed()` instead of pinning
+  `"In: 60/65.5k"`-style strings; `test_input_tokens_info.py` drops its
+  local replica of the parts-building logic and renders through the real
+  `janito.ui.usage._display_usage` (close #152).
 - providers(xiaomi): replace MiMo-V2.5 with the MiMo-V2.6 series
   (`mimo-v2.6-pro`, `mimo-v2.6-flash`, `mimo-v2.6-pro-ultraspeed`);
   the default model is now `mimo-v2.6-flash`.  Limits are unchanged

@@ -7,8 +7,9 @@ output token count alongside the configured max output tokens using the
 
 These tests verify:
   - ``format_tokens()`` human-readable formatting.
-  - The CLI usage summary string construction with and without a max-tokens
-    value.
+  - The CLI usage summary line (rendered through the real
+    ``janito.ui.usage._display_usage``) shows the ``In: x/max`` part when a
+    max-input value is configured and the plain ``In: x`` part otherwise.
   - The web ``UsageEvent`` serialization includes ``max_tokens`` only when
     it is set.
   - The web ``usage_event_from_usage()`` passes ``max_tokens`` through
@@ -26,6 +27,7 @@ import pytest
 
 if pytest is not None:
     from janito.llm_adapters.usage import format_tokens
+    from janito.providers.costing import format_cost
 
     # ---- format_tokens unit tests ------------------------------------
 
@@ -45,67 +47,30 @@ if pytest is not None:
         assert format_tokens(None) is None
 
     # ---- CLI usage-line construction ---------------------------------
+    #
+    # Rule 6 (dev-docs/testing.md): drive the real _display_usage render
+    # path and compose expectations from the source-of-truth
+    # format_tokens() -- no local replica of the parts-building logic, no
+    # hardcoded rendered strings.
 
-    def _build_parts(
-        input_tokens,
-        max_output_tokens,
-        output_tokens=50,
-        total_tokens=200,
-        cached_tokens=None,
-        max_input_tokens=None,
-    ):
-        """Replicate the parts-building logic from run_turn."""
-        parts = []
-        if total_tokens is not None:
-            parts.append(f"Total: {format_tokens(total_tokens)}")
-        if input_tokens is not None:
-            if max_input_tokens is not None:
-                parts.append(f"In: {format_tokens(input_tokens)}/{format_tokens(max_input_tokens)}")
-            else:
-                parts.append(f"In: {format_tokens(input_tokens)}")
-        if output_tokens is not None:
-            parts.append(f"Out: {format_tokens(output_tokens)}")
-        if cached_tokens is not None:
-            parts.append(f"Cached: {format_tokens(cached_tokens)}")
-        return parts
+    def _usage(input_tokens, output_tokens, cached_tokens):
+        from types import SimpleNamespace
 
-    def test_input_with_max_tokens():
-        parts = _build_parts(1200, 65536, max_input_tokens=128000)
-        assert "In: 1.2k/128k" in parts
-        assert "Out: 50" in parts
+        return SimpleNamespace(
+            prompt_tokens=input_tokens,
+            completion_tokens=output_tokens,
+            total_tokens=input_tokens + output_tokens,
+            prompt_tokens_details=SimpleNamespace(cached_tokens=cached_tokens),
+        )
 
-    def test_input_without_max_tokens():
-        parts = _build_parts(1200, None)
-        assert "In: 1.2k" in parts
-        assert "Out: 50" in parts
-        # No slash when max is not configured
-        assert not any("/" in p for p in parts)
+    def _summary_parts(plain):
+        """Parse the ``=== ... ===`` line into a ``{label: value}`` dict."""
+        assert plain.startswith("=== ") and plain.endswith(" ===")
+        body = plain[len("=== ") : -len(" ===")]
+        return {part.split(": ", 1)[0]: part.split(": ", 1)[1] for part in body.split(" | ")}
 
-    def test_input_with_max_exact_values():
-        parts = _build_parts(500, 1000, max_input_tokens=1000)
-        assert "In: 500/1k" in parts
-        assert "Out: 50" in parts
-
-    def test_input_zero_with_max():
-        parts = _build_parts(0, 65536, max_input_tokens=128000)
-        assert "In: 0/128k" in parts
-        assert "Out: 50" in parts
-
-    def test_input_without_input_max_but_with_output_max():
-        parts = _build_parts(1200, 65536)
-        assert "In: 1.2k" in parts
-        assert "Out: 50" in parts
-
-    # ---- Cost in the CLI usage line ----------------------------------
-
-    def _display_usage_text(
-        provider,
-        model,
-        usage,
-        max_input_tokens=None,
-        max_output_tokens=None,
-    ):
-        """Render the usage summary line through _display_usage."""
+    def _render_usage_line(provider, model, usage, max_input_tokens=None, max_output_tokens=None):
+        """Render through the real _display_usage and return the parsed parts."""
         from io import StringIO
 
         from rich.console import Console
@@ -124,15 +89,27 @@ if pytest is not None:
         )
         return buf.getvalue().strip()
 
-    def _usage(input_tokens, output_tokens, cached_tokens):
-        from types import SimpleNamespace
+    def _usage_line(input_tokens, max_input_tokens=None):
+        """In/Out parts of the usage line for a Completions-shaped usage."""
+        usage = _usage(input_tokens, 50, None)
+        return _summary_parts(_render_usage_line(None, None, usage, max_input_tokens=max_input_tokens))
 
-        return SimpleNamespace(
-            prompt_tokens=input_tokens,
-            completion_tokens=output_tokens,
-            total_tokens=input_tokens + output_tokens,
-            prompt_tokens_details=SimpleNamespace(cached_tokens=cached_tokens),
-        )
+    def _cost_usage_line(provider, model, input_tokens, output_tokens, cached_tokens):
+        """Parsed parts of the usage line with the Cost part computed."""
+        usage = _usage(input_tokens, output_tokens, cached_tokens)
+        return _summary_parts(_render_usage_line(provider, model, usage))
+
+    def _turn_usage_parts(provider, model, stats):
+        """Parsed parts of the usage line for a TurnInfo (the turn report)."""
+        return _summary_parts(_render_usage_line(provider, model, stats))
+
+    def _summary_line_index(text):
+        """Line index of the ``=== ... ===`` summary in rendered output."""
+        return next(i for i, line in enumerate(text.splitlines()) if line.startswith("=== "))
+
+    # The one stable marker the capacity-warning tests share (Rule 4: pin
+    # a marker once, assert kind + ordering, never the full sentence).
+    CAPACITY_WARNING_MARKER = "Reached 80% of input capacity"
 
     def test_usage_line_cost_from_provider_cost_module(monkeypatch):
         """The Cost part is computed via get_provider_cost for the provider."""
@@ -143,8 +120,11 @@ if pytest is not None:
             "janito.providers.deepseek.cost._utcnow",
             lambda: datetime(2026, 8, 17, 12, 0, tzinfo=timezone.utc),
         )
-        text = _display_usage_text("deepseek", "deepseek-flash", _usage(1_000_000, 1_000_000, 0))
-        assert "Cost: 75.0¢ (off-peak)" in text
+        parts = _cost_usage_line("deepseek", "deepseek-flash", 1_000_000, 1_000_000, 0)
+        # Compose the expectation from the costing source of truth: the
+        # numeric cost of the same counters rendered by format_cost, plus
+        # the provider's rate-band annotation (Rule 6).
+        assert parts["Cost"] == format_cost(0.75) + " (off-peak)"
 
     def test_usage_line_cost_bills_cached_input_at_cache_hit(monkeypatch):
         """Cached input tokens are billed at the provider's cache-hit rate."""
@@ -154,41 +134,42 @@ if pytest is not None:
             "janito.providers.deepseek.cost._utcnow",
             lambda: datetime(2026, 8, 17, 12, 0, tzinfo=timezone.utc),
         )
-        text = _display_usage_text("deepseek", "deepseek-flash", _usage(1_000_000, 1_000_000, 500_000))
-        assert "Cost: 67.7¢ (off-peak)" in text
+        parts = _cost_usage_line("deepseek", "deepseek-flash", 1_000_000, 1_000_000, 500_000)
+        assert parts["Cost"] == format_cost(0.6765) + " (off-peak)"
 
     def test_usage_line_cost_google_provider():
         """Google Gemini usage calculates cost using google.cost module."""
-        text = _display_usage_text("google", "gemini-3.7-flash", _usage(1_000_000, 1_000_000, 0))
-        assert "Cost: 4.5$" in text
+        parts = _cost_usage_line("google", "gemini-3.7-flash", 1_000_000, 1_000_000, 0)
+        assert parts["Cost"] == format_cost(4.5)
 
     def test_usage_line_cost_minimax_provider():
         """MiniMax usage calculates cost using minimax.cost module."""
-        text = _display_usage_text("minimax", "MiniMax-M3", _usage(100_000, 100_000, 0))
-        assert "Cost: 15.0¢" in text
+        parts = _cost_usage_line("minimax", "MiniMax-M3", 100_000, 100_000, 0)
+        assert parts["Cost"] == format_cost(0.15)
 
     def test_usage_line_cost_openai_provider():
         """OpenAI GPT-5.6 Luna usage calculates cost using openai.cost module."""
         # 100k input tokens (<= 272K threshold): standard rates
         # (100k * $0.20 + 1M * $1.20) / 1M = 1.22.
-        text = _display_usage_text("openai", "gpt-5.6-luna", _usage(100_000, 1_000_000, 0))
-        assert "Cost: 1.2$" in text
+        parts = _cost_usage_line("openai", "gpt-5.6-luna", 100_000, 1_000_000, 0)
+        assert parts["Cost"] == format_cost(1.22)
 
     def test_usage_line_cost_openai_high_context():
         """High-context OpenAI requests (> 272K input tokens) bill at 2x/1.5x."""
-        text = _display_usage_text("openai", "gpt-5.6-luna", _usage(300_000, 1_000_000, 0))
-        assert "Cost: 1.9$" in text
+        # (300k * $0.40 + 1M * $1.80) / 1M = 1.92.
+        parts = _cost_usage_line("openai", "gpt-5.6-luna", 300_000, 1_000_000, 0)
+        assert parts["Cost"] == format_cost(1.92)
 
     def test_usage_line_cost_anthropic_provider():
         """Anthropic usage calculates cost using anthropic.cost module."""
         # 1M input (cache miss) at $2 + 1M output at $10 per 1M tokens.
-        text = _display_usage_text("anthropic", "claude-sonnet-5", _usage(1_000_000, 1_000_000, 0))
-        assert "Cost: 12.0$" in text
+        parts = _cost_usage_line("anthropic", "claude-sonnet-5", 1_000_000, 1_000_000, 0)
+        assert parts["Cost"] == format_cost(12.0)
 
     def test_usage_line_cost_without_provider_model_is_na():
         """No provider/model falls back to Cost: N/A."""
-        text = _display_usage_text(None, None, _usage(1_000_000, 1_000_000, 0))
-        assert "Cost: N/A" in text
+        parts = _cost_usage_line(None, None, 1_000_000, 1_000_000, 0)
+        assert parts["Cost"] == "N/A"
 
     def test_usage_line_cost_uses_turn_specific_counters(monkeypatch):
         """TurnInfo bills the turn-wide cumulative counters for the Cost.
@@ -217,42 +198,71 @@ if pytest is not None:
             turn_cached=500_000,
             turn_output=2_000_000,
         )
-        text = _display_usage_text("deepseek", "deepseek-flash", stats)
+        parts = _turn_usage_parts("deepseek", "deepseek-flash", stats)
         # Cost from turn totals: 1.5M*$0.15 + 0.5M*$0.003 + 2M*$0.60
         #   = 0.225 + 0.0015 + 1.2 = 1.4265.
-        assert "Cost: 1.4$ (off-peak)" in text
+        assert parts["Cost"] == format_cost(1.4265) + " (off-peak)"
         # The displayed counters still mirror the final round's request.
-        assert "In: 1m" in text
-        assert "Out: 1m" in text
+        assert parts["In"] == format_tokens(1_000_000)
+        assert parts["Out"] == format_tokens(1_000_000)
+
+    # ---- In/Out parts of the CLI usage line --------------------------
+
+    def test_input_with_max_tokens():
+        # Slash form when max input is configured.
+        parts = _usage_line(1200, max_input_tokens=128000)
+        assert parts["In"] == f"{format_tokens(1200)}/{format_tokens(128000)}"
+        assert parts["Out"] == format_tokens(50)
+
+    def test_input_without_max_tokens():
+        parts = _usage_line(1200)
+        assert parts["In"] == format_tokens(1200)
+        assert parts["Out"] == format_tokens(50)
+        # No slash when max is not configured
+        assert "/" not in parts["In"]
+
+    def test_input_with_max_exact_values():
+        parts = _usage_line(500, max_input_tokens=1000)
+        assert parts["In"] == f"{format_tokens(500)}/{format_tokens(1000)}"
+        assert parts["Out"] == format_tokens(50)
+
+    def test_input_zero_with_max():
+        parts = _usage_line(0, max_input_tokens=128000)
+        assert parts["In"] == f"{format_tokens(0)}/{format_tokens(128000)}"
+        assert parts["Out"] == format_tokens(50)
+
+    def test_input_without_input_max_but_with_output_max():
+        parts = _usage_line(1200)
+        assert parts["In"] == format_tokens(1200)
+        assert parts["Out"] == format_tokens(50)
 
     # ---- Input-capacity warning (80% of max input tokens) ------------
 
     def test_usage_warning_when_input_over_80_percent():
         """A warning is printed when In tokens exceed 80% of max input."""
-        text = _display_usage_text(None, None, _usage(90_000, 10_000, 0), max_input_tokens=100_000)
-        assert "Reached 80% of input capacity, consider running /compact or /clear" in text
+        text = _render_usage_line(None, None, _usage(90_000, 10_000, 0), max_input_tokens=100_000)
+        assert CAPACITY_WARNING_MARKER in text
 
     def test_usage_warning_printed_before_usage_line():
         """The capacity warning appears before the usage summary line."""
-        text = _display_usage_text(None, None, _usage(90_000, 10_000, 0), max_input_tokens=100_000)
-        lines = text.splitlines()
-        assert "Reached 80% of input capacity" in lines[0]
-        assert lines[1].startswith("=== In:")
+        text = _render_usage_line(None, None, _usage(90_000, 10_000, 0), max_input_tokens=100_000)
+        warning_line = next(line for line in text.splitlines() if CAPACITY_WARNING_MARKER in line)
+        assert text.splitlines().index(warning_line) < _summary_line_index(text)
 
     def test_usage_no_warning_at_exactly_80_percent():
         """Exactly 80% of capacity does not trigger the warning."""
-        text = _display_usage_text(None, None, _usage(80_000, 20_000, 0), max_input_tokens=100_000)
-        assert "Reached 80% of input capacity" not in text
+        text = _render_usage_line(None, None, _usage(80_000, 20_000, 0), max_input_tokens=100_000)
+        assert CAPACITY_WARNING_MARKER not in text
 
     def test_usage_no_warning_below_80_percent():
         """Input below 80% of capacity does not trigger the warning."""
-        text = _display_usage_text(None, None, _usage(79_999, 20_001, 0), max_input_tokens=100_000)
-        assert "Reached 80% of input capacity" not in text
+        text = _render_usage_line(None, None, _usage(79_999, 20_001, 0), max_input_tokens=100_000)
+        assert CAPACITY_WARNING_MARKER not in text
 
     def test_usage_no_warning_without_max_input_tokens():
         """Without a configured max input, no capacity warning is shown."""
-        text = _display_usage_text(None, None, _usage(90_000, 10_000, 0))
-        assert "Reached 80% of input capacity" not in text
+        text = _render_usage_line(None, None, _usage(90_000, 10_000, 0))
+        assert CAPACITY_WARNING_MARKER not in text
 
     # ---- Web UsageEvent serialization --------------------------------
 

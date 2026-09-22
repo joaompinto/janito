@@ -27,8 +27,28 @@ from rich.console import Console  # noqa: E402
 import janito.config_dir as config_dir_mod  # noqa: E402
 import janito.tooling.tools_registry as tools_registry  # noqa: E402
 import janito.tooling.used_files as used_files  # noqa: E402
-from janito.llm_adapters.usage import TurnInfo, normalize_usage  # noqa: E402
+from janito.llm_adapters.usage import (  # noqa: E402
+    TurnInfo,
+    format_elapsed,
+    format_tokens,
+    normalize_usage,
+)
 from janito.ui.usage import display_turn_usage  # noqa: E402
+
+
+def _usage_parts(console_output: str) -> dict[str, str]:
+    """Parse the ``=== Time | In | Out | Cached | Cost ===`` line into parts.
+
+    The expected part *values* are composed from the source-of-truth
+    formatters (:func:`format_tokens` / :func:`format_elapsed`) per
+    dev-docs/testing.md Rule 6 (numbers over words): the labels and order
+    are structural, the numbers come from the real formatting code.
+    """
+    for line in console_output.splitlines():
+        if line.startswith("=== ") and line.endswith(" ==="):
+            body = line[len("=== ") : -len(" ===")]
+            return {part.split(": ", 1)[0]: part.split(": ", 1)[1] for part in body.split(" | ")}
+    raise AssertionError(f"no '=== ... ===' usage summary line in:\n{console_output}")
 
 
 @pytest.fixture(autouse=True)
@@ -121,24 +141,32 @@ class TestDisplayTurnUsage:
                 max_output_tokens=8192,
             ),
         )
-        # "Total" was replaced by the turn's elapsed time (issue #99).
-        assert "Time: 12.3s" in text
-        assert "Total:" not in text
-        assert "In: 60/65.5k" in text
-        assert "Out: 40" in text
-        assert "Cached: 5" in text
+        # "Total" was replaced by the turn's elapsed time (issue #99): the
+        # elapsed part renders via format_elapsed, the token parts via
+        # format_tokens (Rule 6 -- labels structurally, numbers from the
+        # source of truth).
+        parts = _usage_parts(text)
+        assert parts == {
+            "Time": format_elapsed(12.34),
+            "In": f"{format_tokens(60)}/{format_tokens(65536)}",
+            "Out": format_tokens(40),
+            "Cached": format_tokens(5),
+            "Cost": parts["Cost"],
+        }
+        assert "Total" not in parts
         # The conversation turn number is no longer part of the summary
         # (it lives in the shell's pre-prompt rule instead).
-        assert "Turn" not in text
+        assert "Turn" not in parts
 
     def test_time_part_omitted_without_elapsed_time(self):
         # Without an elapsed time (no measurement) the summary line keeps
         # the historical shape minus the Total part.
         u = _token_stats()
-        text = self._render(u)
-        assert "Time:" not in text
-        assert "Total:" not in text
-        assert "In: 60" in text
+        config = _config()
+        parts = _usage_parts(self._render(u, config))
+        assert "Time" not in parts
+        assert "Total" not in parts
+        assert parts["In"] == f"{format_tokens(60)}/{format_tokens(config.max_input_tokens)}"
 
     def test_cached_omitted_when_stats_report_no_cached_tokens(self):
         # The cached part is driven by the normalized stats: APIs that do not
@@ -146,7 +174,7 @@ class TestDisplayTurnUsage:
         # SDKs) carry ``last_cached``/``turn_cached`` of ``None``.
         u = _token_stats(last_cached=None, turn_cached=None)
         text = self._render(u)
-        assert "Cached:" not in text
+        assert "Cached" not in _usage_parts(text)
 
     def test_prints_used_files_before_usage_line(self, monkeypatch):
         from janito.config_store import set_config_value, unset_config_value
@@ -310,8 +338,9 @@ class TestRunTurnDeliversTurnReport:
             ),
         )
         text = buf.getvalue()
-        assert "Time: 12.3s" in text
-        assert "In: 60/65.5k" in text
+        parts = _usage_parts(text)
+        assert parts["Time"] == format_elapsed(12.34)
+        assert parts["In"] == f"{format_tokens(60)}/{format_tokens(65536)}"
 
     def test_rich_observer_on_turn_complete_records_accounting(self):
         """The observer's on_turn_complete also writes the overall-use
