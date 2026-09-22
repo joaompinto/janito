@@ -16,6 +16,12 @@ PROVIDER_CONFIG: dict = {
             "max_input_tokens": 1000000,  # 1M context window
             "max_output_tokens": 128000,  # 128K
         },
+        "glm-5.3-flashx": {
+            "supported_api_types": ["Completions"],
+            "default_api_type": "Completions",  # built-in default (the first supported type)
+            "max_input_tokens": 1000000,  # 1M context window
+            "max_output_tokens": 128000,  # 128K
+        },
         "glm-5.3": {
             "supported_api_types": ["Completions"],
             "default_api_type": "Completions",  # built-in default (the first supported type)

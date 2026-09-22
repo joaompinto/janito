@@ -32,6 +32,7 @@ it does not contribute to the estimate.  There is no peak-hour surcharge.
 #: not contribute to the estimate.
 _MODEL_RATES: dict[str, tuple[float, float, float]] = {
     "glm-5.3-flash": (0.075, 0.015, 0.25),
+    "glm-5.3-flashx": (0.37, 0.075, 1.25),
     "glm-5.3": (1.40, 0.26, 4.40),
 }
 

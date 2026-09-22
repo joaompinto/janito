@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Changes since `v4.42.0` (2026-09-21).
 
+### Added
+
+- providers(zai): new `glm-5.3-flashx` model — the ~200 tokens/s FlashX
+  variant of GLM-5.3, with the same limits as `glm-5.3-flash`
+  (1M context / 128K output); pricing (USD per 1M tokens)
+  $0.37/$0.075 (cache hit)/$1.25.
+
 ### Changed
 
 - providers(xiaomi): replace MiMo-V2.5 with the MiMo-V2.6 series
