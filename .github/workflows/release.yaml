@@ -7,7 +7,10 @@ on:
 jobs:
   build-n-publish:
     name: Build and publish Python 🐍 distributions 📦 to PyPI
-    runs-on: ubuntu-latest
+    # Pinned instead of `ubuntu-latest`: the floating label migrates to
+    # Ubuntu 26.04 starting 2026-10-19 (actions/runner-images#14748), and a
+    # release/publish pipeline should not track a moving OS baseline.
+    runs-on: ubuntu-24.04
     permissions:
       id-token: write
       contents: write  # Required to create GitHub releases
@@ -30,7 +33,7 @@ jobs:
         run: python scripts/check_changelog_freshness.py
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v9.0.0
+        uses: astral-sh/setup-uv@v10
         with:
           enable-cache: true
 
