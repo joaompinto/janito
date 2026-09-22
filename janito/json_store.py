@@ -19,6 +19,7 @@ module-level singleton, so existing import sites are unaffected.
 import json
 import logging
 import os
+from collections.abc import Set as AbstractSet
 from pathlib import Path
 
 from .config_dir import get_config_dir, get_config_file_paths
@@ -173,7 +174,7 @@ class JsonFileStore:
             return self.save(config)
         return False
 
-    def list_keys(self, *, exclude: set[str] | frozenset = frozenset()) -> list:
+    def list_keys(self, *, exclude: AbstractSet[str] = frozenset()) -> list:
         """List the top-level keys, optionally excluding metadata keys."""
         return [k for k in self.load().keys() if k not in exclude]
 
