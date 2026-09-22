@@ -3,27 +3,29 @@
 Rates source
 ------------
 The per-1M-token rates below are the official Xiaomi pricing for the
-MiMo-V2.5 model (international, USD, per 1M tokens): $0.14 input cache
-miss, $0.0028 input cache hit and $0.28 output.  They apply as of the
-verification date.  Xiaomi adjusts figures frequently, so cross-check the
-official rate card before relying on them.
+MiMo-V2.6 series (international, USD, per 1M tokens).  MiMo-V2.6-Flash
+keeps the previous V2.5 rates ($0.14 input cache miss, $0.0028 input
+cache hit, $0.28 output); MiMo-V2.6-Pro and the UltraSpeed variant bill
+at higher flagship rates.  Xiaomi adjusts figures frequently, so
+cross-check the official rate card before relying on them.
 
 Prompt caching
 --------------
 Xiaomi applies automatic prompt caching: repeated input tokens (a stable
 system prompt, a long document, few-shot examples) are billed at the much
-lower cache-hit rate ($0.0028/1M, 2% of the cache-miss input rate) instead
-of the cache-miss rate.  There is no peak-hour surcharge.
+lower cache-hit rate instead of the cache-miss rate.  There is no
+peak-hour surcharge.
 """
 
 #: Per-1M-token rates (USD) keyed by model name:
 #: ``(input cache miss, input cache hit, output)``.
 #:
 #: Xiaomi applies automatic prompt caching: cached input tokens are billed
-#: at the much lower cache-hit rate ($0.0028/1M) instead of the cache-miss
-#: rate ($0.14/1M).
+#: at the much lower cache-hit rate instead of the cache-miss rate.
 _MODEL_RATES: dict[str, tuple[float, float, float]] = {
-    "mimo-v2.5": (0.14, 0.0028, 0.28),
+    "mimo-v2.6-flash": (0.14, 0.0028, 0.28),
+    "mimo-v2.6-pro": (0.435, 0.0036, 0.87),
+    "mimo-v2.6-pro-ultraspeed": (4.35, 0.036, 8.7),
 }
 
 

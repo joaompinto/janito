@@ -391,18 +391,25 @@ if pytest is not None:
     def test_xiaomi_provider():
         info = get_provider_config("xiaomi")
         assert info is not None
-        assert info["default_model"] == "mimo-v2.5"
-        model_entry = info["models"]["mimo-v2.5"]
-        # 1M context window / 128K output per the MiMo-V2.5 model page.
-        assert model_entry["max_input_tokens"] == 1048576  # 1M (2**20)
-        assert model_entry["max_output_tokens"] == 131072  # 128k
+        assert info["default_model"] == "mimo-v2.6-flash"
+        # The V2.6 series: pro, flash (default) and the ultraspeed variant.
+        assert set(info["models"]) == {
+            "mimo-v2.6-pro",
+            "mimo-v2.6-flash",
+            "mimo-v2.6-pro-ultraspeed",
+        }
+        for name in ("mimo-v2.6-pro", "mimo-v2.6-flash", "mimo-v2.6-pro-ultraspeed"):
+            model_entry = info["models"][name]
+            # 1M context window / 128K output (unchanged from V2.5).
+            assert model_entry["max_input_tokens"] == 1048576  # 1M (2**20)
+            assert model_entry["max_output_tokens"] == 131072  # 128k
+            # OpenAI-compatible Chat Completions only (built-in default).
+            assert model_entry["supported_api_types"] == ["Completions"]
+            assert model_entry["default_api_type"] == "Completions"
         assert info["endpoint"] == "https://api.xiaomimimo.com/v1"
-        # OpenAI-compatible Chat Completions only (built-in default).
-        assert model_entry["supported_api_types"] == ["Completions"]
-        assert model_entry["default_api_type"] == "Completions"
         # Case-insensitive lookups.
         assert get_provider_config("Xiaomi")["endpoint"] == "https://api.xiaomimimo.com/v1"
-        assert get_default_model_from_provider("xiaomi") == "mimo-v2.5"
+        assert get_default_model_from_provider("xiaomi") == "mimo-v2.6-flash"
         assert get_default_max_input_tokens_from_provider("xiaomi") == 1048576
         assert get_default_max_output_tokens_from_provider("xiaomi") == 131072
 

@@ -256,13 +256,24 @@ if pytest is not None:
         assert get_provider_cost("zai", "glm-5.3-flash", 1_000_000, 1_000_000, 0) == "32.5\xa2"
         # Cached input tokens are billed at the cache-hit rate.
         assert get_provider_cost("zai", "glm-5.3-flash", 1_000_000, 1_000_000, 500_000) == "29.5\xa2"
-        # Xiaomi ships a cost module: mimo-v2.5 at $0.14 / $0.0028 (cache
-        # hit) / $0.28 output per 1M tokens.
-        assert get_provider_cost("xiaomi", "mimo-v2.5", 1_000_000, 1_000_000, 0) == "42.0\xa2"
+        # Xiaomi ships a cost module.  Flash keeps the V2.5 rates: $0.14 /
+        # $0.0028 (cache hit) / $0.28 output per 1M tokens; Pro and the
+        # UltraSpeed variant bill at higher flagship rates.
+        assert get_provider_cost("xiaomi", "mimo-v2.6-flash", 1_000_000, 1_000_000, 0) == "42.0\xa2"
         # Cached input tokens are billed at the cache-hit rate.
-        assert get_provider_cost("xiaomi", "mimo-v2.5", 1_000_000, 1_000_000, 500_000) == "35.1\xa2"
+        assert get_provider_cost("xiaomi", "mimo-v2.6-flash", 1_000_000, 1_000_000, 500_000) == "35.1\xa2"
         # Case-insensitive provider lookup.
-        assert get_provider_cost("Xiaomi", "mimo-v2.5", 1_000_000, 1_000_000, 0) == "42.0\xa2"
+        assert get_provider_cost("Xiaomi", "mimo-v2.6-flash", 1_000_000, 1_000_000, 0) == "42.0\xa2"
+        # Pro: 1M * $0.435 + 1M * $0.87 = 1.305 -> 1.3$; with half the
+        # input cached: 500k * $0.435 + 500k * $0.0036 + 1M * $0.87 = 1.0893
+        # -> 1.1$.
+        assert get_provider_cost("xiaomi", "mimo-v2.6-pro", 1_000_000, 1_000_000, 0) == "1.3$"
+        assert get_provider_cost("xiaomi", "mimo-v2.6-pro", 1_000_000, 1_000_000, 500_000) == "1.1$"
+        # UltraSpeed: 1M * $4.35 + 1M * $8.7 = 13.05 -> 13.1$; with half the
+        # input cached: 500k * $4.35 + 500k * $0.036 + 1M * $8.7 = 10.893
+        # -> 10.9$.
+        assert get_provider_cost("xiaomi", "mimo-v2.6-pro-ultraspeed", 1_000_000, 1_000_000, 0) == "13.1$"
+        assert get_provider_cost("xiaomi", "mimo-v2.6-pro-ultraspeed", 1_000_000, 1_000_000, 500_000) == "10.9$"
         # OpenAI ships a cost module: gpt-5.6-luna at $0.20 / $0.02 (cache
         # read) / $1.20 output per 1M tokens.  Standard request
         # (input <= 272K): 100k * $0.20 + 1M * $1.20 = 1.22 -> 1.2$.
@@ -391,7 +402,7 @@ if pytest is not None:
         assert openai_get_cost("gpt-5.6-luna", 1_000_000, 1_000_000, 0, is_reference=True) == "2.200000$"
         # Xiaomi also ignores is_reference (estimate unchanged).
         # 1M * $0.14 + 1M * $0.28 = 0.42.
-        assert xiaomi_get_cost("mimo-v2.5", 1_000_000, 1_000_000, 0, is_reference=True) == "0.420000$"
+        assert xiaomi_get_cost("mimo-v2.6-flash", 1_000_000, 1_000_000, 0, is_reference=True) == "0.420000$"
         # Z.ai also ignores is_reference (estimate unchanged).
         # 1M * $1.40 + 1M * $4.40 = 5.80.
         assert zai_get_cost("glm-5.3", 1_000_000, 1_000_000, 0, is_reference=True) == "5.800000$"

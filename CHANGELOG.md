@@ -8,3 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased](https://github.com/joaompinto/janito/compare/v4.42.0...HEAD)
 
 Changes since `v4.42.0` (2026-09-21).
+
+### Changed
+
+- providers(xiaomi): replace MiMo-V2.5 with the MiMo-V2.6 series
+  (`mimo-v2.6-pro`, `mimo-v2.6-flash`, `mimo-v2.6-pro-ultraspeed`);
+  the default model is now `mimo-v2.6-flash`.  Limits are unchanged
+  (1M context / 128K output); per-model pricing (USD per 1M tokens):
+  Flash $0.14/$0.0028 (cache hit)/$0.28, Pro $0.435/$0.0036/$0.87,
+  UltraSpeed $4.35/$0.036/$8.7 (close #150).

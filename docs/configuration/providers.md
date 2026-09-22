@@ -673,16 +673,21 @@ Use Xiaomi AI to access Mimo models.
 
 ```bash
 # Step 1: Set provider and model
-janito --set provider=xiaomi --set model=mimo-v2.5
+janito --set provider=xiaomi --set model=mimo-v2.6-flash
 # Step 2: Store API key
 janito --set-api-key="your-xiaomi-api-key" --provider xiaomi
 ```
 
 ### Popular Models
 
-| Model | Description |
-|-------|-------------|
-| `mimo-v2.5` | Latest Xiaomi language model (default, built-in) |
+| Model | Description | Input (cache hit) | Input (cache miss) | Output |
+|-------|-------------|-------------------|--------------------|--------|
+| `mimo-v2.6-flash` | Fast, cost-efficient Xiaomi language model (default, built-in) | $0.0028 | $0.14 | $0.28 |
+| `mimo-v2.6-pro` | Flagship Xiaomi language model (built-in) | $0.0036 | $0.435 | $0.87 |
+| `mimo-v2.6-pro-ultraspeed` | `mimo-v2.6-pro` with up to 20x inference speed (built-in) | $0.036 | $4.35 | $8.7 |
+
+Prices per 1M tokens. All V2.6 models support a 1M-token context window
+and 128K output tokens.
 
 Model selection is restricted to the built-in models above.
 `janito --list-models` shows the accepted names.
@@ -691,7 +696,7 @@ Model selection is restricted to the built-in models above.
 
 ```bash
 # Step 1: Set provider and model
-janito --set provider=xiaomi --set model=mimo-v2.5
+janito --set provider=xiaomi --set model=mimo-v2.6-flash
 # Step 2: Store API key
 janito --set-api-key="your-xiaomi-api-key" --provider xiaomi
 # Step 3: Run prompt
@@ -771,6 +776,7 @@ janito --set-api-key="your-zai-api-key" --provider zai
 | Model | Description |
 |-------|-------------|
 | `glm-5.3-flash` | GLM-5.3-Flash, the fast/cheap GLM-5 model (default, built-in) |
+| `glm-5.3-flashx` | GLM-5.3-FlashX, faster ~200 tokens/s variant (built-in) |
 | `glm-5.3` | Full-size GLM-5.3 model |
 
 Model selection is restricted to the built-in models above.
