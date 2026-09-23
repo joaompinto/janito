@@ -324,8 +324,8 @@ if pytest is not None:
         assert get_provider_cost("anthropic", "claude-sonnet-5", 1_000_000, 1_000_000, 500_000) == "11.1$"
         # Case-insensitive provider lookup.
         assert get_provider_cost("Anthropic", "claude-sonnet-5", 1_000_000, 1_000_000, 0) == "12.0$"
-        # claude-opus-5 at $5 / $0.50 (cache hit) / $25 output per 1M tokens.
-        assert get_provider_cost("anthropic", "claude-opus-5", 1_000_000, 1_000_000, 0) == "30.0$"
+        # claude-opus-5-5 at $4 / $0.40 (cache hit) / $20 output per 1M tokens.
+        assert get_provider_cost("anthropic", "claude-opus-5-5", 1_000_000, 1_000_000, 0) == "24.0$"
         # claude-fable-5-1 at $10 / $1 (cache hit) / $50 output per 1M tokens.
         assert get_provider_cost("anthropic", "claude-fable-5-1", 1_000_000, 1_000_000, 0) == "60.0$"
         # Unknown models within the provider fall back to "N/A".

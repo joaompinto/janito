@@ -25,7 +25,7 @@ claude-sonnet-5.  There is no peak-hour surcharge.
 #: base input rate).
 _MODEL_RATES: dict[str, tuple[float, float, float]] = {
     "claude-fable-5-1": (10.00, 1.00, 50.00),
-    "claude-opus-5": (5.00, 0.50, 25.00),
+    "claude-opus-5-5": (4.00, 0.40, 20.00),
     "claude-sonnet-5": (2.00, 0.20, 10.00),
 }
 

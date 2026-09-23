@@ -11,6 +11,8 @@ Changes since `v4.43.0` (2026-09-22).
 
 ### Changed
 
+- anthropic: replace `claude-opus-5` with `claude-opus-5-5` (1M context,
+  updated rates `$4.00`/`$0.40` cache hit/`$20.00` output per 1M tokens).
 - ci: pin both workflows to the `ubuntu-24.04` runner instead of the
   floating `ubuntu-latest` label, which migrates to Ubuntu 26.04 starting
   2026-10-19 (actions/runner-images#14748) — release/publish pipelines

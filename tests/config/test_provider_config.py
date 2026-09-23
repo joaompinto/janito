@@ -272,12 +272,12 @@ if pytest is not None:
         assert get_default_max_input_tokens_from_provider("anthropic") == 200000
         assert get_default_max_output_tokens_from_provider("anthropic") == 64000
         assert get_default_api_type_from_provider("anthropic") == "Completions"
-        # claude-opus-5 and claude-fable-5-1 also ship built-in entries: both
+        # claude-opus-5-5 and claude-fable-5-1 also ship built-in entries: both
         # support the Completions and native Anthropic SDK API types (default
         # Completions) and expose the 1M-token context window at standard
         # pricing.
         for name, max_input, max_output in (
-            ("claude-opus-5", 1000000, 128000),
+            ("claude-opus-5-5", 1000000, 128000),
             ("claude-fable-5-1", 1000000, 128000),
         ):
             entry = info["models"][name]

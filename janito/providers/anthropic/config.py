@@ -31,7 +31,7 @@ PROVIDER_CONFIG: dict = {
             "max_input_tokens": 200000,
             "max_output_tokens": 64000,
         },
-        "claude-opus-5": {
+        "claude-opus-5-5": {
             "supported_api_types": [
                 "Completions",
                 "Anthropic",  # native Anthropic SDK (requires the `anthropic` package)
