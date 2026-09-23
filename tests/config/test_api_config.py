@@ -85,10 +85,10 @@ def _make_observer():
 
 def test_build_api_config_resolves_cli_args_for_completions():
     """CLI provider/model + auth-store key resolve into the config."""
-    config = build_api_config(api_type="Completions", cli_provider="openai", cli_model="gpt-5.6-luna")
+    config = build_api_config(api_type="Completions", cli_provider="openai", cli_model="gpt-6-luna")
     assert config.provider == "openai"
     assert config.api_type == "Completions"
-    assert config.model == "gpt-5.6-luna"
+    assert config.model == "gpt-6-luna"
     # Standard OpenAI endpoint: base_url stays None.
     assert config.base_url is None
     assert config.api_key == "sk-test-openai"  # pragma: allowlist secret
@@ -143,16 +143,16 @@ def test_build_api_config_raises_without_provider_or_key():
 
 def test_build_api_config_builtin_token_defaults():
     """Built-in provider-config defaults apply when no config override is set."""
-    config = build_api_config(api_type="Responses", cli_provider="openai", cli_model="gpt-5.6-luna")
+    config = build_api_config(api_type="Responses", cli_provider="openai", cli_model="gpt-6-luna")
     assert config.max_output_tokens == 128000
     assert config.max_input_tokens == 1050000
 
 
 def test_build_api_config_config_override_wins_over_builtin():
     """A model-scoped config override beats the built-in default."""
-    set_config_value("openai.models.gpt-5.6-luna.max-output-tokens", 4096)
-    set_config_value("openai.models.gpt-5.6-luna.effort", "low")
-    config = build_api_config(api_type="Responses", cli_provider="openai", cli_model="gpt-5.6-luna")
+    set_config_value("openai.models.gpt-6-luna.max-output-tokens", 4096)
+    set_config_value("openai.models.gpt-6-luna.effort", "low")
+    config = build_api_config(api_type="Responses", cli_provider="openai", cli_model="gpt-6-luna")
     assert config.max_output_tokens == 4096
     assert config.reasoning_effort == "low"
 
@@ -235,13 +235,13 @@ def test_build_api_config_resolves_preserve_thinking_from_provider_config():
     assert config.preserve_thinking is True
 
     # Models without a built-in declaration resolve to None.
-    config = build_api_config(api_type="Completions", cli_provider="openai", cli_model="gpt-5.6-luna")
+    config = build_api_config(api_type="Completions", cli_provider="openai", cli_model="gpt-6-luna")
     assert config.preserve_thinking is None
 
     # A legacy flat config key no longer has any effect: the value is
     # resolved from the provider config, never from the config store.
     set_config_value("preserve_thinking", True)
-    config = build_api_config(api_type="Completions", cli_provider="openai", cli_model="gpt-5.6-luna")
+    config = build_api_config(api_type="Completions", cli_provider="openai", cli_model="gpt-6-luna")
     assert config.preserve_thinking is None
 
 
@@ -263,7 +263,7 @@ def test_ui_config_injects_settings():
 
 def test_api_config_carries_no_ui_fields():
     """UI concerns live in UIConfig, not APIConfig (the split)."""
-    config = build_api_config(api_type="Completions", cli_provider="openai", cli_model="gpt-5.6-luna")
+    config = build_api_config(api_type="Completions", cli_provider="openai", cli_model="gpt-6-luna")
     assert config.use_mcp is True
     assert not hasattr(config, "verbose")
     assert not hasattr(config, "stream_runner")
@@ -275,7 +275,7 @@ def test_api_config_carries_no_ui_fields():
 
 def test_api_config_is_frozen():
     """APIConfig is immutable: mutation raises FrozenInstanceError."""
-    config = build_api_config(api_type="Completions", cli_provider="openai", cli_model="gpt-5.6-luna")
+    config = build_api_config(api_type="Completions", cli_provider="openai", cli_model="gpt-6-luna")
     with pytest.raises(FrozenInstanceError):
         config.model = "other-model"
 
@@ -285,7 +285,7 @@ def test_api_config_constructed_directly():
     config = APIConfig(
         provider="openai",
         api_type="Completions",
-        model="gpt-5.6-luna",
+        model="gpt-6-luna",
         base_url=None,
         api_key="sk-test",  # pragma: allowlist secret
         max_output_tokens=100_000,
@@ -295,4 +295,4 @@ def test_api_config_constructed_directly():
         preserve_thinking=None,
         use_mcp=True,
     )
-    assert config.model == "gpt-5.6-luna"
+    assert config.model == "gpt-6-luna"

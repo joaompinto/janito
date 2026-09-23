@@ -184,7 +184,7 @@ def test_responses_build_call_kwargs_appends_builtin_tools():
 
 def test_responses_build_call_kwargs_appends_builtin_tools_without_function_tools():
     """Built-in tools are still enabled with no function tools (like
-    image_generation for gpt-5)."""
+    image_generation for gpt-6)."""
     from janito.llm_adapters import responses
 
     class _Cfg:
@@ -207,7 +207,7 @@ def test_responses_build_call_kwargs_appends_builtin_tools_without_function_tool
 
 
 def test_responses_build_call_kwargs_appends_image_generation_tool_for_gpt5():
-    """Mainline gpt-5 models get the native ``image_generation`` tool."""
+    """Mainline gpt-6 models get the native ``image_generation`` tool."""
     from janito.llm_adapters import responses
 
     tools = [
@@ -217,7 +217,7 @@ def test_responses_build_call_kwargs_appends_image_generation_tool_for_gpt5():
         }
     ]
     kwargs = responses.build_call_kwargs(
-        "gpt-5.6",
+        "gpt-6-sol",
         [{"role": "user", "content": "draw a cat"}],
         tools,
         _cfg(thinking=False),
@@ -267,7 +267,7 @@ def test_responses_build_call_kwargs_skips_image_generation_tool_for_other_model
             "parameters": {},
         }
     ]
-    # A non-gpt-5 model with no function tools gets no tools at all.
+    # A non-gpt-5/gpt-6 model with no function tools gets no tools at all.
     kwargs = responses.build_call_kwargs(
         "gpt-4",
         [{"role": "user", "content": "hi"}],
@@ -281,12 +281,12 @@ def test_responses_build_call_kwargs_skips_image_generation_tool_for_other_model
 
 
 def test_responses_build_call_kwargs_image_generation_tool_without_function_tools():
-    """The native image_generation tool is enabled for gpt-5 even when no
+    """The native image_generation tool is enabled for gpt-6 even when no
     function tools are configured (it is a model capability, not a tool)."""
     from janito.llm_adapters import responses
 
     kwargs = responses.build_call_kwargs(
-        "gpt-5.6",
+        "gpt-6-sol",
         [{"role": "user", "content": "draw a cat"}],
         None,
         _cfg(thinking=False),

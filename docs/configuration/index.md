@@ -20,7 +20,7 @@ janito stores your configuration in `~/.janito/`. The main configuration file is
 > secrets in `./.janito` (the current working directory) instead of
 > `~/.janito`. Reads resolve local values first and fall back to the global
 > directory, and `--list-keys` / `--list-secrets` show both. For example:
-> `janito -l --set model=gpt-5.6-luna`.
+> `janito -l --set model=gpt-6-luna`.
 
 ### View Configuration
 
@@ -90,7 +90,7 @@ built-in base prompt (like an empty `AGENTS.md`).
 > that auto-loads a cwd `AGENTS.md` — only use local configs you trust.
 
 At call time, when no model-scoped value is configured, janito falls back to
-the provider/model's built-in limit (e.g. OpenAI's `gpt-5.6-luna`:
+the provider/model's built-in limit (e.g. OpenAI's `gpt-6-luna`:
 1,050,000 in / 128,000 out); the generic fallback used when even the model
 has none is `128000` input / `100000` output.
 

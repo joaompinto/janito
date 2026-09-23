@@ -56,7 +56,7 @@ def _run(
     cli_api_type=None,
     model=None,
     configured_model=None,
-    default_model="gpt-5.6-luna",
+    default_model="gpt-6-luna",
 ):
     from janito.shell.cmds.status import _print_config_info
 

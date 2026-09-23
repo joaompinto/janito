@@ -72,7 +72,7 @@ janito --show-providers
 Supported Providers (12):
 ============================================================
   openai [active]
-    Model:         gpt-5.6-luna (default)
+    Model:         gpt-6-luna (default)
     API types:     Responses (default), Completions
     Endpoint:      default OpenAI (no custom base URL)
     API key:       (not set)
@@ -100,7 +100,7 @@ and which still need a key or an endpoint.
 
 ```bash
 # Step 1: Set provider and model
-janito --set provider=openai --set model=gpt-5.6-luna
+janito --set provider=openai --set model=gpt-6-luna
 # Step 2: Store API key
 janito --set-api-key="sk-your-key" --provider openai
 ```
@@ -117,7 +117,7 @@ janito --config
 
 ### Reasoning Level
 
-The GPT-5.x models support configurable reasoning depth via the
+The GPT-6 models support configurable reasoning depth via the
 OpenAI-compatible `reasoning_effort` parameter. The supported levels are
 `low`, `medium` and `high`; the built-in default is the standard level
 (`medium`).
@@ -132,7 +132,7 @@ janito --provider openai --set effort=medium
 
 Resolution order: `--effort` > per-provider config value
 (`--set effort=...`) > the model's own default level (`medium` for the
-GPT-5.x models).
+GPT-6 models).
 
 ## Google (Gemini)
 

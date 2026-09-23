@@ -159,7 +159,7 @@ if pytest is not None:
         state = c._init_conversation_state(
             "hi",
             "openai",
-            "gpt-5.6-luna",
+            "gpt-6-luna",
             previous_response_id=None,
             previous_items=None,
             instructions="Be helpful",

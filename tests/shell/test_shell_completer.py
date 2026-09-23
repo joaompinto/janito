@@ -248,20 +248,20 @@ if pytest is not None:
     def test_model_argument_completes_from_current_provider():
         # The models suggested come from the session's provider (openai here).
         names = _arg_completer_completions_for("/model ", provider="openai")
-        assert "gpt-5.6-luna" in names
+        assert "gpt-6-luna" in names
 
     def test_model_argument_completes_deepseek_models():
         names = _arg_completer_completions_for("/model ", provider="deepseek")
         assert "deepseek-flash" in names
-        assert "gpt-5.6-luna" not in names
+        assert "gpt-6-luna" not in names
 
     def test_model_argument_completes_prefix():
         names = _arg_completer_completions_for("/model gpt", provider="openai")
-        assert names == ["gpt-5.6-luna", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-6-astra"]
+        assert names == ["gpt-6-astra", "gpt-6-luna", "gpt-6-sol"]
 
     def test_model_argument_complete_prefix_case_insensitive():
         names = _arg_completer_completions_for("/model GPT", provider="openai")
-        assert names == ["gpt-5.6-luna", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-6-astra"]
+        assert names == ["gpt-6-astra", "gpt-6-luna", "gpt-6-sol"]
 
     def test_model_argument_command_case_insensitive():
         names = _arg_completer_completions_for("/MODEL deep", provider="deepseek")
@@ -279,7 +279,7 @@ if pytest is not None:
     def test_model_argument_no_completion_after_second_space():
         # Only the first argument is completed; a second space means the user
         # has moved past it.
-        assert _arg_completer_completions_for("/model gpt-5.6-luna ", provider="openai") == []
+        assert _arg_completer_completions_for("/model gpt-6-luna ", provider="openai") == []
 
     def test_model_argument_no_completion_without_command_prefix():
         # A plain chat line mentioning the word must not offer models.
@@ -288,7 +288,7 @@ if pytest is not None:
 
     def test_model_argument_leading_whitespace_still_completes():
         names = _arg_completer_completions_for("  /model gpt", provider="openai")
-        assert names == ["gpt-5.6-luna", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-6-astra"]
+        assert names == ["gpt-6-astra", "gpt-6-luna", "gpt-6-sol"]
 
     def test_model_argument_completion_meta():
         from janito.shell import InteractiveShell
@@ -296,7 +296,7 @@ if pytest is not None:
         shell = InteractiveShell(model="test-model", no_history=True, provider="openai")
         doc = Document("/model gpt", cursor_position=len("/model gpt"))
         completions = list(shell.session.completer.get_completions(doc, CompleteEvent()))
-        assert len(completions) == 4
+        assert len(completions) == 3
         assert completions[0].start_position == -len("gpt")
         meta = completions[0].display_meta
         assert "argument" in "".join(part[1] for part in meta)

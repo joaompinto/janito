@@ -39,7 +39,7 @@ def build_call_kwargs(
         extra_body enable_thinking, or the raw thinking dict for providers
         with a structured thinking parameter (e.g. MiniMax-M3)
       - max output tokens from ``janito.general_config`` -> max_tokens
-        (``max_completion_tokens`` for gpt-5 models)
+        (``max_completion_tokens`` for gpt-5/gpt-6 models)
       - ``preserve_thinking`` (resolved from the provider config's model
         entry, e.g. ``True`` for Alibaba/Qwen) -> extra_body
       - ``reasoning_effort`` -> ``reasoning_effort`` (e.g. low/medium/xhigh)
@@ -55,7 +55,7 @@ def build_call_kwargs(
     }
 
     if max_output_tokens is not None:
-        if model.startswith("gpt-5"):
+        if model.startswith("gpt-5") or model.startswith("gpt-6"):
             call_kwargs["max_completion_tokens"] = max_output_tokens
         else:
             call_kwargs["max_tokens"] = max_output_tokens

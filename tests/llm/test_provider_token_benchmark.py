@@ -51,8 +51,8 @@ def test_unformat_tokens():
 
 
 def test_parse_model():
-    stdout = "----- Model: gpt-5.6-luna | Backend: api.openai.com\n"
-    assert pbm.parse_model(stdout) == "gpt-5.6-luna"
+    stdout = "----- Model: gpt-6-luna | Backend: api.openai.com\n"
+    assert pbm.parse_model(stdout) == "gpt-6-luna"
     assert pbm.parse_model("no banner here") is None
 
 
@@ -106,14 +106,14 @@ def test_parse_usage_summary():
 
 def test_build_result_ok_from_log():
     stdout = (
-        "----- Model: gpt-5.6-luna | Backend: api.openai.com\n"
+        "----- Model: gpt-6-luna | Backend: api.openai.com\n"
         "answer\n"
         "=== Total: 1.2k | In: 1k | Out: 234 | Cost: N/A ===\n"
     )
     stderr = "INFO: Request completed: total=1234 tokens (in=1000, out=234, cached=None, max=128000), 1 messages\n"
     result = pbm.build_result("openai", 0, stdout, stderr)
     assert result["provider"] == "openai"
-    assert result["model"] == "gpt-5.6-luna"
+    assert result["model"] == "gpt-6-luna"
     assert result["status"] == "ok"
     assert result["out_tokens"] == 234
     assert result["in_tokens"] == 1000
@@ -212,8 +212,8 @@ def test_discover_providers_failure(tmp_path):
 def test_sort_results_and_chart_entries():
     results = [
         {"provider": "zai", "model": "glm-5.3", "out_tokens": 100},
-        {"provider": "openai", "model": "gpt-5.6-luna", "out_tokens": 500},
-        {"provider": "deepseek", "model": "gpt-5.6-luna", "out_tokens": 300},
+        {"provider": "openai", "model": "gpt-6-luna", "out_tokens": 500},
+        {"provider": "deepseek", "model": "gpt-6-luna", "out_tokens": 300},
         {"provider": "broken", "model": None, "out_tokens": None},
         {"provider": "anthropic", "model": "claude-sonnet-5", "out_tokens": 400},
     ]
@@ -223,9 +223,9 @@ def test_sort_results_and_chart_entries():
 
     entries = pbm.chart_entries(sorted_results)
     assert entries == [
-        ("gpt-5.6-luna (openai)", 500),
+        ("gpt-6-luna (openai)", 500),
         ("claude-sonnet-5", 400),
-        ("gpt-5.6-luna (deepseek)", 300),
+        ("gpt-6-luna (deepseek)", 300),
         ("glm-5.3", 100),
     ]
 
@@ -234,7 +234,7 @@ def test_write_json(tmp_path):
     results = [
         {
             "provider": "openai",
-            "model": "gpt-5.6-luna",
+            "model": "gpt-6-luna",
             "out_tokens": 500,
             "status": "ok",
         }
@@ -279,7 +279,7 @@ def test_encode_png_small_canvas():
 
 def test_render_chart_writes_valid_png(tmp_path):
     entries = [
-        ("gpt-5.6-luna", 18432),
+        ("gpt-6-luna", 18432),
         ("deepseek-flash", 8932),
         ("glm-5.3", 512),
     ]

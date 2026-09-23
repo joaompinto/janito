@@ -39,7 +39,7 @@ Example output:
 [INFO] Initializing janito...
 [DEBUG] Loading configuration from ~/.janito/config.json
 [INFO] Using provider: openai
-[DEBUG] API request: model=gpt-5.6-luna, tokens=150
+[DEBUG] API request: model=gpt-6-luna, tokens=150
 [INFO] Processing tools...
 ```
 

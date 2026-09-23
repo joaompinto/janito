@@ -37,7 +37,7 @@ def _args(**kw):
 def _snapshot(**kw):
     state = {
         "provider": "openai",
-        "model": "gpt-5.6-luna",
+        "model": "gpt-6-luna",
         "api_type": "Responses",
         "thinking": True,
         "effort": "high",
@@ -53,18 +53,18 @@ def test_normalize_identity():
 
 
 def test_resume_identity_matches_case_insensitively():
-    assert _resume_identity_matches(_snapshot(), "OpenAI", "GPT-5.6-LUNA", "responses") is True
+    assert _resume_identity_matches(_snapshot(), "OpenAI", "GPT-6-LUNA", "responses") is True
 
 
 def test_resume_identity_matches_requires_api_type():
     state = _snapshot()
-    assert _resume_identity_matches(state, "openai", "gpt-5.6-luna", None) is False
-    assert _resume_identity_matches(state, "openai", "gpt-5.6-luna", "Completions") is False
+    assert _resume_identity_matches(state, "openai", "gpt-6-luna", None) is False
+    assert _resume_identity_matches(state, "openai", "gpt-6-luna", "Completions") is False
 
 
 def test_resume_identity_matches_false_on_provider_or_model_mismatch():
     state = _snapshot()
-    assert _resume_identity_matches(state, "anthropic", "gpt-5.6-luna", "Responses") is False
+    assert _resume_identity_matches(state, "anthropic", "gpt-6-luna", "Responses") is False
     assert _resume_identity_matches(state, "openai", "gpt-4o", "Responses") is False
 
 
@@ -86,7 +86,7 @@ def test_apply_resume_backfills_identity(monkeypatch):
     args = _args()
     _main._apply_resume_session(args)
     assert args.provider == "openai"
-    assert args.model == "gpt-5.6-luna"
+    assert args.model == "gpt-6-luna"
     assert args.api_type == "Responses"
     assert args.thinking is True
     assert args.effort == "high"
@@ -132,14 +132,14 @@ def test_apply_resume_noop_without_continue_flag(monkeypatch):
 
 def test_resolve_resume_ignored_without_continue_flag():
     args = _args(continue_session=False, no_history=False)
-    state, persist = _resolve_resume(args, "openai", "gpt-5.6-luna", "Responses")
+    state, persist = _resolve_resume(args, "openai", "gpt-6-luna", "Responses")
     assert state is None
     assert persist is True
 
 
 def test_resolve_resume_disabled_under_no_history(capsys):
     args = _args(continue_session=True, no_history=True)
-    state, persist = _resolve_resume(args, "openai", "gpt-5.6-luna", "Responses")
+    state, persist = _resolve_resume(args, "openai", "gpt-6-luna", "Responses")
     assert state is None
     assert persist is False
     assert capsys.readouterr().out.strip() != ""  # smoke only
@@ -148,7 +148,7 @@ def test_resolve_resume_disabled_under_no_history(capsys):
 def test_resolve_resume_no_snapshot_starts_fresh(monkeypatch, capsys):
     monkeypatch.setattr(persistence, "load_conversation_state", lambda: None)
     args = _args(continue_session=True, no_history=False)
-    state, persist = _resolve_resume(args, "openai", "gpt-5.6-luna", "Responses")
+    state, persist = _resolve_resume(args, "openai", "gpt-6-luna", "Responses")
     assert state is None
     assert persist is True
     assert capsys.readouterr().out.strip() != ""  # smoke only
@@ -158,7 +158,7 @@ def test_resolve_resume_restores_on_identity_match(monkeypatch):
     snapshot = _snapshot(api_type="Responses")
     monkeypatch.setattr(persistence, "load_conversation_state", lambda: snapshot)
     args = _args(continue_session=True, no_history=False)
-    state, persist = _resolve_resume(args, "openai", "gpt-5.6-luna", "Responses")
+    state, persist = _resolve_resume(args, "openai", "gpt-6-luna", "Responses")
     assert state is snapshot
     assert persist is True
 
@@ -167,7 +167,7 @@ def test_resolve_resume_mismatch_starts_fresh_without_persisting(monkeypatch, ca
     snapshot = _snapshot(api_type="Responses")
     monkeypatch.setattr(persistence, "load_conversation_state", lambda: snapshot)
     args = _args(continue_session=True, no_history=False)
-    state, persist = _resolve_resume(args, "openai", "gpt-5.6-luna", "Completions")
+    state, persist = _resolve_resume(args, "openai", "gpt-6-luna", "Completions")
     assert state is None
     assert persist is False
     assert capsys.readouterr().out.strip() != ""  # smoke only
@@ -176,7 +176,7 @@ def test_resolve_resume_mismatch_starts_fresh_without_persisting(monkeypatch, ca
 def _chat_shell(**kwargs):
     from janito.shell import InteractiveShell
 
-    kwargs.setdefault("model", "gpt-5.6-luna")
+    kwargs.setdefault("model", "gpt-6-luna")
     kwargs.setdefault("no_history", True)
     return InteractiveShell(**kwargs)
 

@@ -84,7 +84,7 @@ Install them with:
 janito --web
 
 # Full-featured: read+write privileges, thinking mode, specific model
-janito --web -r -w -t --model gpt-5.6-luna
+janito --web -r -w -t --model gpt-6-luna
 
 # With a plugin (e.g. Gmail)
 janito --web --plugin ../plugins/janito-gmail-plugin

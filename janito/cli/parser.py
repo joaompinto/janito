@@ -63,11 +63,11 @@ Examples:
   janito --show-config                                      # Show configured provider and model
   janito --show-system-prompt                               # Show the resolved system prompt
   janito --log=info,debug "Your prompt"                     # Enable logging
-  janito --model gpt-5.6-luna "Your prompt"               # Use specific model
+  janito --model gpt-6-luna "Your prompt"               # Use specific model
   janito --effort xhigh "Your prompt"               # Set reasoning depth
   janito --api-type Completions "Your prompt"                # Force the Chat Completions API
-  janito --set model=gpt-5.6-luna                         # Set model for the active provider
-  janito --provider openai --set model=gpt-5.6-luna       # Set model for a specific provider
+  janito --set model=gpt-6-luna                         # Set model for the active provider
+  janito --provider openai --set model=gpt-6-luna       # Set model for a specific provider
   janito --set api-type=completions                         # Force the Chat Completions API
   janito --set api-type=responses                           # Use the Responses API
   janito --unset model                                      # Remove config value
@@ -78,7 +78,7 @@ Examples:
   janito --delete-secret mykey                             # Delete a secret
   janito --config                                           # Interactive configuration setup
   janito -c ~/myconf --set provider=openai                 # Use a custom config dir for all config
-  janito -l --set model=gpt-5.6-luna                      # Store config in ./.janito (project-local)
+  janito -l --set model=gpt-6-luna                      # Store config in ./.janito (project-local)
   janito -l --set-api-key sk-xxx --provider openai         # Store API key in ./.janito
   janito -l --list-keys                                    # Show global and local keys
   janito --provider custom --set endpoint=https://api.example.com/v1  # Use custom provider (set endpoint in config)
@@ -114,7 +114,7 @@ Note: --set and --set-api-key must be used in separate commands.
   taken from --provider or the configured 'provider' value.
   Example:
     janito --set provider=openai                              # Step 1: Set provider
-    janito --set model=gpt-5.6-luna                            # Step 2: Set model (stored as openai.model)
+    janito --set model=gpt-6-luna                            # Step 2: Set model (stored as openai.model)
     janito --set-api-key sk-xxx --provider openai             # Step 3: Store API key
         """,
     )
@@ -305,8 +305,8 @@ Note: --set and --set-api-key must be used in separate commands.
         "  The 'model' key is stored per-provider (e.g. openai.model); the\n"
         "  provider is taken from --provider or the configured 'provider'.\n"
         "  Examples:\n"
-        "    janito --set model=gpt-5.6-luna endpoint=https://api.example.com/v1\n"
-        "    janito --provider openai --set model=gpt-5.6-luna\n"
+        "    janito --set model=gpt-6-luna endpoint=https://api.example.com/v1\n"
+        "    janito --provider openai --set model=gpt-6-luna\n"
         "    janito --set api-type=completions   # or api-type=responses",
     )
 

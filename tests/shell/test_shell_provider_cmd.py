@@ -144,7 +144,7 @@ def test_switch_updates_shell_model_display(monkeypatch, tmp_path):
     assert _provider_handler().handle(shell, "/provider openai") is True
 
     assert shell.provider == "openai"
-    assert shell.model == "gpt-5.6-luna"  # openai's built-in default model
+    assert shell.model == "gpt-6-luna"  # openai's built-in default model
 
 
 def test_non_provider_input_is_not_handled(capsys):

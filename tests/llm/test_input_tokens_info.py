@@ -148,17 +148,17 @@ if pytest is not None:
         assert parts["Cost"] == format_cost(0.15)
 
     def test_usage_line_cost_openai_provider():
-        """OpenAI GPT-5.6 Luna usage calculates cost using openai.cost module."""
+        """OpenAI GPT-6 Luna usage calculates cost using openai.cost module."""
         # 100k input tokens (<= 272K threshold): standard rates
-        # (100k * $0.20 + 1M * $1.20) / 1M = 1.22.
-        parts = _cost_usage_line("openai", "gpt-5.6-luna", 100_000, 1_000_000, 0)
-        assert parts["Cost"] == format_cost(1.22)
+        # (100k * $0.10 + 1M * $0.50) / 1M = 0.51.
+        parts = _cost_usage_line("openai", "gpt-6-luna", 100_000, 1_000_000, 0)
+        assert parts["Cost"] == format_cost(0.51)
 
     def test_usage_line_cost_openai_high_context():
         """High-context OpenAI requests (> 272K input tokens) bill at 2x/1.5x."""
-        # (300k * $0.40 + 1M * $1.80) / 1M = 1.92.
-        parts = _cost_usage_line("openai", "gpt-5.6-luna", 300_000, 1_000_000, 0)
-        assert parts["Cost"] == format_cost(1.92)
+        # (300k * $0.20 + 1M * $0.75) / 1M = 0.81.
+        parts = _cost_usage_line("openai", "gpt-6-luna", 300_000, 1_000_000, 0)
+        assert parts["Cost"] == format_cost(0.81)
 
     def test_usage_line_cost_anthropic_provider():
         """Anthropic usage calculates cost using anthropic.cost module."""

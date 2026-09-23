@@ -17,7 +17,7 @@ Without arguments, janito starts an interactive shell:
 
 ```
 Starting interactive chat session. Type '/exit' or CTRL-D to end the session
-gpt-5.6-luna #
+gpt-6-luna #
 ```
 
 (The prompt shows the active model name; a status toolbar reports the model,
@@ -159,7 +159,7 @@ only make the next prompt fail with an authentication error); the full list
 is still shown by `/provider` with no argument.
 
 After `/model `, the models available from the **current provider** are
-suggested as you type them, e.g. `/model gpt` suggests `gpt-5.6-luna`. The
+suggested as you type them, e.g. `/model gpt` suggests `gpt-6-luna`. The
 available set is the provider's built-in models; `/model` with no argument
 lists them all.
 
@@ -174,14 +174,14 @@ After `/effort `, the current model's supported reasoning efforts are suggested.
 ```bash
 $ janito
 Janito 0.0.0 - Working at /home/user/project
-Using openai, model gpt-5.6-luna, API: Responses (server-side)
+Using openai, model gpt-6-luna, API: Responses (server-side)
 Starting interactive chat session. Type '/exit' or CTRL-D to end the session
 
-gpt-5.6-luna # What is Python?
+gpt-6-luna # What is Python?
 Assistant: Python is a high-level programming language...
-gpt-5.6-luna # Tell me more about it
+gpt-6-luna # Tell me more about it
 Assistant: Python was created by Guido van Rossum...
-gpt-5.6-luna # /exit
+gpt-6-luna # /exit
 Chat session ended.
 ```
 
@@ -189,9 +189,9 @@ Chat session ended.
 
 ```bash
 $ janito
-gpt-5.6-luna # Read the README.md file and summarize it
+gpt-6-luna # Read the README.md file and summarize it
 Assistant: [File content summary]
-gpt-5.6-luna # Now create a similar file called backup.md
+gpt-6-luna # Now create a similar file called backup.md
 Assistant: [File created successfully]
 ```
 
@@ -199,9 +199,9 @@ Assistant: [File created successfully]
 
 ```bash
 $ janito --plugin ../plugins/janito-onedrive-plugin
-gpt-5.6-luna # List my files in Documents
+gpt-6-luna # List my files in Documents
 Assistant: [Lists OneDrive files]
-gpt-5.6-luna # Upload notes.txt to the Documents folder
+gpt-6-luna # Upload notes.txt to the Documents folder
 Assistant: [File uploaded]
 ```
 

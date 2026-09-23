@@ -42,7 +42,7 @@ def _isolated_cwd(tmp_path, monkeypatch):
 
 def _shell(**kwargs):
     """Build a fresh bare shell for testing (never persists to disk)."""
-    kwargs.setdefault("model", "gpt-5.6-luna")
+    kwargs.setdefault("model", "gpt-6-luna")
     kwargs.setdefault("no_history", True)
     return InteractiveShell(**kwargs)
 
@@ -51,7 +51,7 @@ def _write_state(**overrides):
     """Persist a minimal valid snapshot and return it."""
     state = make_state(
         provider="openai",
-        model="gpt-5.6-luna",
+        model="gpt-6-luna",
         model_override=None,
         api_type="Completions",
         thinking=False,
@@ -271,7 +271,7 @@ def test_snapshot_records_identity_and_toggles():
     shell.initialize_history(system_prompt="sys")
     snapshot = shell.conversation_snapshot()
     assert snapshot["provider"] == "openai"
-    assert snapshot["model"] == "gpt-5.6-luna"
+    assert snapshot["model"] == "gpt-6-luna"
     assert snapshot["api_type"] == "Responses"
     assert snapshot["effort"] == "high"
     assert snapshot["thinking"] is True

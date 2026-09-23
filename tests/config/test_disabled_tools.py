@@ -33,7 +33,7 @@ if pytest is not None:
         assert resolve_disabled_tools("meta", "muse-spark-1.3") == ["WebSearch"]
 
     def test_resolve_no_native_search_empty():
-        assert resolve_disabled_tools("openai", "gpt-5.6-luna") == []
+        assert resolve_disabled_tools("openai", "gpt-6-luna") == []
 
     def test_override_wins_over_derived(monkeypatch, tmp_path):
         _use_temp_config(monkeypatch, tmp_path)

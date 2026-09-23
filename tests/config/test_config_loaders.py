@@ -32,8 +32,8 @@ if pytest is not None:
     def test_load_model(monkeypatch, tmp_path):
         _use_temp_config(monkeypatch, tmp_path)
         loader = ProviderConfigLoader()
-        set_config_from_cli("model=gpt-5.6-luna", "openai")
-        assert loader.load_model("openai") == "gpt-5.6-luna"
+        set_config_from_cli("model=gpt-6-luna", "openai")
+        assert loader.load_model("openai") == "gpt-6-luna"
         assert loader.load_model("unknown") is None
         assert loader.load_model() is None  # no configured provider
 
@@ -68,7 +68,7 @@ if pytest is not None:
             json.dumps(
                 {
                     "providers": {
-                        "openai": {"models": {"gpt-5.6-luna": {"max-input-tokens": 128000}}},
+                        "openai": {"models": {"gpt-6-luna": {"max-input-tokens": 128000}}},
                         "minimax": {"models": {"MiniMax-M3": {"max_input_tokens": 4096}}},
                     }
                 }
@@ -103,7 +103,7 @@ if pytest is not None:
             json.dumps(
                 {
                     "providers": {
-                        "openai": {"models": {"gpt-5.6-luna": {"stateless-mode": "true"}}},
+                        "openai": {"models": {"gpt-6-luna": {"stateless-mode": "true"}}},
                         "deepseek": {"models": {"deepseek-flash": {"stateless-mode": "FALSE"}}},
                         "xai": {"models": {"grok-4.6": {"stateless-mode": True}}},
                         "zai": {"models": {"glm-5.3-flash": {"stateless-mode": False}}},

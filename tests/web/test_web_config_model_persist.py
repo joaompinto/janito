@@ -122,11 +122,11 @@ def test_patch_model_without_provider_targets_active_provider(client):
     cs.unset_config_value("openai.model")
     client.app.state.config.session_provider = None
 
-    resp = client.patch("/api/config", json={"model": "gpt-5.6-luna"})
+    resp = client.patch("/api/config", json={"model": "gpt-6-luna"})
     assert resp.status_code == 200
 
     # Applied to the persisted default (openai), not any other provider.
-    assert cs.load_config().get("providers", {}).get("openai", {}).get("model") == "gpt-5.6-luna"
+    assert cs.load_config().get("providers", {}).get("openai", {}).get("model") == "gpt-6-luna"
     assert cl.load_model_from_config("minimax") in (None, "MiniMax-M3")
 
 
@@ -138,11 +138,11 @@ def test_patch_model_mirrored_into_running_server_when_effective(client):
     client.app.state.config.session_provider = None
     client.app.state.config.provider = "openai"
 
-    resp = client.patch("/api/config", json={"model": "gpt-5.6-sol"})
+    resp = client.patch("/api/config", json={"model": "gpt-6-sol"})
     assert resp.status_code == 200
 
     # The running server now reports the new model (next prompt uses it).
-    assert client.get("/api/config").json()["model"] == "gpt-5.6-sol"
+    assert client.get("/api/config").json()["model"] == "gpt-6-sol"
 
 
 @requires_fastapi

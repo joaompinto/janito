@@ -147,7 +147,7 @@ def test_patch_empty_endpoint_clears_override(client):
 @requires_fastapi
 def test_patch_api_type_persists_and_normalizes(client):
     """api_type is canonicalized (Responses/Completions) and stored per provider."""
-    cs.unset_config_value("openai.models.gpt-5.6-luna.api-type")
+    cs.unset_config_value("openai.models.gpt-6-luna.api-type")
 
     resp = client.patch("/api/config", json={"api_type": "completions", "provider": "openai"})
     assert resp.status_code == 200
@@ -163,7 +163,7 @@ def test_patch_api_type_persists_and_normalizes(client):
 @requires_fastapi
 def test_patch_api_type_rejects_unknown_value(client):
     """A bogus API type is rejected with 400 and nothing is written."""
-    cs.unset_config_value("openai.models.gpt-5.6-luna.api-type")
+    cs.unset_config_value("openai.models.gpt-6-luna.api-type")
     before = cs.load_config()
 
     resp = client.patch("/api/config", json={"api_type": "Bogus", "provider": "openai"})
@@ -196,7 +196,7 @@ def test_patch_api_type_empty_clears_override(client):
     # api-type is model-scoped: seed the real key (not the flat
     # "openai.api-type" form nothing reads) so this test passes
     # regardless of execution order / xdist grouping.
-    cs.set_config_value("openai.models.gpt-5.6-luna.api-type", "Completions")
+    cs.set_config_value("openai.models.gpt-6-luna.api-type", "Completions")
     assert cl.load_api_type("openai") == "Completions"
 
     resp = client.patch("/api/config", json={"api_type": "", "provider": "openai"})
@@ -210,7 +210,7 @@ def test_patch_api_type_empty_clears_override(client):
 @requires_fastapi
 def test_patch_stateless_mode_persists(client):
     """stateless_mode is stored per provider/model and exposed effectively."""
-    cs.unset_config_value("openai.models.gpt-5.6-luna.stateless-mode")
+    cs.unset_config_value("openai.models.gpt-6-luna.stateless-mode")
 
     resp = client.patch(
         "/api/config",
@@ -248,7 +248,7 @@ def test_patch_stateless_mode_accepts_string_bool(client):
 @requires_fastapi
 def test_patch_stateless_mode_rejects_invalid(client):
     """A non-boolean stateless_mode is rejected with 400."""
-    cs.unset_config_value("openai.models.gpt-5.6-luna.stateless-mode")
+    cs.unset_config_value("openai.models.gpt-6-luna.stateless-mode")
     before = cs.load_config()
 
     resp = client.patch(
@@ -283,7 +283,7 @@ def test_providers_endpoint_exposes_advanced_fields(client):
     """Each provider entry carries the Advanced fields the drawer reads."""
     # Clear any model-scoped stateless-mode override left by earlier
     # tests in this module (they share the module-scoped config dir).
-    cs.unset_config_value("openai.models.gpt-5.6-luna.stateless-mode")
+    cs.unset_config_value("openai.models.gpt-6-luna.stateless-mode")
     cs.unset_config_value("deepseek.models.deepseek-flash.stateless-mode")
     entries = _providers_by_name(client)
 

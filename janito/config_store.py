@@ -141,7 +141,7 @@ class ConfigStore:
         """Get a config value by key.
 
         Supports flat keys, provider-scoped keys (``"openai.model"``) and
-        model-scoped keys (``"openai.models.gpt-5.6-luna.max-output-tokens"``); the
+        model-scoped keys (``"openai.models.gpt-6-luna.max-output-tokens"``); the
         scoped forms read from the nested providers structure.
 
         Args:
@@ -217,7 +217,7 @@ class ConfigStore:
         """Set a config value.
 
         Supports flat keys, provider-scoped keys (``"openai.model"``) and
-        model-scoped keys (``"openai.models.gpt-5.6-luna.max-output-tokens"``); the
+        model-scoped keys (``"openai.models.gpt-6-luna.max-output-tokens"``); the
         scoped forms write to the nested providers structure.
 
         Args:
@@ -255,7 +255,7 @@ class ConfigStore:
         """Remove a config value by key.
 
         Supports flat keys, provider-scoped keys (``"openai.model"``) and
-        model-scoped keys (``"openai.models.gpt-5.6-luna.max-output-tokens"``); the
+        model-scoped keys (``"openai.models.gpt-6-luna.max-output-tokens"``); the
         scoped forms remove from the nested providers structure.  When a
         model's dict or a non-variant provider dict becomes empty after
         removal it is pruned; an emptied variant entry is kept (``{}``)
@@ -395,7 +395,7 @@ def get_config_value(key: str) -> Any | None:
     """Get a config value by key.
 
     Supports flat keys, provider-scoped keys (``"openai.model"``) and
-    model-scoped keys (``"openai.models.gpt-5.6-luna.max-output-tokens"``); the
+    model-scoped keys (``"openai.models.gpt-6-luna.max-output-tokens"``); the
     scoped forms read from the nested providers structure.
 
     Args:
@@ -411,7 +411,7 @@ def set_config_value(key: str, value: Any) -> None:
     """Set a config value.
 
     Supports flat keys, provider-scoped keys (``"openai.model"``) and
-    model-scoped keys (``"openai.models.gpt-5.6-luna.max-output-tokens"``); the
+    model-scoped keys (``"openai.models.gpt-6-luna.max-output-tokens"``); the
     scoped forms write to the nested providers structure.
 
     Args:
@@ -425,7 +425,7 @@ def unset_config_value(key: str) -> bool:
     """Remove a config value by key.
 
     Supports flat keys, provider-scoped keys (``"openai.model"``) and
-    model-scoped keys (``"openai.models.gpt-5.6-luna.max-output-tokens"``); the
+    model-scoped keys (``"openai.models.gpt-6-luna.max-output-tokens"``); the
     scoped forms remove from the nested providers structure.  Emptied model
     dicts and non-variant provider dicts are pruned; variant entries keep
     their ``{}`` registration marker.

@@ -44,7 +44,7 @@ def split_model_scoped_key(key: str) -> tuple[str, str, str] | None:
     A full model-scoped key has the shape
     ``<provider>.models.<model>.<leaf>`` where ``leaf`` is one of
     :data:`MODEL_SCOPED_KEYS`.  Model names may themselves contain dots
-    (e.g. ``gpt-5.6-luna``), so the provider is split on the ``.models.``
+    (e.g. ``gpt-6-luna``), so the provider is split on the ``.models.``
     marker and the leaf on the **last** dot.
 
     Args:
@@ -111,7 +111,7 @@ def model_scoped_config_key(provider: str, model: str, key: str) -> str:
 
     Returns:
         The full model-scoped config key, e.g.
-        ``"openai.models.gpt-5.6-luna.max-output-tokens"``.
+        ``"openai.models.gpt-6-luna.max-output-tokens"``.
     """
     return f"{normalize_provider(provider)}.models.{model}.{key}"
 

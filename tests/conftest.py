@@ -72,7 +72,7 @@ def make_config(
     *,
     provider: str = "openai",
     api_type: str = "Completions",
-    model: str = "gpt-5.6-luna",
+    model: str = "gpt-6-luna",
     base_url: str | None = None,
     api_key: str = "sk-test",
     max_output_tokens: int = 100_000,

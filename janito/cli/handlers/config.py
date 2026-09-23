@@ -84,7 +84,7 @@ def handle_set_config(values: list[str], cli_provider: str = None) -> int:
     if not values:
         print("[ERROR] At least one KEY=VALUE pair required.", file=sys.stderr)
         print(
-            "Usage: janito --set model=gpt-5.6-luna endpoint=https://api.example.com/v1",
+            "Usage: janito --set model=gpt-6-luna endpoint=https://api.example.com/v1",
             file=sys.stderr,
         )
         return 1
@@ -316,13 +316,13 @@ def _save_configuration(
         print(f"[OK] Saved model '{model}' to config ({provider}.model)")
 
         # Save max output tokens to config.json under the model-scoped key
-        # (e.g. "openai.models.gpt-5.6-luna.max-output-tokens") so each
+        # (e.g. "openai.models.gpt-6-luna.max-output-tokens") so each
         # provider/model pair has its own limit.
         key, _ = set_config_from_cli(f"max-output-tokens={max_output_tokens}", provider)
         print(f"[OK] Saved max output tokens {max_output_tokens} to config ({key})")
 
         # Save max input tokens to config.json under the model-scoped key
-        # (e.g. "openai.models.gpt-5.6-luna.max-input-tokens") so each
+        # (e.g. "openai.models.gpt-6-luna.max-input-tokens") so each
         # provider/model pair has its own limit.
         key, _ = set_config_from_cli(f"max-input-tokens={max_input_tokens}", provider)
         print(f"[OK] Saved max input tokens {max_input_tokens} to config ({key})")

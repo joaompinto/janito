@@ -33,7 +33,7 @@ def available_model_names(provider: str | None, prefix: str = "") -> Iterable[st
     """Return model names available from ``provider`` matching ``prefix``.
 
     The available set is the provider's built-in ``models`` registry (e.g.
-    OpenAI's ``gpt-5.6-luna``) plus any per-model config entries stored
+    OpenAI's ``gpt-6-luna``) plus any per-model config entries stored
     under ``providers.<provider>.models`` in config.json, so a custom model
     with model-scoped settings is suggested too.  Matching is
     case-insensitive and the result is sorted case-insensitively; with an

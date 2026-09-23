@@ -105,5 +105,5 @@ def test_available_model_names_from_registry(monkeypatch, tmp_path):
     _use_temp_config(monkeypatch, tmp_path)
     set_config_value("openai.models.gpt-future.max-output-tokens", 1000)
     names = list(available_model_names("openai"))
-    assert "gpt-5.6-luna" in names
+    assert "gpt-6-luna" in names
     assert "gpt-future" in names

@@ -1266,13 +1266,13 @@ def test_turn_factory_honors_cli_model_for_startup_provider(monkeypatch):
 
     factory = chat_mod._make_turn_factory(
         cli_api_type=None,
-        cli_model="gpt-5.6-luna",
+        cli_model="gpt-6-luna",
         cli_provider="openai",
         cli_effort=None,
     )
     send = factory("openai")
     send("hello", previous_messages=[])
-    assert captured["cli_model"] == "gpt-5.6-luna"
+    assert captured["cli_model"] == "gpt-6-luna"
     assert captured["cli_provider"] == "openai"
     assert captured["api_type"] == "Responses"  # openai's built-in default
     assert captured["config"] is fake_config
@@ -1302,7 +1302,7 @@ def test_turn_factory_resolves_new_provider_model_and_api_type(monkeypatch):
 
     factory = chat_mod._make_turn_factory(
         cli_api_type=None,
-        cli_model="gpt-5.6-luna",  # startup --model, belongs to openai
+        cli_model="gpt-6-luna",  # startup --model, belongs to openai
         cli_provider="openai",
         cli_effort=None,
     )

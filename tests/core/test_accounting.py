@@ -53,7 +53,7 @@ if pytest is not None:
         config_dir = _point_at(monkeypatch, tmp_path)
         accounting.record_turn(
             "openai",
-            "gpt-5.6-luna",
+            "gpt-6-luna",
             input_tokens=1000,
             cached_tokens=200,
             output_tokens=300,
@@ -203,9 +203,9 @@ if pytest is not None:
     def test_cost_value_from_known_provider():
         """get_provider_cost_value returns numeric dollars for known models."""
         # 100k input tokens (below OpenAI's high-context threshold) at the
-        # $0.20/1M cache-miss rate -> $0.02.
-        value = get_provider_cost_value("openai", "gpt-5.6-luna", 100_000, 0, 0)
-        assert value == pytest.approx(0.02)
+        # $0.10/1M cache-miss rate -> $0.01.
+        value = get_provider_cost_value("openai", "gpt-6-luna", 100_000, 0, 0)
+        assert value == pytest.approx(0.01)
 
     def test_cost_value_none_for_unknown_provider():
         assert get_provider_cost_value("nope", "model", 1, 1, 0) is None
@@ -320,7 +320,7 @@ if pytest is not None:
         # second turn that must be summed into the same group.
         accounting.record_turn(
             "openai",
-            "gpt-5.6-luna",
+            "gpt-6-luna",
             input_tokens=1000,
             cached_tokens=100,
             output_tokens=500,
@@ -329,7 +329,7 @@ if pytest is not None:
         )
         accounting.record_turn(
             "openai",
-            "gpt-5.6-luna",
+            "gpt-6-luna",
             input_tokens=2000,
             cached_tokens=200,
             output_tokens=600,
@@ -347,7 +347,7 @@ if pytest is not None:
         )
         accounting.record_turn(
             "openai",
-            "gpt-5.6-luna",
+            "gpt-6-luna",
             input_tokens=4000,
             cached_tokens=400,
             output_tokens=700,
@@ -373,7 +373,7 @@ if pytest is not None:
             (
                 now.date().isoformat(),
                 "openai",
-                "gpt-5.6-luna",
+                "gpt-6-luna",
                 4000,
                 400,
                 700,
@@ -391,7 +391,7 @@ if pytest is not None:
             (
                 (now - timedelta(days=1)).date().isoformat(),
                 "openai",
-                "gpt-5.6-luna",
+                "gpt-6-luna",
                 3000,
                 300,
                 1100,

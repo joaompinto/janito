@@ -7,10 +7,10 @@ CONFIG option.
 
 #: The config entry for the ``openai`` provider.
 PROVIDER_CONFIG: dict = {
-    "default_model": "gpt-5.6-luna",
+    "default_model": "gpt-6-luna",
     "endpoint": None,  # Standard OpenAI - no base_url needed
     "models": {
-        "gpt-5.6-sol": {
+        "gpt-6-sol": {
             "supported_api_types": [
                 "Responses",
                 "Completions",
@@ -19,7 +19,7 @@ PROVIDER_CONFIG: dict = {
             "stateless_mode": False,  # server-side conversation state (previous_response_id)
             "max_input_tokens": 1050000,
             "max_output_tokens": 128000,
-            # GPT-5.x models support configurable reasoning depth via the
+            # GPT-6 models support configurable reasoning depth via the
             # OpenAI-compatible reasoning_effort parameter.  The built-in
             # default is the standard level (medium).
             "default_reasoning_effort": "medium",
@@ -38,7 +38,7 @@ PROVIDER_CONFIG: dict = {
                 },
             ],
         },
-        "gpt-5.6-terra": {
+        "gpt-6-luna": {
             "supported_api_types": [
                 "Responses",
                 "Completions",
@@ -47,35 +47,7 @@ PROVIDER_CONFIG: dict = {
             "stateless_mode": False,  # server-side conversation state (previous_response_id)
             "max_input_tokens": 1050000,
             "max_output_tokens": 128000,
-            # GPT-5.x models support configurable reasoning depth via the
-            # OpenAI-compatible reasoning_effort parameter.  The built-in
-            # default is the standard level (medium).
-            "default_reasoning_effort": "medium",
-            "supported_reasoning_efforts": [
-                {
-                    "effort": "low",
-                    "description": "Lighter reasoning for fast responses",
-                },
-                {
-                    "effort": "medium",
-                    "description": "Standard reasoning depth",
-                },
-                {
-                    "effort": "high",
-                    "description": "Deep reasoning for complex problems",
-                },
-            ],
-        },
-        "gpt-5.6-luna": {
-            "supported_api_types": [
-                "Responses",
-                "Completions",
-            ],
-            "default_api_type": "Responses",  # built-in default (Responses is the default)
-            "stateless_mode": False,  # server-side conversation state (previous_response_id)
-            "max_input_tokens": 1050000,
-            "max_output_tokens": 128000,
-            # GPT-5.x models support configurable reasoning depth via the
+            # GPT-6 models support configurable reasoning depth via the
             # OpenAI-compatible reasoning_effort parameter.  The built-in
             # default is the standard level (medium).
             "default_reasoning_effort": "medium",

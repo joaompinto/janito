@@ -33,7 +33,7 @@ uv tool install janito
 janito --config
 
 # Or set options directly (two steps: config, then API key)
-janito --set provider=openai --set model=gpt-5.6-luna
+janito --set provider=openai --set model=gpt-6-luna
 janito --set-api-key="sk-your-key" --provider openai
 
 # Start chatting
@@ -67,7 +67,7 @@ janito --config
 You'll be prompted for:
 - **Provider** - `openai` or `custom`
 - **API Key** - Masked for security
-- **Model** - e.g., `gpt-5.6-luna`
+- **Model** - e.g., `gpt-6-luna`
 - **Max Output Tokens** - Maximum output tokens (default: 65536)
 - **Max Input Tokens** - Maximum input tokens / context window (default: 128000)
 
@@ -77,7 +77,7 @@ Set options directly from the command line:
 
 ```bash
 # Single key-value
-janito --set model=gpt-5.6-luna
+janito --set model=gpt-6-luna
 ```
 
 You can also use `--get`, `--unset`, and `--set-secret` with multiple values.
@@ -95,7 +95,7 @@ janito --show-config
 | Alibaba  | qwen3.8-flash | Pay as you go |
 | Moonshot | kimi-k3 | $15/month (Moderato)|
 | z.ai     | glm-5.3-flash | $12.6/month (Lite)|
-| openai   | gpt-5.6 | Pay as you go |
+| openai   | gpt-6 | Pay as you go |
 
 
 For custom endpoints (base-url), see [README_custom.md](README_custom.md).
@@ -203,7 +203,7 @@ janito --log=info,debug "Your prompt" # Multiple levels
 
 ```bash
 # Step 1: Set provider and model
-janito --set provider=openai --set model=gpt-5.6-luna
+janito --set provider=openai --set model=gpt-6-luna
 # Step 2: Store API key
 janito --set-api-key="sk-your-key" --provider openai
 

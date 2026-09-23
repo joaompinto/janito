@@ -26,7 +26,7 @@ def test_meta_models_request_thinking_summary():
 def test_models_without_declaration_default_to_false():
     found = get_provider("openai")
     assert found is not None
-    assert bool(found.model_config("gpt-5.6-luna").get("thinking_summary", False)) is False
+    assert bool(found.model_config("gpt-6-luna").get("thinking_summary", False)) is False
 
 
 def _cli_kwargs(provider, model, effort):
@@ -57,7 +57,7 @@ def test_cli_kwargs_summary_without_effort_for_meta():
 
 
 def test_cli_kwargs_omit_reasoning_for_plain_models():
-    kwargs = _cli_kwargs("openai", "gpt-5.6-luna", None)
+    kwargs = _cli_kwargs("openai", "gpt-6-luna", None)
     assert "reasoning" not in kwargs
 
 

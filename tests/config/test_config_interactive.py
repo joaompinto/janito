@@ -103,7 +103,7 @@ def test_prompt_max_input_tokens_uses_existing_value_as_default(monkeypatch, cap
         "janito.cli.handlers.config._prompt_with_default",
         lambda prompt, default=None, is_password=False: default,
     )
-    result = _prompt_max_input_tokens("openai", "gpt-5.6-luna", 256000)
+    result = _prompt_max_input_tokens("openai", "gpt-6-luna", 256000)
     assert result == 256000
     out = capsys.readouterr().out
     assert out.strip() != ""
@@ -119,7 +119,7 @@ def test_prompt_max_input_tokens_defaults_to_provider_builtin(monkeypatch):
         "janito.cli.handlers.config.get_provider",
         lambda provider: Mock(model_config=lambda model=None: ModelConfig({"max_input_tokens": 200000})),
     )
-    result = _prompt_max_input_tokens("openai", "gpt-5.6-luna", None)
+    result = _prompt_max_input_tokens("openai", "gpt-6-luna", None)
     assert result == 200000
 
 
@@ -142,7 +142,7 @@ def test_prompt_max_input_tokens_parses_input(monkeypatch, capsys):
         "janito.cli.handlers.config._prompt_with_default",
         lambda prompt, default=None, is_password=False: "1048576",
     )
-    result = _prompt_max_input_tokens("openai", "gpt-5.6-luna", None)
+    result = _prompt_max_input_tokens("openai", "gpt-6-luna", None)
     assert result == 1048576
     assert "1048576" in capsys.readouterr().out
 
@@ -152,7 +152,7 @@ def test_prompt_max_input_tokens_rejects_non_numeric(monkeypatch, capsys):
         "janito.cli.handlers.config._prompt_with_default",
         lambda prompt, default=None, is_password=False: "many",
     )
-    result = _prompt_max_input_tokens("openai", "gpt-5.6-luna", None)
+    result = _prompt_max_input_tokens("openai", "gpt-6-luna", None)
     assert result is None
     err = capsys.readouterr().err
     assert err.strip() != ""

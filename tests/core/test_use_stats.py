@@ -24,7 +24,7 @@ def _record_day(day: str, n: int, *, cost: float | None = None) -> None:
     for i in range(n):
         accounting.record_turn(
             "openai",
-            "gpt-5.6-luna",
+            "gpt-6-luna",
             input_tokens=1000 + i,
             cached_tokens=100,
             output_tokens=500,
@@ -174,7 +174,7 @@ if pytest is not None:
             {
                 "day": "2026-08-28",
                 "provider": "openai",
-                "model": "gpt-5.6-luna",
+                "model": "gpt-6-luna",
                 "input_tokens": 1000,
                 "cached_tokens": 100,
                 "output_tokens": 500,
@@ -200,7 +200,7 @@ if pytest is not None:
         )
         accounting.record_turn(
             "openai",
-            "gpt-5.6-luna",
+            "gpt-6-luna",
             input_tokens=1000,
             cached_tokens=100,
             output_tokens=500,
@@ -209,7 +209,7 @@ if pytest is not None:
         )
         accounting.record_turn(
             "openai",
-            "gpt-5.6-luna",
+            "gpt-6-luna",
             input_tokens=2000,
             cached_tokens=200,
             output_tokens=600,
@@ -220,9 +220,9 @@ if pytest is not None:
         handler = UseStatsCmdHandler()
         stats = accounting.get_per_model_stats()
         assert [row["model"] for row in stats] == [
-            "gpt-5.6-luna",
+            "gpt-6-luna",
             "deepseek-flash",
-            "gpt-5.6-luna",
+            "gpt-6-luna",
         ]
         totals = {(r["day"], r["model"]): r for r in stats}
         assert totals[("2026-08-28", "deepseek-flash")]["input_tokens"] == 300

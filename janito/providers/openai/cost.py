@@ -3,24 +3,22 @@
 Rates source
 ------------
 The per-1M-token rates below were taken from the official OpenAI API
-pricing for the GPT-5.6 family (Sol, Terra, Luna) and apply as of the
-verification date.  OpenAI adjusts figures frequently, so cross-check the
-official rate card before relying on them.
+pricing for the GPT-6 family (Sol, Luna, Astra) and apply as of the
+verification date (2026-09-23).  OpenAI adjusts figures frequently, so
+cross-check the official rate card before relying on them.
 
 High-context prompts
 --------------------
 Requests whose input exceeds 272K tokens are billed at 2x the standard
-input rate ($0.40/1M) and 1.5x the standard output rate ($1.80/1M) for
-the **whole** request -- not just the portion above the threshold.
-Cached-input reads scale with the input rate, so they are also billed at
-2x ($0.04/1M) in high-context mode.
+input rate and 1.5x the standard output rate for the **whole** request
+-- not just the portion above the threshold.  Cached-input reads scale
+with the input rate, so they are also billed at 2x in high-context mode.
 
 Cache writes
 ------------
-OpenAI bills cache writes at 1.25x the uncached input rate
-($0.25/1M tokens; $0.50/1M in high-context mode).  The usage payload does
-not report cache-write token counts, so the estimate below covers input
-reads (cache miss + cache hit) and output only.
+OpenAI bills cache writes at 1.25x the uncached input rate.  The usage
+payload does not report cache-write token counts, so the estimate below
+covers input reads (cache miss + cache hit) and output only.
 """
 
 #: Per-1M-token rates (USD) keyed by model name:
@@ -31,9 +29,8 @@ reads (cache miss + cache hit) and output only.
 #: lower cache-read rate (10% of the input rate) instead of the cache-miss
 #: rate.  There is no peak-hour surcharge.
 _MODEL_RATES: dict[str, tuple[float, float, float]] = {
-    "gpt-5.6-sol": (4.00, 0.40, 20.00),
-    "gpt-5.6-terra": (2.00, 0.20, 12.00),
-    "gpt-5.6-luna": (0.20, 0.02, 1.20),
+    "gpt-6-sol": (2.00, 0.20, 10.00),
+    "gpt-6-luna": (0.10, 0.01, 0.50),
     "gpt-6-astra": (10.00, 1.00, 50.00),
 }
 

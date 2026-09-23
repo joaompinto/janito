@@ -112,7 +112,7 @@ def _resolve_model_scoped_key(
 
     Returns:
         The full model-scoped key (e.g.
-        ``openai.models.gpt-5.6-luna.max-output-tokens``)
+        ``openai.models.gpt-6-luna.max-output-tokens``)
 
     Raises:
         ProviderRequiredError: If the provider cannot be determined
@@ -274,7 +274,7 @@ def set_config_from_cli(
     Returns:
         tuple: (key, value) that was set. For scoped keys the returned key
             is the full nested key (e.g. ``openai.model`` or
-            ``openai.models.gpt-5.6-luna.max-output-tokens``).
+            ``openai.models.gpt-6-luna.max-output-tokens``).
 
     Raises:
         ValueError: If the format is invalid

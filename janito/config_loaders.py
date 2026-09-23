@@ -109,7 +109,7 @@ class ProviderConfigLoader:
         This value is used as the maximum output-token limit (``max_tokens`` /
         ``max_completion_tokens``) for API calls. It is stored per
         provider/model under the nested providers structure (e.g.
-        providers.openai.models.gpt-5.6-luna.max-output-tokens).
+        providers.openai.models.gpt-6-luna.max-output-tokens).
 
         Args:
             cli_provider: Provider passed via ``--provider`` (may be None). If
@@ -140,7 +140,7 @@ class ProviderConfigLoader:
         This value is the maximum input-token (context window) limit used for
         the usage summary display. It is stored per provider/model under the
         nested providers structure (e.g.
-        providers.openai.models.gpt-5.6-luna.max-input-tokens).
+        providers.openai.models.gpt-6-luna.max-input-tokens).
 
         Args:
             cli_provider: Provider passed via ``--provider`` (may be None). If
@@ -345,7 +345,7 @@ def load_max_output_tokens(cli_provider: str | None = None, model: str | None = 
     This value is used as the maximum output-token limit (``max_tokens`` /
     ``max_completion_tokens``) for API calls. It is stored per provider/model
     under the nested providers structure (e.g.
-    providers.openai.models.gpt-5.6-luna.max-output-tokens).
+    providers.openai.models.gpt-6-luna.max-output-tokens).
 
     Args:
         cli_provider: Provider passed via ``--provider`` (may be None). If not
@@ -365,7 +365,7 @@ def load_max_input_tokens(cli_provider: str | None = None, model: str | None = N
     This value is the maximum input-token (context window) limit used for
     the usage summary display. It is stored per provider/model under the
     nested providers structure (e.g.
-    providers.openai.models.gpt-5.6-luna.max-input-tokens).
+    providers.openai.models.gpt-6-luna.max-input-tokens).
 
     Args:
         cli_provider: Provider passed via ``--provider`` (may be None). If not

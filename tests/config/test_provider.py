@@ -147,7 +147,7 @@ if pytest is not None:
         from janito.llm_clients.openai.responses_state import stateless_mode
 
         monkeypatch.setattr(config_dir_mod, "_config_dir", tmp_path)
-        gc.set_config_value("openai.models.gpt-5.6-luna.stateless-mode", True)
+        gc.set_config_value("openai.models.gpt-6-luna.stateless-mode", True)
         assert Provider("openai").model_config().get("stateless_mode", False) is False
         assert stateless_mode("openai", None) is True
         assert get_provider("openai").model_config().get("stateless_mode", False) is False
@@ -274,24 +274,20 @@ if pytest is not None:
         # -> 10.9$.
         assert get_provider_cost("xiaomi", "mimo-v2.6-pro-ultraspeed", 1_000_000, 1_000_000, 0) == "13.1$"
         assert get_provider_cost("xiaomi", "mimo-v2.6-pro-ultraspeed", 1_000_000, 1_000_000, 500_000) == "10.9$"
-        # OpenAI ships a cost module: gpt-5.6-luna at $0.20 / $0.02 (cache
-        # read) / $1.20 output per 1M tokens.  Standard request
-        # (input <= 272K): 100k * $0.20 + 1M * $1.20 = 1.22 -> 1.2$.
-        assert get_provider_cost("openai", "gpt-5.6-luna", 100_000, 1_000_000, 0) == "1.2$"
-        # Cached input tokens are billed at the cache-read rate.
-        assert get_provider_cost("openai", "gpt-5.6-luna", 100_000, 1_000_000, 40_000) == "1.2$"
+        # OpenAI ships a cost module: gpt-6-luna at $0.10 / $0.01 (cache
+        # read) / $0.50 output per 1M tokens.  Standard request
+        # (input <= 272K): 100k * $0.10 + 1M * $0.50 = 0.51 -> 51.0¢.
+        assert get_provider_cost("openai", "gpt-6-luna", 100_000, 1_000_000, 0) == "51.0\xa2"
+        # Cached input tokens are billed at the cache-read rate:
+        # 60k * $0.10 + 40k * $0.01 + 1M * $0.50 = 0.5064 -> 50.6¢.
+        assert get_provider_cost("openai", "gpt-6-luna", 100_000, 1_000_000, 40_000) == "50.6\xa2"
         # High-context prompts (> 272K input tokens) bill the whole request
-        # at 2x input ($0.40) and 1.5x output ($1.80):
-        # 300k * $0.40 + 1M * $1.80 = 1.92 -> 1.9$.
-        assert get_provider_cost("openai", "gpt-5.6-luna", 300_000, 1_000_000, 0) == "1.9$"
-        # The GPT-5.6 family also covers Sol and Terra:
-        # sol: 100k * $4.00 + 1M * $20.00 = 20.40 -> 20.4$.
-        assert get_provider_cost("openai", "gpt-5.6-sol", 100_000, 1_000_000, 0) == "20.4$"
-        # terra: 100k * $2.00 + 1M * $12.00 = 12.20 -> 12.2$.
-        assert get_provider_cost("openai", "gpt-5.6-terra", 100_000, 1_000_000, 0) == "12.2$"
-        # terra cached reads bill at the cache-read rate ($0.20):
-        # 60k * $2.00 + 40k * $0.20 + 1M * $12.00 = 12.128 -> 12.1$.
-        assert get_provider_cost("openai", "gpt-5.6-terra", 100_000, 1_000_000, 40_000) == "12.1$"
+        # at 2x input ($0.20) and 1.5x output ($0.75):
+        # 300k * $0.20 + 1M * $0.75 = 0.81 -> 81.0¢.
+        assert get_provider_cost("openai", "gpt-6-luna", 300_000, 1_000_000, 0) == "81.0\xa2"
+        # The GPT-6 family also covers Sol:
+        # sol: 100k * $2.00 + 1M * $10.00 = 10.20 -> 10.2$.
+        assert get_provider_cost("openai", "gpt-6-sol", 100_000, 1_000_000, 0) == "10.2$"
         # xAI ships a cost module: grok-4.6 at $2.00 / $0.50 (cache hit) /
         # $6.00 output per 1M tokens.  Standard request (input <= 200K):
         # 100k * $2.00 + 1M * $6.00 = 6.20 -> 6.2$.
@@ -397,9 +393,9 @@ if pytest is not None:
         assert moonshot_get_cost("kimi-k3", 1_000_000, 1_000_000, 0, is_reference=True) == "16.500000$"
         # OpenAI also ignores is_reference (estimate unchanged).
         # 1M input exceeds the 272K high-context threshold, so the whole
-        # request is billed at 2x input ($0.40) / 1.5x output ($1.80):
-        # 1M * $0.40 + 1M * $1.80 = 2.20.
-        assert openai_get_cost("gpt-5.6-luna", 1_000_000, 1_000_000, 0, is_reference=True) == "2.200000$"
+        # request is billed at 2x input ($0.20) / 1.5x output ($0.75):
+        # 1M * $0.20 + 1M * $0.75 = 0.95.
+        assert openai_get_cost("gpt-6-luna", 1_000_000, 1_000_000, 0, is_reference=True) == "0.950000$"
         # Xiaomi also ignores is_reference (estimate unchanged).
         # 1M * $0.14 + 1M * $0.28 = 0.42.
         assert xiaomi_get_cost("mimo-v2.6-flash", 1_000_000, 1_000_000, 0, is_reference=True) == "0.420000$"
@@ -426,11 +422,11 @@ if pytest is not None:
         """Requests at 272K input tokens use standard rates; above use 2x/1.5x."""
         from janito.providers.openai.cost import get_cost as openai_get_cost
 
-        # Exactly 272K input tokens: standard rates (0.20 input, 1.20 output).
-        assert openai_get_cost("gpt-5.6-luna", 272_000, 1_000, 0) == "0.055600$"
+        # Exactly 272K input tokens: standard rates (0.10 input, 0.50 output).
+        assert openai_get_cost("gpt-6-luna", 272_000, 1_000, 0) == "0.027700$"
         # One token more: the whole request is billed at high-context rates
-        # (272001 * 0.40 + 1000 * 1.80) / 1M = 0.110600.
-        assert openai_get_cost("gpt-5.6-luna", 272_001, 1_000, 0) == "0.110600$"
+        # (272001 * 0.20 + 1000 * 0.75) / 1M = 0.055150.
+        assert openai_get_cost("gpt-6-luna", 272_001, 1_000, 0) == "0.055150$"
 
     def test_minimax_cost_standard_and_high_context():
         """MiniMax-M3 uses standard rates <= 512K and 2x rates > 512K."""

@@ -265,7 +265,7 @@ def test_stream_prompt_responses_emits_image_event(monkeypatch):
     monkeypatch.setattr(
         loop,
         "resolve_runtime_config",
-        lambda *a, **k: (None, "sk-test", "gpt-5.6"),
+        lambda *a, **k: (None, "sk-test", "gpt-6-sol"),
     )
 
     png_bytes = b"\x89PNG\r\n\x1a\n" + b"\x00\x00\x00\x0dIHDRjunk"
@@ -330,7 +330,7 @@ def test_stream_prompt_responses_emits_image_event(monkeypatch):
     assert assistant_msg["content"] == "Here is your image:"
     assert assistant_msg["images"] == [{"path": img_path, "revised_prompt": "A tabby cat hugging an otter"}]
 
-    # The image_generation tool was advertised to the model (gpt-5 model).
+    # The image_generation tool was advertised to the model (gpt-6 model).
     assert fake_client.calls[0]["tools"][-1] == {"type": "image_generation"}
 
     os.remove(img_path)

@@ -85,8 +85,8 @@ so you can see at a glance which model drove the usage on each day:
 ┃ Day            ┃ Provider  ┃ Model                 ┃ Input tokens    ┃ Cached tokens    ┃ Output tokens    ┃       Cost ┃
 ┡━━━━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━┩
 │ 2026-08-28     │ deepseek  │ deepseek-flash     │             180 │          6 (6%)  │              120 │    0.010¢ │
-│ 2026-08-28     │ openai    │ gpt-5.6-luna          │           1,200 │       300 (25%)  │              800 │    0.170¢ │
-│ 2026-08-29     │ openai    │ gpt-5.6-luna          │           1,800 │       600 (33%)  │            1,600 │    0.240¢ │
+│ 2026-08-28     │ openai    │ gpt-6-luna          │           1,200 │       300 (25%)  │              800 │    0.170¢ │
+│ 2026-08-29     │ openai    │ gpt-6-luna          │           1,800 │       600 (33%)  │            1,600 │    0.240¢ │
 └────────────────┴───────────┴───────────────────────┴─────────────────┴──────────────────┴──────────────────┴────────────┘
 ```
 
@@ -106,7 +106,7 @@ Example output:
 
 ```
 2026-08-28T17:47:34.778205+00:00  /home/me/proj  deepseek/deepseek-flash  in=180 cached=10 out=120  cost=0.0001$
-2026-08-28T17:47:34.778580+00:00  /home/me/proj  openai/gpt-5.6-luna          in=50000 cached=5000 out=4000  cost=0.0150$
+2026-08-28T17:47:34.778580+00:00  /home/me/proj  openai/gpt-6-luna          in=50000 cached=5000 out=4000  cost=0.0150$
 ```
 
 ## Querying with SQL

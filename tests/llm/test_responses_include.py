@@ -33,8 +33,8 @@ def test_models_without_declaration_default_to_no_include():
     found = get_provider("openai")
     assert found is not None
     # OpenAI models declare no include values (the API default applies).
-    assert found.model_config("gpt-5.6-luna").get("responses_include") is None
-    assert bool(found.model_config("gpt-5.6-luna").get("stateless_mode", False)) is False
+    assert found.model_config("gpt-6-luna").get("responses_include") is None
+    assert bool(found.model_config("gpt-6-luna").get("stateless_mode", False)) is False
 
 
 def test_responses_include_malformed_value_returns_none():

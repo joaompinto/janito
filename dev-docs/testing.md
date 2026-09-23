@@ -79,7 +79,7 @@ pytest tests/ -q -n 0           # force serial (e.g. when debugging ordering)
   global in one file breaks another depending on scheduling. Fixed
   Sept 2026: `test_patch_api_type_empty_clears_override` seeded a
   flat `"openai.api-type"` key nothing reads (real key is model-scoped
-  `openai.models.gpt-5.6-luna.api-type`) and only passed on leftover
+  `openai.models.gpt-6-luna.api-type`) and only passed on leftover
   state; `test_tools_endpoint_shape` saw a privilege-filtered registry
   leaked from another file.
 - Multithreading (`pytest-run-parallel` / `pytest-parallel`) is NOT

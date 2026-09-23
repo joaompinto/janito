@@ -187,11 +187,11 @@ if pytest is not None:
         model *within* the provider instead of the whole provider entry."""
         # model=None returns the full provider entry.
         info = get_provider_config("openai")
-        assert info["default_model"] == "gpt-5.6-luna"
+        assert info["default_model"] == "gpt-6-luna"
         assert get_provider_config("openai") == info
         # model given returns that model's entry inside the provider.
-        model_info = get_provider_config("openai", "gpt-5.6-luna")
-        assert model_info == info["models"]["gpt-5.6-luna"]
+        model_info = get_provider_config("openai", "gpt-6-luna")
+        assert model_info == info["models"]["gpt-6-luna"]
         assert model_info["max_output_tokens"] == 128000
         # Case-insensitive provider lookup works with a model too.
         assert get_provider_config("MiniMax", "MiniMax-M3")["thinking"] == {"type": "adaptive"}
@@ -200,7 +200,7 @@ if pytest is not None:
         assert get_provider_config("openai", "no-such-model") is None
         # Unknown provider -> None.
         assert get_provider_config("bogus") is None
-        assert get_provider_config("bogus", "gpt-5.6-luna") is None
+        assert get_provider_config("bogus", "gpt-6-luna") is None
         # The "custom" provider has no built-in models.
         assert get_provider_config("custom", "any-model") is None
 
@@ -212,7 +212,7 @@ if pytest is not None:
         assert get_provider("openai").info is PACKAGE_PROVIDER_CONFIGS["openai"]
         # Provider-level fields and per-model entries come from that dict.
         assert get_provider("minimax").info["endpoint"] == "https://api.minimax.io/v1"
-        assert get_provider("openai").model_config("gpt-5.6-luna").get("max_output_tokens") == 128000
+        assert get_provider("openai").model_config("gpt-6-luna").get("max_output_tokens") == 128000
         assert get_provider("minimax").model_config("MiniMax-M3").get("thinking", False) == {"type": "adaptive"}
         # Case-insensitive provider lookup works.
         assert get_provider("MiniMax").default_model() == "MiniMax-M3"
@@ -415,7 +415,7 @@ if pytest is not None:
 
     def test_default_model_and_max_tokens():
         # Providers expose built-in default models / max tokens.
-        assert get_default_model_from_provider("openai") == "gpt-5.6-luna"
+        assert get_default_model_from_provider("openai") == "gpt-6-luna"
         assert get_default_model_from_provider("alibaba") == "qwen3.8-flash"
         assert get_default_max_input_tokens_from_provider("openai") == 1050000
         assert get_default_max_output_tokens_from_provider("openai") == 128000
@@ -754,7 +754,7 @@ if pytest is not None:
             "Completions",
         ]
         assert get_default_api_type_from_provider("openai") == "Responses"
-        assert get_provider_config("openai")["models"]["gpt-5.6-luna"]["supported_api_types"] == [
+        assert get_provider_config("openai")["models"]["gpt-6-luna"]["supported_api_types"] == [
             "Responses",
             "Completions",
         ]
@@ -1013,7 +1013,7 @@ if pytest is not None:
         with previous_response_id; stateless endpoints (DeepSeek) do not."""
         # OpenAI keeps the conversation server-side.
         assert get_stateless_mode_from_provider("openai") is False
-        assert get_provider_config("openai")["models"]["gpt-5.6-luna"]["stateless_mode"] is False
+        assert get_provider_config("openai")["models"]["gpt-6-luna"]["stateless_mode"] is False
         # DeepSeek's /responses endpoint is stateless.
         assert get_stateless_mode_from_provider("deepseek") is True
         assert get_provider_config("deepseek")["models"]["deepseek-flash"]["stateless_mode"] is True
@@ -1036,11 +1036,11 @@ if pytest is not None:
         # OpenAI's built-in default is False (server-side); force stateless
         # on via a model-scoped config override (stored under
         # providers.openai.models.<model>.stateless-mode).
-        gc.set_config_value("openai.models.gpt-5.6-luna.stateless-mode", True)
+        gc.set_config_value("openai.models.gpt-6-luna.stateless-mode", True)
         assert get_stateless_mode_from_provider("openai") is True
 
         # Clearing the override falls back to the built-in default.
-        gc.unset_config_value("openai.models.gpt-5.6-luna.stateless-mode")
+        gc.unset_config_value("openai.models.gpt-6-luna.stateless-mode")
         assert get_stateless_mode_from_provider("openai") is False
 
         # DeepSeek's built-in default is True (stateless); force server-side
@@ -1056,7 +1056,7 @@ if pytest is not None:
     def test_fallback_chain_unknown_model_uses_default_model_entry():
         """A model without its own built-in entry falls back to the default
         model's entry for its defaults."""
-        # OpenAI has only one built-in model (gpt-5.6-luna); an unknown model
+        # OpenAI has only one built-in model (gpt-6-luna); an unknown model
         # inherits its defaults (token limits, API types).
         assert get_default_max_output_tokens_from_provider("openai", "my-model") == (
             get_default_max_output_tokens_from_provider("openai")
@@ -1193,12 +1193,12 @@ if pytest is not None:
         rc = _run_main(
             monkeypatch,
             tmp_path,
-            ["--provider", "OpenAI", "--set", "model=gpt-5.6-luna"],
+            ["--provider", "OpenAI", "--set", "model=gpt-6-luna"],
         )
         assert rc == 0
         config = json.loads((tmp_path / "config.json").read_text())
         # The provider was normalized to its canonical casing ("openai").
-        assert config == {"providers": {"openai": {"model": "gpt-5.6-luna"}}}
+        assert config == {"providers": {"openai": {"model": "gpt-6-luna"}}}
 
     def test_cli_rejects_unknown_model_on_set(monkeypatch, tmp_path, capsys):
         """--set model=<unknown> exits 1 without writing anything."""
@@ -1210,7 +1210,7 @@ if pytest is not None:
         assert rc == 1
         err = capsys.readouterr().err
         assert "Unknown model 'gpt-4' for provider 'openai'" in err
-        assert "gpt-5.6-luna" in err  # available models are listed
+        assert "gpt-6-luna" in err  # available models are listed
         assert not (tmp_path / "config.json").exists()
 
     def test_cli_rejects_unknown_model_flag(monkeypatch, tmp_path, capsys):

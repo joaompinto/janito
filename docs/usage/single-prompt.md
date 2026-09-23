@@ -37,7 +37,7 @@ echo "Explain this code" | janito
     Run the configuration step and the prompt step separately:
 
     ```bash
-    janito --set provider=openai --set model=gpt-5.6-luna   # Step 1: configure
+    janito --set provider=openai --set model=gpt-6-luna   # Step 1: configure
     janito "Your question here"                      # Step 2: run
     ```
 

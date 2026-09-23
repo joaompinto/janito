@@ -139,13 +139,13 @@ def test_price_shows_na_for_models_without_cost_module(monkeypatch, tmp_path, ca
     from janito.providers.costing import get_provider_cost_value
 
     assert get_provider_cost_value("anthropic", "claude-sonnet-5", 1_000_000, 0, 0, is_reference=True) is not None
-    assert get_provider_cost_value("openai", "gpt-5.6-luna", 1_000_000, 0, 0, is_reference=True) is not None
+    assert get_provider_cost_value("openai", "gpt-6-luna", 1_000_000, 0, 0, is_reference=True) is not None
     assert out.strip() != ""
     assert "anthropic" in out
     # OpenAI ships a cost module, so its model shows a real cost, not N/A.
-    # gpt-5.6-luna 1M input exceeds the 272K high-context threshold, so the
-    # in/cache columns bill at 2x the input rate: $0.40 + $0.04 + $1.20 =
-    # 1.640000$.
+    # gpt-6-luna 1M input exceeds the 272K high-context threshold, so the
+    # in/cache columns bill at 2x the input rate: $0.20 + $0.02 + $0.50 =
+    # 0.720000$.
 
     # A provider without a cost module is reported as N/A.
     restore = _inject_fake_no_cost_provider()
