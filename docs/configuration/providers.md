@@ -34,6 +34,7 @@ The API type is selected per provider with `--set api-type=...` (see the
 | `zai` | Z.AI (GLM models) |
 | `xai` | xAI (Grok models) |
 | `anthropic` | Anthropic (Claude models) |
+| `apertus` | Apertus (Swiss AI Initiative models via Swisscom) |
 | `openrouter` | OpenRouter (aggregator of many models) |
 
 !!! note
@@ -68,7 +69,7 @@ janito --show-providers
 ```
 
 ```
-Supported Providers (12):
+Supported Providers (13):
 ============================================================
   openai [active]
     Model:         gpt-5.6-luna (default)
@@ -880,6 +881,43 @@ janito --provider anthropic --api-type Anthropic "Explain quantum computing"
 janito --set provider=anthropic --set model=claude-sonnet-5
 # Step 2: Store API key
 janito --set-api-key="your-anthropic-api-key" --provider anthropic
+# Step 3: Run prompt
+janito "Explain quantum computing"
+```
+
+## Apertus
+
+Use Swisscom's OpenAI-compatible gateway to access Apertus models (Swiss AI
+Initiative, e.g. Apertus 1.5 70B with a 262K-token context window).
+
+> **Get an API key:** Visit [The Keymaker](https://keymaker.ai-weeks.ch/) to
+> generate an API key.
+
+### Configuration
+
+```bash
+# Step 1: Set provider and model
+janito --set provider=apertus --set model=swiss-ai/Apertus-v1.5-70B
+# Step 2: Store API key
+janito --set-api-key="your-apertus-api-key" --provider apertus
+```
+
+### Popular Models
+
+| Model | Description |
+|-------|-------------|
+| `swiss-ai/Apertus-v1.5-70B` | Apertus 1.5 70B via Swisscom (default, built-in) |
+
+Model selection is restricted to the built-in models above.
+`janito --list-models` shows the accepted names.
+
+### Example
+
+```bash
+# Step 1: Set provider and model
+janito --set provider=apertus --set model=swiss-ai/Apertus-v1.5-70B
+# Step 2: Store API key
+janito --set-api-key="your-apertus-api-key" --provider apertus
 # Step 3: Run prompt
 janito "Explain quantum computing"
 ```
