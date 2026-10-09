@@ -21,6 +21,13 @@ Changes since `v4.46.0` (2026-10-08).
   Lowercase `-r/--read` is unchanged. Documentation explains why choosing a
   task-appropriate role matters and its limits. Custom prompts remain unchanged.
 
+- **Apertus provider** — new `apertus` provider for Apertus models (Swiss AI
+  Initiative) via Swisscom's OpenAI-compatible gateway
+  (`https://api.swisscom.com/products/swiss-ai-weeks/apertus-1.5-70b/v1`),
+  with `swiss-ai/Apertus-v1.5-70B` (262K-token context) as the built-in
+  default model over the Chat Completions API. Select it with
+  `janito --set provider=apertus`. See `docs/configuration/providers.md`.
+
 ### Fixed
 
 - ChatGPT-plan login no longer strands users on "Already signed in" with an
