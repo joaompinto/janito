@@ -21,8 +21,25 @@ Changes since `v4.46.0` (2026-10-08).
   Lowercase `-r/--read` is unchanged. Documentation explains why choosing a
   task-appropriate role matters and its limits. Custom prompts remain unchanged.
 
+- **ACP (Agent Client Protocol) v1 agent** â€” `janito --acp` runs as an ACP
+  subprocess agent over stdio (newline-delimited JSON-RPC 2.0) for ACP-compatible
+  editors (e.g. Zed). Implements `initialize`, `session/new`, `session/prompt`,
+  and `session/cancel`; streams token/reasoning/tool updates; honors the
+  session `cwd`, ignores client-provided `mcpServers`, and keeps stdout clean by
+  redirecting all non-protocol output to stderr. See `docs/usage/acp.md`.
+
 ### Fixed
 
+- ACP turn safety: cancellation now stops streaming promptly but waits for
+  tracked sync workers (tool execution, MCP discovery, sync SDK chunks) to
+  finish before restoring the session `cwd` and releasing the turn lock, so
+  repeated cancels cannot strand background threads on the wrong directory;
+  stdin shutdown also waits for turn cleanup before closing the event loop;
+  cancelled, failed, and error-event turns roll history back to before the
+  turn while completed turns keep the system prompt and prior messages;
+  overlapping `session/prompt` calls on one session are rejected; and
+  `session/new` resolves the project prompt (including `AGENTS.md`) under
+  the requested `cwd` while waiting for any active turn.
 - ChatGPT-plan login no longer strands users on "Already signed in" with an
   expired/revoked token: `janito --login` refreshes transparently when
   expired and re-authenticates when refresh fails; `-f/--force` forces

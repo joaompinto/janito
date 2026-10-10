@@ -9,13 +9,13 @@ through ``asyncio.to_thread``).  The loop builds call kwargs and
 accumulators directly from the shared adapters in :mod:`janito.llm_adapters.gemini`.
 """
 
-import asyncio
 import logging
 
 from janito.llm_adapters.gemini import GeminiTurnAccumulator
 from janito.optional_packages import require_optional_package
 
 from .stream_utils import _next_or_none, emit_stream_events
+from .workers import run_in_worker
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ async def _gemini_chunks(client, call_kwargs: dict):
     """
     stream = client.models.generate_content_stream(**call_kwargs)
     while True:
-        chunk = await asyncio.to_thread(_next_or_none, stream)
+        chunk = await run_in_worker(_next_or_none, stream)
         if chunk is None:
             return
         yield chunk

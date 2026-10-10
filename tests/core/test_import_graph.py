@@ -2,8 +2,8 @@
 
 Every module in ``janito/`` is assigned to a **domain**: the root package
 (``janito`` and its top-level modules) or one of the subpackages
-(``llm_adapters``, ``cli``, ``llm_clients``, ``mcp_client``, ``providers``,
-``shell``, ``tooling``, ``tools``, ``ui``, ``web``).  This test statically
+(``acp``, ``llm_adapters``, ``cli``, ``llm_clients``, ``mcp_client``,
+``providers``, ``shell``, ``tooling``, ``tools``, ``ui``, ``web``).  This test statically
 parses every import in the codebase (lazy imports inside functions included,
 since the agent loop relies on them) and fails on any directed cross-domain
 edge that is not in the allowed matrix below.
@@ -11,7 +11,8 @@ edge that is not in the allowed matrix below.
 The matrix encodes the intended layering:
 
 - the **outer** presentation / entry layers (``ui``, ``shell``, ``cli``,
-  ``web``) may depend on anything below them;
+  ``web``, ``acp``) may depend on anything below them; ``acp`` is a thin
+  async entry layer over the web loop (it targets ``web`` + ``root`` only);
 - ``llm_clients`` depends one-way on the shared adapter layer
   (``llm_adapters``) and on ``tooling`` / ``providers`` / the root config
   layer;
@@ -39,6 +40,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 PACKAGE_DIR = REPO_ROOT / "janito"
 
 DOMAINS = {
+    "acp",
     "cli",
     "llm_adapters",
     "llm_clients",
@@ -58,7 +60,8 @@ DOMAINS = {
 # modules (config stores, system prompt, plugin manager, MCP manager) reach
 # into the packages lazily.
 ALLOWED_EDGES: dict[str, set[str]] = {
-    "root": {"cli", "mcp_client", "providers", "shell", "tooling", "tools", "web"},
+    "root": {"acp", "cli", "mcp_client", "providers", "shell", "tooling", "tools", "web"},
+    "acp": {"root", "web"},
     "llm_adapters": {"providers"},
     "llm_clients": {"llm_adapters", "providers", "root", "tooling"},
     "mcp_client": set(),
@@ -178,6 +181,27 @@ def test_allowed_matrix_domains_are_known():
         assert source in DOMAINS, f"Unknown source domain {source!r}"
         for target in targets:
             assert target in DOMAINS, f"Unknown target domain {target!r}"
+
+
+def test_acp_domain_is_explicit():
+    """The ACP entry layer is a first-class domain targeting web + root."""
+    assert _domain_of("janito.acp.agent") == "acp"
+    assert _domain_of("janito.acp.server") == "acp"
+    assert ALLOWED_EDGES["acp"] == {"root", "web"}
+    assert "acp" in ALLOWED_EDGES["root"]
+
+
+def test_async_confined_to_web_and_acp():
+    """Only the web backend and the ACP entry layer may use ``async def``."""
+    offenders = []
+    for source_file in sorted(PACKAGE_DIR.rglob("*.py")):
+        tree = ast.parse(source_file.read_text(encoding="utf-8"), filename=str(source_file))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.AsyncFunctionDef):
+                rel = source_file.relative_to(REPO_ROOT).as_posix()
+                if not (rel.startswith("janito/web/") or rel.startswith("janito/acp/")):
+                    offenders.append(f"{rel}:{node.lineno}")
+    assert not offenders, "async def outside janito/web and janito/acp:\n" + "\n".join(offenders)
 
 
 if __name__ == "__main__":  # pragma: no cover - manual diagnostics

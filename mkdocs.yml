@@ -53,6 +53,7 @@ nav:
       - usage/logging.md
       - usage/accounting.md
       - usage/web-ui.md
+      - usage/acp.md
       - usage/cli-vs-web.md
   - Tools:
       - tools/index.md

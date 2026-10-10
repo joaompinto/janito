@@ -546,6 +546,15 @@ Note: --set and --set-api-key must be used in separate commands.
         "default). Ignored with --no-history (nothing to reload from)",
     )
 
+    # --- Agent Client Protocol (ACP) option ---
+    parser.add_argument(
+        "--acp",
+        action="store_true",
+        help="Run as an Agent Client Protocol (ACP) agent over stdio, for "
+        "ACP-compatible editors (e.g. Zed) that launch the agent as a "
+        "subprocess speaking newline-delimited JSON-RPC",
+    )
+
     return parser
 
 

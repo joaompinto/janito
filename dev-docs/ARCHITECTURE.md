@@ -1,9 +1,9 @@
 # Architecture
 
 This document summarizes the architecture of **janito**, a development agent
-with function calling, MCP support and skills. It runs through two interfaces
-built on the same engine: a terminal CLI/shell and an (alpha) browser-based
-web UI.
+with function calling, MCP support and skills. It runs through three interfaces
+built on the same engine: a terminal CLI/shell, an (alpha) browser-based
+web UI, and an (alpha) ACP stdio agent for editors.
 
 ---
 
@@ -13,25 +13,25 @@ Janito is a Python 3.10+ application organized as a single `janito` package
 plus a `tests/` suite. At a high level it is a loop:
 
 ```
-user prompt ──► stream model response
-                       │
-       model wants tools? │
-                       ▼
+user prompt â”€â”€â–º stream model response
+                       â”‚
+       model wants tools? â”‚
+                       â–¼
               execute tools
-                       │
-                       ▼
+                       â”‚
+                       â–¼
             append results, loop
-                       │
-       no more tools?   │
-                       ▼
+                       â”‚
+       no more tools?   â”‚
+                       â–¼
                display final answer
 ```
 
-Everything else — CLI parsing, tool discovery, MCP, skills, the web UI,
-configuration — exists to feed or present this loop. The per-session
+Everything else â€” CLI parsing, tool discovery, MCP, skills, the web UI,
+configuration â€” exists to feed or present this loop. The per-session
 configuration (provider, model, endpoint, api key, token limits, reasoning
 level) is resolved **once** into an immutable `APIConfig`
-(`llm_clients/api_config.py` → `build_api_config`) at the composition
+(`llm_clients/api_config.py` â†’ `build_api_config`) at the composition
 point; the turn pipeline is a pure function of `(config, request)`.
 
 ### Top-level layout
@@ -50,6 +50,7 @@ point; the turn pipeline is a pure function of `(config, request)`.
 | `janito/taskmanager/` | Parallel-task manager (issue #94): spawns each task as a child `janito` process and tracks its exit status (`constants`/`process`/`command`/`task`/`manager` modules, re-exported from `janito.taskmanager`) |
 | `janito/conversation_utils.py`, `janito/optional_packages.py` | Root-level helpers shared across domains: turn truncation/rollback (`truncate_to_last_turn`, `rollback_to_last_turn`) and the optional-SDK install guards (`require_optional_package`) |
 | `janito/web/` | FastAPI web backend + plain HTML/JS/CSS frontend |
+| `janito/acp/` | ACP v1 stdio agent (JSON-RPC transport + session/turn handlers, thin async entry over the web loop) |
 | `janito/session_setup.py` | Shared system-prompt/toolset selection for the CLI and web entry points (outside `cli/` so the web backend never imports from the CLI package) |
 | `janito/plugin_manager.py` | Plugin loader: contract validation, scoped `sys.path`, registration |
 | `../plugins/` (outside the repo) | Optional plugins (e.g. `janito-codesearch-plugin/`) loaded with `--plugin DIR` |
@@ -65,34 +66,38 @@ subpackages below), and the cross-domain import edges are a deliberate,
 enforced contract.  The allowed directed edges (source ->
 targets, same-domain imports always allowed) are:
 
-| source \ target | llm_adapters | cli | llm_clients | mcp_client | providers | root | shell | tooling | tools | ui | web |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| **root** | | ✓ | | ✓ | ✓ | — | ✓ | ✓ | ✓ | | ✓ |
-| **llm_adapters** | — | | | | ✓ | | | | | | |
-| **llm_clients** | ✓ | | — | | ✓ | ✓ | | ✓ | | | |
-| **mcp_client** | | | | — | | | | | | | |
-| **providers** | | | | | — | ✓ | | | | | |
-| **shell** | | | ✓ | | ✓ | ✓ | — | ✓ | ✓ | | |
-| **tooling** | | | | | | ✓ | | — | | | |
-| **tools** | | | | | ✓ | ✓ | | ✓ | — | | |
-| **ui** | ✓ | | ✓ | | ✓ | ✓ | | ✓ | | — | |
-| **cli** | | — | ✓ | | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | |
-| **web** | ✓ | | | | ✓ | ✓ | | ✓ | ✓ | | — |
+| source \ target | acp | llm_adapters | cli | llm_clients | mcp_client | providers | root | shell | tooling | tools | ui | web |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **root** | âœ“ | | âœ“ | | âœ“ | âœ“ | â€” | âœ“ | âœ“ | âœ“ | | âœ“ |
+| **acp** | â€” | | | | | | âœ“ | | | | | âœ“ |
+| **llm_adapters** | | â€” | | | | âœ“ | | | | | | |
+| **llm_clients** | | âœ“ | | â€” | | âœ“ | âœ“ | | âœ“ | | | |
+| **mcp_client** | | | | | â€” | | | | | | | |
+| **providers** | | | | | | â€” | âœ“ | | | | | |
+| **shell** | | | | âœ“ | | âœ“ | âœ“ | â€” | âœ“ | âœ“ | | |
+| **tooling** | | | | | | | âœ“ | | â€” | | | |
+| **tools** | | | | | | âœ“ | âœ“ | | âœ“ | â€” | | |
+| **ui** | | âœ“ | | âœ“ | | âœ“ | âœ“ | | âœ“ | | â€” | |
+| **cli** | | | â€” | âœ“ | | âœ“ | âœ“ | âœ“ | âœ“ | âœ“ | âœ“ | |
+| **web** | | âœ“ | | | | âœ“ | âœ“ | | âœ“ | âœ“ | | â€” |
 
 The intended layering:
 
-- **`ui` / `shell` / `cli` / `web` are the outer presentation / entry
-  layers** — they may depend on anything below them, and nothing below may
-  depend on them.  In particular `web` never imports from `cli` (the shared
-  `SessionSetup` lives at the package root), and — like `llm_adapters` —
-  `web` never imports from `llm_clients` either: every per-API piece the
-  web loop needs (call-kwargs builders, accumulators, the DashScope
-  endpoint-routing helpers) lives in the shared `llm_adapters` layer, so
-  the web agent runners stay thin async glue.  The API clients likewise
+- **`ui` / `shell` / `cli` / `web` / `acp` are the outer presentation /
+  entry layers** â€” they may depend on anything below them, and nothing
+  below may depend on them.  In particular `web` never imports from `cli`
+  (the shared `SessionSetup` lives at the package root), and â€” like
+  `llm_adapters` â€” `web` never imports from `llm_clients` either: every
+  per-API piece the web loop needs (call-kwargs builders, accumulators, the
+  DashScope endpoint-routing helpers) lives in the shared `llm_adapters`
+  layer, so the web agent runners stay thin async glue.  `acp` is the
+  thinnest entry layer: it targets `web` (the turn runner, config, events,
+  worker tracker) + `root` (history rollback) only, and `root` reaches it
+  lazily from `__main__`.  The API clients likewise
   never import the concrete `UIConfig` (they depend on the structural
   protocol in `llm_clients/base_client.py`; the frozen bundle is composed
   by the CLI in `janito/ui/config.py`).
-- **`llm_adapters` is the shared adapter layer** — both agent loops (CLI and web)
+- **`llm_adapters` is the shared adapter layer** â€” both agent loops (CLI and web)
   build on it; `llm_clients`, `ui` and `web` depend on it, and it must
   **never** import from `llm_clients` (the stream converters /
   `GeminiStreamConsumer` / `_ModelEndpointMismatch` / `_is_multimodal_model`
@@ -100,44 +105,44 @@ The intended layering:
   here for that reason).
 - **`llm_clients` depends one-way on `llm_adapters`**, `tooling`,
   `providers` and the root config layer.
-- **`tooling` is the tool framework** — `tools` (the built-in
+- **`tooling` is the tool framework** â€” `tools` (the built-in
   implementations) depends on it, never the other way round; tool discovery
   and the privilege predicates live in `tooling/discovery.py`.
 - **`providers` and the root config stores are leaves.**
-- The one remaining cycle — **root <-> providers** (config-store /
-  variant-name resolution vs. the provider registry) — is accepted and kept
+- The one remaining cycle â€” **root <-> providers** (config-store /
+  variant-name resolution vs. the provider registry) â€” is accepted and kept
   contained with lazy imports on both sides; each site carries a
   comment to that effect.  `tests/core/test_import_graph.py` statically enforces
   this matrix, so any new cycle or wrong-direction edge fails the suite.
 
 ## Design principles
 
-Every review (issue #31) must report on each principle below — OK or a
+Every review (issue #31) must report on each principle below â€” OK or a
 violation with `file:line`. Blocking: a domain with two owners, duplicated
 logic, or business logic in templates / UI code.
 
-- **Separation of concerns** — domain policy lives in exactly one owner.
+- **Separation of concerns** â€” domain policy lives in exactly one owner.
   End-of-turn accounting (token selection, cost, persistence) is owned by
   `janito/accounting_policy.py`; model-setting precedence
-  (`config override → built-in default → 100_000 fallback`) is owned by
+  (`config override â†’ built-in default â†’ 100_000 fallback`) is owned by
   `janito/model_settings.py`. The CLI (`ui/observer.py`) and the web loop
   (`web/backend/agent/loop.py`) invoke those services; observers render
   results but never own billing or config policy.
-- **Programming by intention** — dependencies are explicit, never
+- **Programming by intention** â€” dependencies are explicit, never
   discovered by inspecting implementation details. The turn factory exposes
   `turn_func.observer`, `InteractiveShell` stores it as `shell.observer`
   (`_attach_turn_func`), and `shell/cmds/pop.py:_resolve_observer` reads
-  only those attributes — no `turn_func.__closure__` walk.
-- **Encapsulation** — callers respect implementation boundaries. The shared
+  only those attributes â€” no `turn_func.__closure__` walk.
+- **Encapsulation** â€” callers respect implementation boundaries. The shared
   `llm_adapters/responses.py` adapter receives authentication metadata
   (`is_oauth` argument or `config.is_oauth` from
   `WebServerConfig.is_oauth`) and never reads the config/auth stores
   itself; changing how the turn callable is built cannot silently alter
   rendering.
-- **High cohesion** — presentation stays presentation. `RichTurnObserver`
+- **High cohesion** â€” presentation stays presentation. `RichTurnObserver`
   (and `SilentTurnObserver`) render the usage summary; billing-record
   construction and persistence live in the accounting service above.
-- **Low coupling** — cross-domain edges follow the matrix in
+- **Low coupling** â€” cross-domain edges follow the matrix in
   [Domains & boundaries](#domains--boundaries) and nothing more.
   `llm_adapters` targets only `providers`; `web` never imports from
   `llm_clients`; `shell` never imports from `ui`. The guard asserts a
@@ -162,19 +167,19 @@ the `janito` console script). Flow:
    those requested with `--plugin DIR` (`load_plugins`, repeatable). For each
    plugin, its parent dir is temporarily added to `sys.path`, the package is
    imported, the contract is validated, `on_start` is called, and its tools,
-   `/`-commands and system-prompt sections are registered — all before any
+   `/`-commands and system-prompt sections are registered â€” all before any
    registry/shell access. Plugin tools are **not** gated by `--no-tools`;
    use `--no-plugins` to disable autoloading.
 5. **Flag-driven commands** (`--info`, `--config`, `--list-*`,
    `--set-api-key`, `--install-skill`, ...) via
-   `_dispatch_flag_command` → handlers in `janito/cli/handlers/`.
-6. **Validate runtime config** (`validate_runtime_config`) — API key, endpoint
+   `_dispatch_flag_command` â†’ handlers in `janito/cli/handlers/`.
+6. **Validate runtime config** (`validate_runtime_config`) â€” API key, endpoint
    and model must resolve before any session starts.
 7. **Dispatch to a mode**:
-   - `--web` → `janito/web/backend/app.py:run_web` (checks the optional
+   - `--web` â†’ `janito/web/backend/app.py:run_web` (checks the optional
      `[web]` extras first);
-   - stdin pipe → the piped text replaces the prompt argument;
-   - prompt argument present (positional, or piped) → `run_single_prompt`;
+   - stdin pipe â†’ the piped text replaces the prompt argument;
+   - prompt argument present (positional, or piped) â†’ `run_single_prompt`;
      otherwise `run_interactive_chat` (both in `janito/cli/chat.py`).
 
 `janito/cli/chat.py` builds the per-session `APIConfig` via
@@ -182,7 +187,7 @@ the `janito` console script). Flow:
 type (Responses / Completions / Anthropic / DashScope / Gemini); it drives
 either the interactive shell or a single prompt.
 `janito/session_setup.py` (`SessionSetup`) decides the effective system
-prompt and which toolsets to enable — shared with the web backend, which
+prompt and which toolsets to enable â€” shared with the web backend, which
 imports it from the package root instead of from `cli/`.
 
 ---
@@ -198,7 +203,7 @@ imports it from the package root instead of from `cli/`.
   (`janito/shell/cmds/`): `/rewind`, `/history`, `/priv`, `/mcp`, `/skills`,
   `/tools`, `/changes`, `/ask`, `/multi`, ... Commands are registered through
   a small registry (`cmds/registry.py`).
-- **`janito/shell/conversation.py`** — the single home for "where does the
+- **`janito/shell/conversation.py`** â€” the single home for "where does the
   conversation live" (Completions-style `messages_history` vs stateless /
   server-side Responses items) and the `(role, content)` display rows
   `/history` renders. `/history`, `/compact` and the interactive shell's
@@ -226,7 +231,7 @@ The heart of the engine is a **template-method turn pipeline** defined in
 
 **Configuration is resolved once, not per turn**. The immutable
 `APIConfig` dataclass (`llm_clients/api_config.py`) carries everything a
-turn needs that can be decided before the call starts — provider, API type,
+turn needs that can be decided before the call starts â€” provider, API type,
 model, base URL, api key, resolved max-output/input tokens, reasoning level,
 thinking mode, `preserve_thinking`, `use_mcp`. The UI-side behaviour
 (per-round stream runner + turn observer) is carried separately by the
@@ -239,18 +244,18 @@ touches the config store / auth store / provider registry. It is called at
 the composition point (`cli/chat.py`'s `_make_turn_factory`, which rebuilds
 it on every `/provider` / `/model` / `/thinking` switch) and handed to the
 client constructor. The concrete client class is picked from the resolved
-`APIConfig` by `llm_clients/factory.py` (`create_client`) — the single
-`api_type` → class mapping, mirroring `mcp_client/factory.py`. The five
+`APIConfig` by `llm_clients/factory.py` (`create_client`) â€” the single
+`api_type` â†’ class mapping, mirroring `mcp_client/factory.py`. The five
 module-level `run_turn(config, prompt, *, ...)`
 functions and `Client.run_turn` therefore make **no** config-store or auth-store
-reads — the turn pipeline is a pure function of `(config, request)`.
+reads â€” the turn pipeline is a pure function of `(config, request)`.
 The Responses `message` input-item shape is built by the shared
 `llm_clients/openai/responses_items.py` (`message_item`) used by the clients
 and the shell; `_resolve_model_settings` has a base default in `Client`
 (reading the resolved `APIConfig`), with per-API overrides only when an API
 drops a value (e.g. DashScope drops `reasoning_effort`).
 Thinking mode is resolved into `config.thinking` at build time too (the
-`--thinking` flag, or the provider's *static* built-in default — a `True`
+`--thinking` flag, or the provider's *static* built-in default â€” a `True`
 flag or a pass-through dict such as MiniMax-M3's `{'type': 'adaptive'}`);
 the shell's `/thinking` toggle flips it mid-session by re-invoking the send
 factory with the shell's current flag, so no resolution is left inside the
@@ -265,8 +270,8 @@ The pipeline per turn:
 4. Create a `ToolExecutor` (tool-call routing + bookkeeping).
 5. Resolve tool schemas (built-in registry + MCP); model settings come from
    the config (max tokens, reasoning level, thinking).
-6. Loop: stream a response → display reasoning/content (routed through the
-   injected `TurnObserver`, see below) → if tool calls were
+6. Loop: stream a response â†’ display reasoning/content (routed through the
+   injected `TurnObserver`, see below) â†’ if tool calls were
    requested, execute them (see [Tool execution](#tool-execution)) and loop
    again; otherwise finalize (record the assistant message, return value).
    Each round's usage is folded into a `TurnInfo` (`janito/llm_adapters/usage.py`);
@@ -280,19 +285,19 @@ The pipeline per turn:
    compression call swaps in the silent observer -- see below -- so it
    records the accounting row without rendering).
 
-The blocking work of each streaming round — thread creation, the Rich spinner
-and Enter-to-cancel detection — lives in a **per-round stream runner**
+The blocking work of each streaming round â€” thread creation, the Rich spinner
+and Enter-to-cancel detection â€” lives in a **per-round stream runner**
 (`_run_with_progress_bar` + its `_is_enter_pressed` stdin poller, in
 `janito/ui/stream_runner.py`). It is a UI-side concern **injected** by
 the caller through the `UIConfig` (`stream_runner`): `None` runs each
-stream worker directly in the calling thread — no thread, no spinner, no
-Enter-to-cancel — keeping `run_turn`/`Client.run_turn` purely API-side.
+stream worker directly in the calling thread â€” no thread, no spinner, no
+Enter-to-cancel â€” keeping `run_turn`/`Client.run_turn` purely API-side.
 `_make_turn_factory` in `cli/chat.py` (the same composition point that
 injects the turn observer) wires in the TUI runner when it builds
 the `UIConfig`, so every CLI entry point (interactive shell, `/ask`, `/compact`,
 one-shot prompt) keeps the spinner. Because the runner is invoked **per
 round** from inside the `Client.run_turn` loop, the spinner is only visible while
-the API stream is in flight — never during tool execution.
+the API stream is in flight â€” never during tool execution.
 
 All other user-visible output of the turn is routed through a **turn
 observer** (`TurnObserver` protocol in `janito/llm_adapters/observer.py`), injected
@@ -339,13 +344,15 @@ stream accumulation and history conversion are implemented once.
 
 The CLI and the web UI drive the same turn pipeline on two different
 runtimes: the CLI is **fully synchronous**, the web backend is **fully
-asyncio**. The split is deliberate and visible in the code layout — there is
-no `async def` anywhere in the package except under `janito/web/` (the few
-`asyncio` mentions in `llm_adapters` / `tooling` docstrings all describe the
-web loop bridging back *into* that sync code, below).
+asyncio**. The split is deliberate and visible in the code layout â€” there is
+no `async def` anywhere in the package except under `janito/web/` and
+`janito/acp/` (the few `asyncio` mentions in `llm_adapters` / `tooling`
+docstrings all describe the web loop bridging back *into* that sync code,
+below). The ACP agent (`janito --acp`) is the second async entry: it reuses
+the web loop's `stream_prompt` instead of forking it.
 
 **Why the CLI stays sync.** A terminal session has one foreground user who
-submits one turn at a time — there is no second stream of work to interleave,
+submits one turn at a time â€” there is no second stream of work to interleave,
 so an event loop would buy nothing. The only concurrency the CLI needs is
 "keep the UI alive while the API stream blocks": the spinner and
 Enter-to-cancel, solved with one worker thread and a `cancel_event` in the
@@ -367,39 +374,53 @@ and the WebSocket receive loop (`_await_cancel`), rolls the conversation back
 to a known-good state on a client cancel or disconnect (`_rollback`), and
 collects prompts that arrive mid-turn into `pending_prompts` instead of
 dropping them. Output is `await websocket.send_json(...)` of the structured
-events in `web/backend/events.py` — the browser does the rendering a
+events in `web/backend/events.py` â€” the browser does the rendering a
 `RichTurnObserver` does in the CLI, so the web loop never needs a terminal
 observer at all.
 
 **Where the two worlds meet.** The shared engine below `web/` stays sync;
 the web loop bridges back into it at three seams, each one a thread hop:
 
-1. **Streams with no async API** — the DashScope and Gemini runners pump the
-   *sync* SDK stream chunk-by-chunk through
-   `chunk = await asyncio.to_thread(_next_or_none, stream)` so the event loop
-   stays responsive mid-stream.
-2. **Tool execution** — built-in and MCP tools are plain sync functions;
+1. **Streams with no async API** â€” the DashScope and Gemini runners pump the
+   *sync* SDK stream chunk-by-chunk through the tracked
+   `run_in_worker(_next_or_none, stream)` (`web/backend/agent/workers.py`)
+   so the event loop stays responsive mid-stream.
+2. **Tool execution** â€” built-in and MCP tools are plain sync functions;
    `web/backend/agent/tooling.py` runs `run_tool()` and MCP
-   `load_services()` via `asyncio.to_thread`, so tools (and their subprocess
-   instincts) never learn about asyncio.
-3. **User prompting** — `AskUser` blocks its worker thread on a
+   `load_services()` / `get_all_tools()` via `run_in_worker`, so tools (and
+   their subprocess instincts) never learn about asyncio. ACP installs a
+   per-turn `WorkerTracker`; without it, web execution keeps plain
+   `asyncio.to_thread` semantics. The ACP owner drains the workers â€”
+   shielded from repeated cancels â€” before restoring `cwd` / releasing the
+   turn lock, which is what lets ACP cancellation stop streaming promptly
+   without stranding threads on the wrong directory.
+3. **User prompting** â€” `AskUser` blocks its worker thread on a
    `threading.Event` while `WebPromptHandler` (`web/backend/prompts.py`)
    posts the question to the browser with `run_coroutine_threadsafe` and the
-   WebSocket receive loop resolves it — a full thread → loop → browser → loop
-   → thread round trip.
+   WebSocket receive loop resolves it â€” a full thread â†’ loop â†’ browser â†’ loop
+   â†’ thread round trip.
 
-**The payoff.** Because async is confined to `janito/web/`, everything the
-two loops share — `llm_adapters` (call-kwargs builders,
+**ACP turns.** `janito/acp/agent.py` serializes turns and `session/new`
+prompt resolution on one lock that also owns the process `cwd`; each turn
+runs under a `WorkerTracker`, records its history start, rejects an
+overlapping same-session prompt, and rolls back to the recorded start on
+cancel / exception / `ErrorEvent` (preserving the system message and earlier
+completed turns). The stdio server cancels and awaits in-flight requests on
+stdin EOF before closing the event loop, so turn cleanup finishes before
+`asyncio.run` cancels remaining worker tasks.
+
+**The payoff.** Because async is confined to `janito/web/` + `janito/acp/`, everything the
+two loops share â€” `llm_adapters` (call-kwargs builders,
 accumulators, the DashScope endpoint-routing helpers, `TurnInfo`),
-`tooling`, the `TurnObserver` protocol — is
+`tooling`, the `TurnObserver` protocol â€” is
 sync-pure and usable without an event loop anywhere in sight. That is what
-makes the adapter layer genuinely shared — shared to the point that `web`
+makes the adapter layer genuinely shared â€” shared to the point that `web`
 depends only on `llm_adapters` for its per-API code, never on the CLI's
-`llm_clients` — and it mirrors the import matrix of
+`llm_clients` â€” and it mirrors the import matrix of
 [Domains & boundaries](#domains--boundaries): `web` is just
 another outer presentation layer depending inward, and its async-ness never
 propagates below it. For the user-visible consequences of the split see
-`docs/usage/cli-vs-web.md` — that doc is the *what*, this section is the
+`docs/usage/cli-vs-web.md` â€” that doc is the *what*, this section is the
 *why*.
 
 ---
@@ -408,7 +429,7 @@ propagates below it. For the user-visible consequences of the split see
 
 ### Discovery & registry (`janito/tooling/`)
 
-- **`tools_registry.py`** — lazy, module-level `ToolsRegistry` singleton:
+- **`tools_registry.py`** â€” lazy, module-level `ToolsRegistry` singleton:
   - `ensure_initialized()` runs discovery on first access so privilege flags
     are set before tools are filtered;
   - autoloads the `files`, `system`, `net`, `tasks` toolsets;
@@ -416,11 +437,11 @@ propagates below it. For the user-visible consequences of the split see
     OpenAI-compatible JSON schemas from a tool's type hints and docstring;
   - `add_toolset()` enables on-demand toolsets (janitoweb);
   - `register_plugin_tools()` registers tool classes contributed by plugins
-    (**not** gated by `--no-tools`, unlike built-in discovery — plugins are
+    (**not** gated by `--no-tools`, unlike built-in discovery â€” plugins are
     disabled independently via `--no-plugins`);
   - `enable_skills()/disable_skills()` toggle skill tools.
 
-- **`executor.py`** — `ToolExecutor` + shared `run_tool()` core (the
+- **`executor.py`** â€” `ToolExecutor` + shared `run_tool()` core (the
   single tool-execution path used by both the CLI and web loops):
   - routes each call to the MCP manager (tools prefixed with a `service_`
     name) or the built-in registry;
@@ -428,21 +449,21 @@ propagates below it. For the user-visible consequences of the split see
   - never raises: failures become `{"success": False, "error": ...}` results
     so the model can react.
 
-- **`base_tool.py` / `decorator.py`** — `BaseTool` ABC and the
+- **`base_tool.py` / `decorator.py`** â€” `BaseTool` ABC and the
   `@tool(permissions="...")` decorator marking a class as a tool.
 
-- **`reporter.py` / `prompting.py`** — pluggable progress-report and
+- **`reporter.py` / `prompting.py`** â€” pluggable progress-report and
   user-prompt handlers (Rich console in the CLI, WebSocket frames in web
   mode).
 
-- **`skills_provider.py`** — progressive-disclosure skills: advertise
+- **`skills_provider.py`** â€” progressive-disclosure skills: advertise
   (~100 tokens) in the system prompt, load full `SKILL.md` when activated,
   read resources on demand. Skills are discovered from `~/.janito/skills`,
   `.agents/skills`, and `.janito/skills` (project-local wins, with
   `.janito/skills` taking precedence
   over `.agents/skills`).
 
-- **`changes.py`, `used_files.py`, `tools_usage.py`** — per-prompt tracking
+- **`changes.py`, `used_files.py`, `tools_usage.py`** â€” per-prompt tracking
   feeding `/changes`, "Used files" reports and tool stats.
 
 ### Toolsets (`janito/tools/`)
@@ -513,13 +534,13 @@ interactive-shell command.
 
 ## MCP support
 
-- **`janito/mcp_manager.py`** — `MCPManager` manages multiple connected
+- **`janito/mcp_manager.py`** â€” `MCPManager` manages multiple connected
   services: `load_services()`, transport lifecycle, tool listing/caching,
   and `call_tool()` routing by service prefix.
-- **`janito/mcp_client/`** — transport layer: `stdio.py` (subprocess) and
+- **`janito/mcp_client/`** â€” transport layer: `stdio.py` (subprocess) and
   `http.py` (streamable HTTP), with a `factory.py` selecting the transport
   from `mcp_config.py` service definitions.
-- **`janito/mcp_transports.py`** — the transport-type registry the CLI
+- **`janito/mcp_transports.py`** â€” the transport-type registry the CLI
   layers use to *build* (`/mcp add`) and *display* (`/mcp list`,
   `--list-mcp`) service configs, so the `stdio`/`http` knowledge lives in
   one root-level place (the shell/CLI layers may not import `mcp_client`;
@@ -534,25 +555,26 @@ interactive-shell command.
 
 `janito/web/backend/` (FastAPI + uvicorn, optional `[web]` extras):
 
-- **`app.py`** — app factory: mounts API routers (`/api/chat`, `/api/config`,
+- **`app.py`** â€” app factory: mounts API routers (`/api/chat`, `/api/config`,
   `/api/tools`, `/api/mcp`, `/api/images`, `/api/health`), session manager,
   token-auth middleware and CORS, and serves the frontend via Jinja2
   templates + static files.
-- **`session.py` / `session_store.py`** — `SessionManager` with optional
+- **`session.py` / `session_store.py`** â€” `SessionManager` with optional
   TTL-based expiry (`--web-session-ttl`, lazy reaping + disk reload; disabled
   by default) and conversations persisted to `.janito/sessions/` so they
   survive restarts.
-- **`security.py`** — optional bearer-token auth (`JANITO_WEB_TOKEN`) and CORS.
-- **`agent/`** — the async agent loop (`loop.py` orchestrates; `turn.py`
+- **`security.py`** â€” optional bearer-token auth (`JANITO_WEB_TOKEN`) and CORS.
+- **`agent/`** â€” the async agent loop (`loop.py` orchestrates; `turn.py`
   runs tool turns; `completions.py`, `responses.py`, `anthropic.py`,
-  `dashscope.py`, `gemini.py` are the per-API-type runners — one module
+  `dashscope.py`, `gemini.py` are the per-API-type runners â€” one module
   each, Completions included; `stream_utils.py` holds the shared stream
   consumption helpers (`_next_or_none`, `emit_stream_events`) the runners
   all delegate to; `tooling.py` resolves tools and executes
-  calls). Tool calls run
-  through the shared `run_tool` core in a worker thread
-  (`asyncio.to_thread`).
-- **`events.py` / `prompts.py`** — structured SSE/WebSocket events and the
+  calls; `workers.py` tracks the per-turn `to_thread` hops so the owner can
+  drain them before restoring `cwd`). Tool calls run
+  through the shared `run_tool` core in a tracked worker thread
+  (`run_in_worker`).
+- **`events.py` / `prompts.py`** â€” structured SSE/WebSocket events and the
   web AskUser prompt handler.
 - **Frontend** (`janito/web/frontend/`): plain HTML/JS/CSS (Alpine.js) with
   WebSocket chat, session list, settings drawer, tool-call cards and a prompt
@@ -566,10 +588,10 @@ interactive-shell command.
 tool with a **SQLite-based
 inverted trigram index**:
 
-- `index.py` — schema (files, trigrams posting lists) and the `Index` class;
-- `trigram.py` — trigram extraction;
-- `candidates.py` — candidate file scoring/ranking;
-- `code_search.py` — the query layer (and the tool wraps it).
+- `index.py` â€” schema (files, trigrams posting lists) and the `Index` class;
+- `trigram.py` â€” trigram extraction;
+- `candidates.py` â€” candidate file scoring/ranking;
+- `code_search.py` â€” the query layer (and the tool wraps it).
 
 The plugin's `on_start()` creates the index at `.janito/codesearch.db`
 when it is missing; the `/codesearch` shell command maintains it
@@ -591,28 +613,28 @@ Configuration lives in the config dir (default `~/.janito/`, overridable with
 
 Key modules:
 
-- **`config_dir.py`** — config-dir resolution and local-mode flag.
-- **`json_store.py`** — shared `JsonFileStore` base class (path resolution, local-merge reads, 0600 perms) plus the auth/secrets/MCP store subclasses.
-- **`general_config.py`** — config-resolution helpers (`load_provider_from_config`,
+- **`config_dir.py`** â€” config-dir resolution and local-mode flag.
+- **`json_store.py`** â€” shared `JsonFileStore` base class (path resolution, local-merge reads, 0600 perms) plus the auth/secrets/MCP store subclasses.
+- **`general_config.py`** â€” config-resolution helpers (`load_provider_from_config`,
   `determine_provider`, `get_active_provider`, `resolve_api_type()`).
   Config keys are scoped: flat keys (e.g. `provider`), **provider-scoped** keys
   (`model`, `endpoint` under `providers.<name>.<key>`) and **model-scoped**
   keys (`max-input-tokens`, `max-output-tokens`, `effort`, `api-type`,
   `stateless-mode` under `providers.<name>.models.<model>.<key>`).  The
   storage and per-key logic live in the focused modules below.
-- **`config_keys.py`** — key constants (`PROVIDER_SCOPED_KEYS`,
+- **`config_keys.py`** â€” key constants (`PROVIDER_SCOPED_KEYS`,
   `MODEL_SCOPED_KEYS`) and the helpers that build/parse dotted keys
   (`model_config_key`, `model_scoped_config_key`, `normalize_api_type`,
   `get_masked_api_key`, ...).
-- **`config_store.py`** — `ConfigStore` read/write primitives plus the
+- **`config_store.py`** â€” `ConfigStore` read/write primitives plus the
   `load_config` / `get_config_value` / `set_config_value` ... delegators.
-- **`config_loaders.py`** — per-provider loaders (`load_model_from_config`,
+- **`config_loaders.py`** â€” per-provider loaders (`load_model_from_config`,
   `load_max_output_tokens`, ...).
-- **`config_cli.py`** — CLI helpers for the `--set/--get/--unset` family
+- **`config_cli.py`** â€” CLI helpers for the `--set/--get/--unset` family
   (provider-scoped and model-scoped key resolution).
-- **`config_variants.py`** — provider variant management (`load_variants`,
+- **`config_variants.py`** â€” provider variant management (`load_variants`,
   `create_variant`, `delete_variant`, ...).
-- **`providers/`** — per-provider configuration package. The static
+- **`providers/`** â€” per-provider configuration package. The static
   provider registry is split into one `config.py` module per provider
   (`janito/providers/<name>/config.py`, each exporting that provider's
   `PROVIDER_CONFIG` entry); the package `__init__.py` assembles them into
@@ -629,29 +651,29 @@ Key modules:
   these entries: it is not a real provider (never registered in
   `_PROVIDER_CONFIGS`) and comments every possible CONFIG option, so new
   providers are written by copying it and filling in the values.
-- **`providers/models.py`** — the typed accessors: `Provider` (with
+- **`providers/models.py`** â€” the typed accessors: `Provider` (with
   `model_config(model)` and the routing helpers `tools` / `endpoint_for`)
   and `ModelConfig` (raw `get(key)` over one model entry plus the
   `tools(api_type)` routing helper). Accessor policy: plain model keys go
-  through `model_config(model).get("...")` — a dedicated method exists
+  through `model_config(model).get("...")` â€” a dedicated method exists
   only for routing/fallback logic (`tools`, `model_config`,
   `endpoint_for`, `has_usable_builtin_models`); no new `Provider`
   model-level pass-throughs.
-- **`providers/registry.py`** — `ProviderRegistry` (case-insensitive lookup
+- **`providers/registry.py`** â€” `ProviderRegistry` (case-insensitive lookup
   over `janito.providers._PROVIDER_CONFIGS`, including registered variants),
   the `parse_variant_name` / `is_variant_style_name` helpers, and the
   module-level `get_provider(name)` entry point that callers use to obtain a
   typed `Provider` (the former `get_*_from_provider` facade).
-- **`providers/payloads.py`** — pure request-payload helpers
+- **`providers/payloads.py`** â€” pure request-payload helpers
   (`apply_thinking_to_extra_body`, `apply_builtin_tools_to_extra_body`,
   `builtin_tools_enable_flags`, `format_thinking_display`).
-- **`providers/costing.py`** — cost estimation (`get_provider_cost`,
+- **`providers/costing.py`** â€” cost estimation (`get_provider_cost`,
   `get_provider_cost_value`, adaptive `format_cost`).
-- **`providers/validation.py`** — provider name validation / listing helpers
+- **`providers/validation.py`** â€” provider name validation / listing helpers
   (`validate_provider_name`, `is_supported_provider`, `list_variants`, ...)
   and API-type availability (`get_all_api_types`,
   `ensure_api_type_available`, ...).
-- **`auth_config.py`, `secrets_config.py`, `mcp_config.py`** — auth, secrets
+- **`auth_config.py`, `secrets_config.py`, `mcp_config.py`** â€” auth, secrets
   and MCP service stores.
 
 The system prompt (`janito/system_prompt.py`) composes the base prompt, the
@@ -666,7 +688,7 @@ sessions; custom prompt text is not interpolated. The
 composition is built from ordered sections (`start`, `skills`, `agents.md`,
 `plugins:<name>`) stored in a shared `SysPromptManager`; each section is a
 `Section` dataclass carrying its name, text and an optional display `label`
-(issue #86) — `built-in` for the packaged base prompt, `-S` for a
+(issue #86) â€” `built-in` for the packaged base prompt, `-S` for a
 `--system-prompt` override, and `(config) ...` labels for the
 `system-prompt` / `system-prompt-file` config keys (resolved by
 `load_system_prompt_start`, which returns `(text, label)`).
@@ -684,7 +706,7 @@ showing the label when set and falling back to the section name.
 2. `__main__` resolves config, validates runtime, dispatches to
    `run_single_prompt` / `run_interactive_chat`.
 3. The chosen API client (`Client.run_turn` pipeline) streams the model response.
-4. If the model emits tool calls, `ToolExecutor` → `run_tool()` executes them
+4. If the model emits tool calls, `ToolExecutor` â†’ `run_tool()` executes them
    (built-in registry or MCP), tracking usage/used-files/changes, and the
    results are appended to the conversation.
 5. The loop repeats until the model answers; the final answer is displayed
@@ -694,10 +716,10 @@ showing the label when set and falling back to the section name.
 
 ## Testing & quality
 
-- `tests/` — pytest suite covering clients, tooling, config, shell commands,
+- `tests/` â€” pytest suite covering clients, tooling, config, shell commands,
   skills, the plugin framework and web (`tests/web/`); the codesearch plugin
   carries its own tests under
   `../plugins/janito-codesearch-plugin/tests/`.
-- `tox.ini` + `pyproject.toml` — tox environments, ruff linting/isort.
-- `.pre-commit-config.yaml` + `.secrets.baseline` — pre-commit hooks and
+- `tox.ini` + `pyproject.toml` â€” tox environments, ruff linting/isort.
+- `.pre-commit-config.yaml` + `.secrets.baseline` â€” pre-commit hooks and
   detect-secrets baseline.

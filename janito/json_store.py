@@ -15,6 +15,8 @@ three config modules keep their module-level functions as thin delegators to a
 module-level singleton, so existing import sites are unaffected.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import os

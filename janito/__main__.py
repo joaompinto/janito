@@ -247,6 +247,13 @@ def _dispatch_flag_command(args) -> int | None:
     return None
 
 
+def _print_version_banner(args) -> None:
+    """Print the version banner, unless a headless mode owns stdout."""
+    if getattr(args, "acp", False):
+        return
+    print_version_banner()
+
+
 def _run_web(args) -> int:
     """Run the web UI server, failing with a hint when extras are missing."""
     # The [web] extra (fastapi / uvicorn) is optional, so check its
@@ -263,6 +270,14 @@ def _run_web(args) -> int:
     from .web.backend.app import run_web
 
     run_web(args)
+    return 0
+
+
+def _run_acp(args) -> int:
+    """Run the Agent Client Protocol (ACP) stdio agent."""
+    from .acp import run_acp_agent
+
+    run_acp_agent(args)
     return 0
 
 
@@ -378,10 +393,45 @@ def _dispatch_chat(args, stdin_prompt: str | None) -> int | None:
     return None
 
 
+def _setup_acp_transport(args) -> None:
+    """Reserve stdout for the ACP JSON-RPC transport before anything prints.
+
+    ACP is a stdio protocol: the client listens on the pipe janito was spawned
+    with.  fd 1 is redirected to stderr up front (a duplicate of the original
+    stdout is kept for the transport writer) so the version banner, plugin
+    loading messages and any stray library output never corrupt the stream.
+    No-op outside ``--acp`` mode.
+    """
+    if not getattr(args, "acp", False):
+        return
+    from .acp.server import reserve_transport_stdout
+
+    reserve_transport_stdout()
+
+
+def _dispatch_headless_mode(args) -> int | None:
+    """Run a headless server mode (``--web`` / ``--acp``) if requested.
+
+    Returns the exit code when a headless mode was started, else ``None`` so
+    the caller proceeds to the terminal/CLI chat paths.
+    """
+    # Both modes skip the stdin check: they must run BEFORE
+    # read_stdin_prompt() so headless / service contexts never block on a
+    # non-tty stdin.  ACP additionally consumes stdin for its JSON-RPC
+    # transport.
+    if args.web:
+        return _run_web(args)
+    if args.acp:
+        return _run_acp(args)
+    return None
+
+
 def main():
     """Main entry point."""
     parser = create_parser()
     args = parser.parse_args()
+
+    _setup_acp_transport(args)
 
     # Apply the -c/--config-dir override, logging, provider normalization and
     # privilege flags as early as possible.
@@ -417,8 +467,9 @@ def main():
         from .plugin_manager import load_installed_plugins, load_plugins
 
         # Show the version banner before any plugin loading messages so the
-        # session identity is visible first.
-        print_version_banner()
+        # session identity is visible first (skipped in ACP mode: it would
+        # only clutter the redirected stderr logs).
+        _print_version_banner(args)
 
         if not getattr(args, "no_plugins", False):
             load_installed_plugins()
@@ -446,11 +497,11 @@ def main():
     # prompt is rendered.
     validate_system_prompt_file(args)
 
-    # Web mode: skip stdin check — the server doesn't consume stdin.
-    # Must come BEFORE read_stdin_prompt() to avoid blocking on non-tty
-    # stdin in headless / service contexts.
-    if args.web:
-        return _run_web(args)
+    # Web / ACP modes skip stdin entirely: dispatch them before
+    # read_stdin_prompt() so headless runs don't block on non-tty stdin.
+    exit_code = _dispatch_headless_mode(args)
+    if exit_code is not None:
+        return exit_code
 
     # Check for stdin input
     stdin_prompt = read_stdin_prompt()

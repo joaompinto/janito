@@ -13,6 +13,7 @@
 - 🔌 **MCP Support** - Connect to Model Context Protocol servers
 - 🧩 **Skills** - Install and use task-specific skills from GitHub
 - 🌐 **Web UI (Alpha)** - Chat through a browser instead of the terminal with `--web`
+- 🔌 **Agent Client Protocol (ACP)** - Run as an ACP v1 subprocess agent for editors like Zed with `--acp`
 - ↪️ **Session Resume** - Exit a terminal chat and reopen it with `janito -C` (full conversation restored)
 - 📊 **Real-time Progress** - Watch tool execution progress as it happens
 - 🚀 **Easy Setup** - Interactive configuration with `--config` or quick setup with `--set` flags
