@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+
 from janito.acp.events import locations_from_args, map_event
 from janito.web.backend.events import (
     ErrorEvent,
@@ -46,7 +48,7 @@ def test_map_tool_call_pending():
     assert update["kind"] == "read"
     assert update["status"] == "pending"
     assert update["rawInput"] == {"filepath": "src/a.txt"}
-    assert update["locations"] == [{"path": "/home/user/proj/src/a.txt"}]
+    assert update["locations"] == [{"path": os.path.abspath(os.path.join(CWD, "src/a.txt"))}]
 
 
 def test_map_tool_call_kind_for_mutation_tools():
@@ -145,10 +147,11 @@ def test_map_progress_always_in_progress():
 
 
 def test_locations_from_args_resolves_against_cwd():
-    assert locations_from_args({"directory": "./sub"}, CWD) == [{"path": "/home/user/proj/sub"}]
-    assert locations_from_args({"filepath": "/abs/path.txt"}, CWD) == [{"path": "/abs/path.txt"}]
+    assert locations_from_args({"directory": "./sub"}, CWD) == [{"path": os.path.abspath(os.path.join(CWD, "sub"))}]
+    abs_path = os.path.join(os.path.abspath(os.sep), "abs-path.txt")
+    assert locations_from_args({"filepath": abs_path}, CWD) == [{"path": os.path.abspath(abs_path)}]
     assert locations_from_args({"filepaths": ["a.py", "b.py"]}, CWD) == [
-        {"path": "/home/user/proj/a.py"},
-        {"path": "/home/user/proj/b.py"},
+        {"path": os.path.abspath(os.path.join(CWD, "a.py"))},
+        {"path": os.path.abspath(os.path.join(CWD, "b.py"))},
     ]
     assert locations_from_args({"pattern": "foo"}, CWD) is None

@@ -105,7 +105,10 @@ def test_prompt_streams_updates_and_restores_cwd(tmp_path, monkeypatch):
     result = _run(
         agent.handle_request(
             "session/prompt",
-            {"sessionId": "s1", "prompt": [{"type": "text", "text": "hi"}, {"type": "resource_link", "uri": "file:///x.txt"}]},
+            {
+                "sessionId": "s1",
+                "prompt": [{"type": "text", "text": "hi"}, {"type": "resource_link", "uri": "file:///x.txt"}],
+            },
         )
     )
     assert result == {"stopReason": "end_turn"}
@@ -120,7 +123,7 @@ def test_prompt_streams_updates_and_restores_cwd(tmp_path, monkeypatch):
     asserted = updates[1]
     assert asserted["title"] == "Reading file"
     assert asserted["kind"] == "read"
-    assert asserted["locations"] == [{"path": os.path.join(session_cwd, "a.txt")}]
+    assert asserted["locations"] == [{"path": os.path.abspath(os.path.join(session_cwd, "a.txt"))}]
 
     # The turn runner saw the appended user message and the history persisted.
     # (The session was created directly, so there is no system message.)
@@ -157,11 +160,9 @@ async def _gated_runner(release, prompt, messages, config, **kwargs):
     yield TokenEvent(content="gated done")
 
 
-def test_stale_prompt_does_not_evict_newer_registration():
-    """Two overlapping prompts on one session: finishing the first must not
-    drop the second's cancel registration."""
+def test_overlapping_prompt_same_session_rejected():
+    """A second prompt on a session with a running turn is rejected."""
     release_first = asyncio.Event()
-    release_second = asyncio.Event()
     agent = make_agent(turn_runner=lambda *a, **k: _gated_runner(release_first, *a, **k))
     agent._sessions["s1"] = AcpSession(session_id="s1", cwd=os.getcwd())
 
@@ -170,17 +171,13 @@ def test_stale_prompt_does_not_evict_newer_registration():
             agent.handle_request("session/prompt", {"sessionId": "s1", "prompt": [{"type": "text", "text": "one"}]})
         )
         await asyncio.sleep(0.05)
-        agent._turn_runner = lambda *a, **k: _gated_runner(release_second, *a, **k)
-        second = asyncio.create_task(
-            agent.handle_request("session/prompt", {"sessionId": "s1", "prompt": [{"type": "text", "text": "two"}]})
-        )
-        await asyncio.sleep(0.05)
+        with pytest.raises(RpcError) as exc:
+            await agent.handle_request(
+                "session/prompt", {"sessionId": "s1", "prompt": [{"type": "text", "text": "two"}]}
+            )
+        assert exc.value.code == INVALID_PARAMS
         release_first.set()
         assert await first == {"stopReason": "end_turn"}
-        # The second prompt holds the lock now; its registration survived.
-        assert agent._running.get("s1") is second
-        release_second.set()
-        assert await second == {"stopReason": "end_turn"}
 
     asyncio.run(scenario())
 

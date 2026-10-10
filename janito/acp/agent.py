@@ -5,6 +5,14 @@ The agent is a plain object answering ACP JSON-RPC methods (``initialize``,
 Turn execution reuses the web backend's async generator
 ``janito.web.backend.agent.loop.stream_prompt``; the ``turn_runner`` parameter
 allows tests to inject a fake generator.
+
+Concurrency model: one global ``_turn_lock`` serializes every turn and every
+``session/new`` system-prompt resolution, and the process cwd is owned by
+the lock holder until its tracked sync workers finish.  Sync work (tool
+execution, MCP discovery, sync SDK chunk pulls) runs in tracked worker
+threads (``janito.web.backend.agent.workers``); cancellation stops the async
+turn promptly but drains the workers -- shielded from repeated cancels --
+before restoring cwd, releasing the lock, and rolling the history back.
 """
 
 import asyncio
@@ -12,15 +20,18 @@ import logging
 import os
 import time
 import uuid
+from collections.abc import AsyncGenerator, Callable
 from dataclasses import dataclass, field
 from typing import Any
-from collections.abc import AsyncGenerator, Callable
 
+from janito.conversation_utils import rollback_to_last_turn
 from janito.web.backend.agent.loop import stream_prompt
+from janito.web.backend.agent.workers import WorkerTracker, drain_shielded, reset_tracker, set_tracker
 from janito.web.backend.config import WebServerConfig
+from janito.web.backend.events import ErrorEvent
 
 from .events import map_event, text_block
-from .protocol import INVALID_PARAMS, INTERNAL_ERROR, METHOD_NOT_FOUND, RpcError
+from .protocol import INTERNAL_ERROR, INVALID_PARAMS, METHOD_NOT_FOUND, RpcError
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +48,10 @@ class AcpSession:
     cwd: str
     messages: list[dict] = field(default_factory=list)
     created_at: float = field(default_factory=time.time)
+    # Turn-start markers (history length before each turn); a cancelled /
+    # failed turn rolls back to the most recent one (mirrors the web
+    # backend's ``history_turns``).
+    history_turns: list[int] = field(default_factory=list)
 
 
 def blocks_to_text(blocks) -> str:
@@ -59,9 +74,7 @@ def blocks_to_text(blocks) -> str:
         elif block_type == "resource_link":
             parts.append(f"[Referenced file: {block.get('uri', '')}]")
         elif block_type in ("image", "audio"):
-            parts.append(
-                f"[{block_type} content ignored: janito has no {block_type} input capability]"
-            )
+            parts.append(f"[{block_type} content ignored: janito has no {block_type} input capability]")
         else:
             continue
     return "\n\n".join(part.strip() for part in parts if part and part.strip())
@@ -82,7 +95,8 @@ class JanitoAgent:
         self.writer = writer  # a StdioWriter, wired up by JsonRpcServer
         self._sessions: dict[str, AcpSession] = {}
         self._running: dict[str, asyncio.Task] = {}
-        # Serializes turns and keeps chdir session-scoped (see _run_turn).
+        # Serializes turns and session/new prompt resolution, and scopes
+        # chdir ownership (see _run_turn / _new_session).
         self._turn_lock = asyncio.Lock()
 
     def _agent_info(self) -> dict[str, Any]:
@@ -136,8 +150,25 @@ class JanitoAgent:
                 len(mcp_servers),
             )
 
+        # Resolve the project prompt under the same turn lock and the
+        # requested cwd: waits for any active turn (no cwd race), and the
+        # cwd AGENTS.md / config start is read from the session's project,
+        # not the server's launch directory.
+        async with self._turn_lock:
+            previous_cwd = os.getcwd()
+            need_chdir = os.path.abspath(previous_cwd) != os.path.abspath(cwd)
+            if need_chdir:
+                try:
+                    os.chdir(cwd)
+                except OSError as exc:
+                    raise RpcError(INVALID_PARAMS, f"cwd is not accessible: {cwd!r} ({exc})") from exc
+            try:
+                system_prompt = self.config.get_effective_system_prompt()
+            finally:
+                if need_chdir:
+                    os.chdir(previous_cwd)
+
         session = AcpSession(session_id=uuid.uuid4().hex, cwd=cwd)
-        system_prompt = self.config.get_effective_system_prompt()
         if system_prompt and not self.config.no_system_prompt:
             session.messages.append({"role": "system", "content": system_prompt})
         self._sessions[session.session_id] = session
@@ -155,21 +186,33 @@ class JanitoAgent:
         task = asyncio.current_task()
         if task is None:
             raise RpcError(INTERNAL_ERROR, "session/prompt must run inside a task")
+        # Atomic same-session registration: no await between check and set,
+        # so overlapping prompts on one session are rejected instead of
+        # overwriting each other's cancel registration.
+        if session.session_id in self._running:
+            raise RpcError(INVALID_PARAMS, f"prompt already running for session: {session.session_id!r}")
         self._running[session.session_id] = task
+        # Record the turn start before the turn mutates history; a
+        # cancelled / failed turn rolls back to it.
+        session.history_turns.append(len(session.messages))
         try:
-            await self._run_turn(session, text)
+            saw_error = await self._run_turn(session, text)
         except asyncio.CancelledError:
             logger.info("Prompt for session %s cancelled", session.session_id)
+            rollback_to_last_turn(session.messages, session.history_turns)
             return {"stopReason": "cancelled"}
         except Exception as exc:  # noqa: BLE001 - boundary: report, then end turn
             logger.exception("Prompt for session %s failed", session.session_id)
+            rollback_to_last_turn(session.messages, session.history_turns)
             await self._notify(
                 session.session_id,
                 {"sessionUpdate": "agent_message_chunk", "content": text_block(f"Agent error: {exc}")},
             )
+        else:
+            if saw_error:
+                rollback_to_last_turn(session.messages, session.history_turns)
         finally:
-            # Only clear our own registration: a newer prompt on the same
-            # session may already have replaced it.
+            # Release the session only after cancellation cleanup finishes.
             if self._running.get(session.session_id) is task:
                 self._running.pop(session.session_id, None)
         return {"stopReason": "end_turn"}
@@ -188,23 +231,53 @@ class JanitoAgent:
             logger.info("Cancelling running prompt for session %s", session_id)
             task.cancel()
 
-    async def _run_turn(self, session: AcpSession, text: str) -> None:
-        """Run one turn with the session's cwd applied, restoring on exit."""
+    async def _run_turn(self, session: AcpSession, text: str) -> bool:
+        """Run one turn with the session's cwd applied, restoring on exit.
+
+        Returns ``True`` when the turn streamed an :class:`ErrorEvent`
+        (the caller rolls the history back).  The cwd is owned until every
+        tracked sync worker finishes: cancellation stops the async turn
+        promptly, then the workers are drained -- shielded from repeated
+        cancels -- before cwd restore / lock release.
+        """
         async with self._turn_lock:
             previous_cwd = os.getcwd()
-            if os.path.abspath(previous_cwd) != os.path.abspath(session.cwd):
+            need_chdir = os.path.abspath(previous_cwd) != os.path.abspath(session.cwd)
+            if need_chdir:
                 os.chdir(session.cwd)
+            tracker = WorkerTracker()
+            token = set_tracker(tracker)
+            saw_error = False
+            was_cancelled = False
             try:
-                await self._stream_turn(session, text)
+                try:
+                    saw_error = await self._stream_turn(session, text)
+                except asyncio.CancelledError:
+                    was_cancelled = True
             finally:
-                os.chdir(previous_cwd)
+                # Drain sync workers before restoring cwd / releasing the
+                # lock; repeated cancels must not interrupt cleanup.
+                was_cancelled |= await drain_shielded(tracker)
+                # Reset the context var and restore cwd even if draining
+                # saw (and swallowed) repeated cancels.
+                reset_tracker(token)
+                if need_chdir:
+                    os.chdir(previous_cwd)
+            if was_cancelled:
+                raise asyncio.CancelledError
+            return saw_error
 
-    async def _stream_turn(self, session: AcpSession, text: str) -> None:
+    async def _stream_turn(self, session: AcpSession, text: str) -> bool:
+        """Stream one turn's events; return True when an ErrorEvent fired."""
         message_id = uuid.uuid4().hex[:16]
+        saw_error = False
         async for event in self._turn_runner(text, session.messages, self.config):
+            if isinstance(event, ErrorEvent):
+                saw_error = True
             update = map_event(event, message_id=message_id, cwd=session.cwd)
             if update:
                 await self._notify(session.session_id, update)
+        return saw_error
 
     async def _notify(self, session_id: str, update: dict[str, Any]) -> None:
         if self.writer is None:

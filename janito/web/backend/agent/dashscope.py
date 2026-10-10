@@ -10,7 +10,6 @@ builds call kwargs and accumulators directly from the shared adapters in
 :mod:`janito.llm_adapters.dashscope`.
 """
 
-import asyncio
 import logging
 from types import SimpleNamespace
 
@@ -18,6 +17,7 @@ from janito.llm_adapters.dashscope import DashScopeTurnAccumulator
 from janito.optional_packages import require_optional_package
 
 from .stream_utils import _next_or_none, emit_stream_events
+from .workers import run_in_worker
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +79,7 @@ async def _dashscope_chunks(handle, call_kwargs: dict):
         try:
             stream = cls.call(**round_kwargs)
             while True:
-                chunk = await asyncio.to_thread(_next_or_none, stream)
+                chunk = await run_in_worker(_next_or_none, stream)
                 if chunk is None:
                     return
                 yield chunk

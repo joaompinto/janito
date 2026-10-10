@@ -106,8 +106,18 @@ class JsonRpcServer:
             async for message in _iter_stdin_messages():
                 await self._on_message(message)
         finally:
-            for task in list(self._tasks):
+            tasks = list(self._tasks)
+            for task in tasks:
                 task.cancel()
+            # Finish turn cleanup before asyncio.run cancels every remaining
+            # task (including shielded worker tasks) and restores the cwd.
+            cleanup = asyncio.gather(*tasks, return_exceptions=True)
+            while True:
+                try:
+                    await asyncio.shield(cleanup)
+                    break
+                except asyncio.CancelledError:
+                    continue
 
     async def _on_message(self, message: Any) -> None:
         if isinstance(message, list):

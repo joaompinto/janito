@@ -11,10 +11,10 @@ output through a progress callback.  This module wraps it in a thread and
 converts the captured output into ``ToolProgressEvent``s for the browser.
 """
 
-import asyncio
 import logging
 
 from janito.mcp_manager import get_mcp_manager
+
 from janito.tooling.executor import (
     is_mcp_tool as is_mcp_tool,  # re-exported for turn.py
 )
@@ -29,6 +29,7 @@ from janito.tooling.used_files import (
 )
 
 from ..events import ToolProgressEvent
+from .workers import run_in_worker
 
 logger = logging.getLogger(__name__)
 
@@ -52,9 +53,9 @@ async def resolve_tools(config, tools: list[dict] | None, use_mcp: bool) -> list
     if use_mcp and tools_loading_enabled():
         mcp_manager = get_mcp_manager()
         try:
-            await asyncio.to_thread(mcp_manager.load_services)
-            mcp_tools = await asyncio.to_thread(mcp_manager.get_all_tools)
-            logger.info(f"Loaded {len(mcp_tools)} MCP tools from " f"{len(mcp_manager.connected_services)} services")
+            await run_in_worker(mcp_manager.load_services)
+            mcp_tools = await run_in_worker(mcp_manager.get_all_tools)
+            logger.info(f"Loaded {len(mcp_tools)} MCP tools from {len(mcp_manager.connected_services)} services")
         except Exception as e:  # noqa: BLE001 - intentional boundary, log/convert and continue
             logger.warning(f"Failed to load MCP tools: {e}")
 
@@ -93,7 +94,7 @@ async def execute_tool(
             )
         )
 
-    result, error, exec_time_ms = await asyncio.to_thread(
+    result, error, exec_time_ms = await run_in_worker(
         run_tool,
         tool_name,
         tool_args,
