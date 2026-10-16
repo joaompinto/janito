@@ -1,0 +1,85 @@
+name: Publish Docker image to GHCR
+
+# Publishes ghcr.io/joaompinto/janito on every release so the web UI can
+# run as `docker run -p 9090:9090 ghcr.io/joaompinto/janito:<tag>`.
+# Triggers on version tags (v*, same as the PyPI release workflow) and on
+# published GitHub releases. The job is guarded to the official repository
+# so forks never publish to their own registry namespace from this file.
+on:
+  push:
+    tags:
+      - 'v*'
+  release:
+    types: [published]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    name: Build and push Docker image
+    # Only the official repository publishes: forks get this file but the
+    # job is skipped there (same guard as the documentation workflow).
+    if: github.repository == 'joaompinto/janito'
+    # Pinned instead of `ubuntu-latest`: the floating label migrates to
+    # Ubuntu 26.04 starting 2026-10-19 (actions/runner-images#14748), and a
+    # release/publish pipeline should not track a moving OS baseline.
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract image metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+          labels: |
+            org.opencontainers.image.title=janito
+            org.opencontainers.image.description=Janito Web UI (janito --web) on port 9090
+
+      - name: Resolve version for setuptools_scm
+        id: version
+        run: |
+          # Tag is e.g. "v4.49.1" -> pretend version "4.49.1" (strip leading v).
+          # Anything else falls back to the Dockerfile default (0.0.0).
+          ref="${GITHUB_REF_NAME:-}"
+          if [[ "$ref" == v* ]]; then
+            version="${ref#v}"
+          else
+            version="0.0.0"
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

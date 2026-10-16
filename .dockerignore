@@ -1,0 +1,19 @@
+# Keep the Docker build context small and hermetic.
+.git
+.github
+.janito
+.omo
+.cache
+.venv
+.venv-dev
+.pytest_cache
+__pycache__
+*.pyc
+site/
+dist/
+build/
+*.egg-info/
+tests/
+docs/
+dev-docs/
+scripts/

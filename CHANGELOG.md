@@ -8,3 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased](https://github.com/joaompinto/janito/compare/v4.49.0...HEAD)
 
 Changes since `v4.49.0` (2026-10-15).
+
+### Added
+
+- Docker image for the Web UI (`Dockerfile`, port 9090) published to GHCR
+  (`ghcr.io/joaompinto/janito`) on every release via
+  `.github/workflows/docker-publish.yml`; usage documented in
+  `docs/usage/docker.md`.
