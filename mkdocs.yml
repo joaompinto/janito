@@ -70,6 +70,7 @@ nav:
   - Reference:
       - reference/cli-options.md
       - reference/exit-codes.md
+      - CLI Landscape: cli_landscape.md
 
 markdown_extensions:
   - pymdownx.highlight:

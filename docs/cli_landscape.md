@@ -7,3 +7,4 @@
 | Claude Code | ❌ | NodeJS | 8000|
 | Pi |✅ | NodeJS | 1350 |
 | Codex | ✅ | NodeJS | 1500 |
+| Antigravity | ❌ | TypeScript | ? |
