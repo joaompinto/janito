@@ -10,6 +10,10 @@ permissions:
   id-token: write
 jobs:
   deploy:
+    # Skip Pages deploy on forks: configure-pages fails with 404
+    # ("Get Pages site failed") where Pages is not enabled.
+    # Upstream (joaompinto/janito) has Pages enabled; forks do not.
+    if: github.repository == 'joaompinto/janito'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
