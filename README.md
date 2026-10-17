@@ -218,6 +218,11 @@ janito --set-api-key="sk-your-key" --provider openai
 janito "Explain quantum computing"
 ```
 
+> **Headless or remote host?** `janito --login` finishes through a loopback
+> callback on a random `127.0.0.1` port and needs a browser. On a machine
+> without one, forward that port over SSH before signing in — see
+> [Sign in with ChatGPT](https://joaompinto.github.io/janito/configuration/providers/#sign-in-with-chatgpt-plan-allowance-no-api-key).
+
 ### Alibaba (Qwen)
 
 ```bash

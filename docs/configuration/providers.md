@@ -169,6 +169,43 @@ Notes:
   (the session re-sends history); `--api-type Completions` is rejected
   with OAuth. ChatGPT-plan allowance and API billing are separate systems.
 
+#### Headless or remote machines (SSH)
+
+Sign-in completes through a **loopback callback**: `janito --login` starts a
+temporary HTTP listener on `127.0.0.1` at a **random port** (fixed path
+`/auth/callback`) and prints the authorization URL plus the exact redirect URI
+it waits on:
+
+```
+Opening the browser for ChatGPT sign-in...
+https://auth.openai.com/api/accounts/authorize?...
+Waiting for callback on http://127.0.0.1:41273/auth/callback (timeout 300s).
+```
+
+On a machine without a browser (headless server, container, or remote host)
+nothing opens automatically, and the browser's redirect to
+`127.0.0.1:<port>` can never reach that host, so sign-in fails with
+`Login timed out waiting for the browser callback.`
+
+Forward that port to the machine that runs your browser, then sign in there:
+
+1. On the headless host, run `janito --login` and note the `PORT` in the
+   `Waiting for callback on http://127.0.0.1:PORT/auth/callback` line.
+2. On the machine with the browser, open the tunnel (same port on both ends):
+
+   ```bash
+   ssh -NL PORT:localhost:PORT user@headless-host
+   ```
+
+3. Open the authorization URL printed by `janito --login` in the local browser
+   and complete the sign-in.
+
+The redirect to `http://127.0.0.1:PORT/auth/callback` then reaches the headless
+host through the tunnel, and the credentials are stored there in
+`~/.janito/auth.json` (0600). The callback port is chosen at runtime, so read
+it from the printed line instead of reusing a previous value, and complete the
+sign-in within the 300-second timeout.
+
 ### Reasoning Level
 
 The GPT-6 models support configurable reasoning depth via the
