@@ -1,4 +1,11 @@
-"""Tests for the shell /model command handler (behavior over rendering)."""
+"""Tests for the shell /model command handler (behavior over rendering).
+
+A successful ``/model <name>`` switch also persists the selected model to the
+project-local config (``./.janito/config.json``, ``providers.<provider>.model``);
+the global ``~/.janito/config.json`` is never touched from the shell.
+"""
+
+import json
 
 import janito.config_dir as config_dir_mod
 from janito.config_store import get_config_value
@@ -9,9 +16,16 @@ from tests.conftest import assert_command_registered
 
 
 def _use_temp_config(monkeypatch, tmp_path):
-    config_path = tmp_path / ".janito" / "config.json"
-    monkeypatch.setattr(config_dir_mod, "_config_dir", config_path.parent)
-    return config_path
+    """Point the base config dir at a tmp dir and chdir into a project dir."""
+    monkeypatch.setattr(config_dir_mod, "_config_dir", tmp_path)
+    project_dir = tmp_path / "project"
+    project_dir.mkdir(exist_ok=True)
+    monkeypatch.chdir(project_dir)
+    return tmp_path / ".janito" / "config.json"
+
+
+def _local_config_path(tmp_path):
+    return tmp_path / "project" / ".janito" / "config.json"
 
 
 def _shell(provider=None):
@@ -47,14 +61,31 @@ def test_no_argument_smoke(monkeypatch, tmp_path, capsys):
     assert "Current provider:" in out
 
 
-def test_switch_model_updates_state_not_config(monkeypatch, tmp_path, capsys):
-    _use_temp_config(monkeypatch, tmp_path)
+def test_switch_model_updates_state_and_persists_locally(monkeypatch, tmp_path, capsys):
+    global_path = _use_temp_config(monkeypatch, tmp_path)
     shell = _shell(provider="deepseek")
     assert _model_handler().handle(shell, "/model deepseek-flash") is True
     capsys.readouterr()
-    assert get_config_value("deepseek.model") is None
+    assert get_config_value("deepseek.model") == "deepseek-flash"
     assert shell.model == "deepseek-flash"
     assert shell.model_override == "deepseek-flash"
+    local_config = json.loads(_local_config_path(tmp_path).read_text())
+    assert local_config == {"providers": {"deepseek": {"model": "deepseek-flash"}}}
+    assert not global_path.exists()
+
+
+def test_persistence_failure_does_not_break_switch(monkeypatch, tmp_path, capsys):
+    """A failed local write keeps the runtime switch working (best-effort)."""
+    _use_temp_config(monkeypatch, tmp_path)
+
+    import janito.config_store as cs
+
+    monkeypatch.setattr(cs, "set_local_config_value", lambda key, value: False)
+    shell = _shell(provider="deepseek")
+    assert _model_handler().handle(shell, "/model deepseek-flash") is True
+    capsys.readouterr()
+    assert shell.model == "deepseek-flash"
+    assert not _local_config_path(tmp_path).exists()
 
 
 def test_switch_model_canonicalizes(monkeypatch, tmp_path, capsys):
@@ -74,6 +105,7 @@ def test_switch_unknown_model_error_kind(monkeypatch, tmp_path, capsys):
     assert "error" in out.lower()
     assert shell.model == "test-model"
     assert get_config_value("deepseek.model") is None
+    assert not _local_config_path(tmp_path).exists()
 
 
 def test_switch_model_clears_history(monkeypatch, tmp_path, capsys):

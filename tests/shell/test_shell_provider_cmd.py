@@ -3,13 +3,14 @@ Tests for the shell /provider command handler.
 
 ``/provider`` switches the active provider for the shell session: it validates
 the name against the supported providers (built-in ``janito.providers``
-entries plus registered variants) and updates the shell's displayed
-provider/model
-**without** changing the configured default ``provider`` in config.json
-(that requires ``janito --set provider=<name>``).  ``/provider`` with no
-argument lists the current provider and every available one.  The command
-must not match non-``/provider`` input (e.g. ``/providers``) and must report
-unknown providers without touching the config.
+entries plus registered variants), updates the shell's displayed
+provider/model and persists the choice to the **project-local** config
+(``./.janito/config.json``, ``provider`` key) so the next session in the same
+project resumes with it.  The global ``~/.janito/config.json`` is never
+touched from the shell (that requires ``janito --set provider=<name>``).
+``/provider`` with no argument lists the current provider and every available
+one.  The command must not match non-``/provider`` input (e.g. ``/providers``)
+and must report unknown providers without touching any config file.
 
 The switch takes effect in real time: the shell's send function is rebound to
 the new provider (via ``turn_factory``) and the LLM conversation history is
@@ -18,10 +19,9 @@ with ``--provider``.  Switching to the same provider keeps both the history
 and the send function.
 """
 
+import json
 import sys
 from pathlib import Path
-
-import pytest
 
 # Add the repo root to sys.path to allow importing the package directly.
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -35,10 +35,21 @@ from janito.shell.cmds.registry import get_registered_commands
 
 
 def _use_temp_config(monkeypatch, tmp_path):
-    """Point the config directory at a temporary directory."""
-    config_path = tmp_path / ".janito" / "config.json"
-    monkeypatch.setattr(config_dir_mod, "_config_dir", config_path.parent)
-    return config_path
+    """Point the base config dir at a tmp dir and chdir into a project dir.
+
+    Returns the base (global) config.json path; the project-local
+    ``./.janito`` config lives under ``<tmp_path>/project/.janito``.
+    """
+    monkeypatch.setattr(config_dir_mod, "_config_dir", tmp_path)
+    project_dir = tmp_path / "project"
+    project_dir.mkdir(exist_ok=True)
+    monkeypatch.chdir(project_dir)
+    return tmp_path / ".janito" / "config.json"
+
+
+def _local_config_path(tmp_path):
+    """The project-local config.json written by TUI switches."""
+    return tmp_path / "project" / ".janito" / "config.json"
 
 
 def _shell(provider=None):
@@ -80,14 +91,17 @@ def test_no_argument_respects_session_provider(monkeypatch, tmp_path, capsys):
     assert shell.provider == "deepseek"
 
 
-def test_switch_provider_updates_shell_without_changing_config(monkeypatch, tmp_path):
-    """``/provider deepseek`` updates the shell display but not the config default."""
-    _use_temp_config(monkeypatch, tmp_path)
+def test_switch_provider_persists_to_local_config(monkeypatch, tmp_path):
+    """``/provider deepseek`` updates the shell and writes the provider key
+    to the project-local config; the global config file is untouched."""
+    global_path = _use_temp_config(monkeypatch, tmp_path)
     shell = _shell()
     assert _provider_handler().handle(shell, "/provider deepseek") is True
 
-    assert get_config_value("provider") is None
     assert shell.provider == "deepseek"
+    local_config = json.loads(_local_config_path(tmp_path).read_text())
+    assert local_config["provider"] == "deepseek"
+    assert not global_path.exists()
 
 
 def test_switch_provider_is_case_insensitive(monkeypatch, tmp_path, capsys):
@@ -96,8 +110,24 @@ def test_switch_provider_is_case_insensitive(monkeypatch, tmp_path, capsys):
     shell = _shell()
     assert _provider_handler().handle(shell, "/provider DEEPSEEK") is True
 
-    assert get_config_value("provider") is None
     assert shell.provider == "deepseek"
+    local_config = json.loads(_local_config_path(tmp_path).read_text())
+    assert local_config["provider"] == "deepseek"
+
+
+def test_local_provider_wins_over_global_default(monkeypatch, tmp_path):
+    """A locally persisted provider takes precedence at resolution time."""
+    from janito.general_config import load_provider_from_config
+
+    _use_temp_config(monkeypatch, tmp_path)
+    from janito.config_store import set_config_value
+
+    set_config_value("provider", "openai")  # machine-level default
+    shell = _shell()
+    assert _provider_handler().handle(shell, "/provider deepseek") is True
+
+    assert get_config_value("provider") == "deepseek"
+    assert load_provider_from_config() == "deepseek"
 
 
 def test_switch_to_registered_variant(monkeypatch, tmp_path, capsys):
@@ -109,20 +139,35 @@ def test_switch_to_registered_variant(monkeypatch, tmp_path, capsys):
     shell = _shell()
     assert _provider_handler().handle(shell, "/provider alibaba-tokenplan") is True
 
-    assert get_config_value("provider") is None
     assert shell.provider == "alibaba-tokenplan"
+    local_config = json.loads(_local_config_path(tmp_path).read_text())
+    assert local_config["provider"] == "alibaba-tokenplan"
 
 
 def test_unknown_provider_is_rejected_without_changes(monkeypatch, tmp_path, capsys):
-    """An unsupported name is reported and the config is left untouched."""
+    """An unsupported name is reported and no config file is touched."""
     _use_temp_config(monkeypatch, tmp_path)
     shell = _shell(provider="openai")
     assert _provider_handler().handle(shell, "/provider not-a-provider") is True
 
     out = capsys.readouterr().out
     assert "error" in out.lower()
-    assert get_config_value("provider") is None
+    assert not _local_config_path(tmp_path).exists()
     assert shell.provider == "openai"
+
+
+def test_persistence_failure_does_not_break_switch(monkeypatch, tmp_path, capsys):
+    """A failed local write keeps the runtime switch working (best-effort)."""
+    _use_temp_config(monkeypatch, tmp_path)
+
+    import janito.config_store as cs
+
+    monkeypatch.setattr(cs, "set_local_config_value", lambda key, value: False)
+    shell = _shell()
+    assert _provider_handler().handle(shell, "/provider deepseek") is True
+
+    assert shell.provider == "deepseek"
+    assert not _local_config_path(tmp_path).exists()
 
 
 def test_cli_bound_session_switch_applies_immediately(monkeypatch, tmp_path):
@@ -133,9 +178,9 @@ def test_cli_bound_session_switch_applies_immediately(monkeypatch, tmp_path):
     shell = _shell_with_history(provider="openai")
     assert _provider_handler().handle(shell, "/provider deepseek") is True
 
-    # History is reset to just the preserved system prompt.
     assert shell.messages_history == [{"role": "system", "content": "sys"}]
-    assert get_config_value("provider") is None
+    local_config = json.loads(_local_config_path(tmp_path).read_text())
+    assert local_config["provider"] == "deepseek"
 
 
 def test_switch_updates_shell_model_display(monkeypatch, tmp_path):
@@ -247,7 +292,8 @@ def test_switch_to_same_provider_keeps_history(monkeypatch, tmp_path):
 
 def test_cli_bound_session_switch_to_other_provider_clears_history(monkeypatch, tmp_path):
     """In a --provider-bound session, a switch to another provider still
-    rebinds the send function and clears the history immediately."""
+    rebinds the send function, clears the history immediately, and persists
+    the provider to the project-local config."""
     _use_temp_config(monkeypatch, tmp_path)
     shell = _shell_with_history(provider="openai")
     calls = []
@@ -265,8 +311,8 @@ def test_cli_bound_session_switch_to_other_provider_clears_history(monkeypatch, 
     assert shell.turn_func == "send:deepseek"
     # History is reset to just the preserved system prompt.
     assert shell.messages_history == [{"role": "system", "content": "sys"}]
-    # The configured default is not changed for future sessions.
-    assert get_config_value("provider") is None
+    local_config = json.loads(_local_config_path(tmp_path).read_text())
+    assert local_config["provider"] == "deepseek"
 
 
 def test_switch_to_same_provider_keeps_send_function(monkeypatch, tmp_path):
