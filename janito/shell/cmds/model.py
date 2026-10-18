@@ -6,12 +6,17 @@ Usage:
                         the current provider
     /model <name>     - Switch the session's model
 
-The switch is **runtime-only**: it updates the shell's displayed model
-(prompt and bottom toolbar) and rebinds the turn function so subsequent
-turns use the new model, but it does **not** change the configured default
-``model`` in config.json -- use ``janito --set model=<name>`` to persist a
-new default.  The switch takes effect immediately for the running session,
-whether or not the session was started with ``--model``.
+The provider name is validated against the models available from the
+current provider; like ``/provider``, a successful switch is persisted to
+the **project-local** config (``./.janito/config.json``,
+``providers.<provider>.model``), so the next session in the same project
+resumes with this model.  The global ``~/.janito/config.json`` is never
+touched from the shell -- use ``janito --set model=<name>`` to persist a
+machine-level default.  The switch takes effect immediately for the
+running session, whether or not the session was started with ``--model``.
+
+Persistence (issue #198) is best-effort: a failed local write is reported
+but never breaks the switching session.
 
 Like the CLI's ``--model`` flag, the model name is validated against the
 models available from the current provider (its built-in models); when it
@@ -114,6 +119,7 @@ class ModelCmdHandler(CmdHandler):
     @staticmethod
     def _switch_model(shell, model_name: str) -> None:
         """Apply the new model for this shell session only."""
+        from janito.config_store import set_local_config_value
         from janito.general_config import get_active_provider
         from janito.providers.validation import validate_model_name
 
@@ -134,15 +140,19 @@ class ModelCmdHandler(CmdHandler):
 
         previous = getattr(shell, "model", None)
 
-        # Runtime-only switch: the shell's model changes for this session,
-        # but the configured default in config.json is left untouched (use
-        # ``janito --set model=<name>`` to persist a new default).
+        # Runtime switch plus project-local persistence (issue #198): the
+        # provider-scoped ``<provider>.model`` key is written to
+        # ./.janito/config.json so the next session in this project resumes
+        # with the same model.  The global ~/.janito/config.json is never
+        # touched from the shell.
         shell.model = canonical
         # Remember the explicit switch so a later /provider switch knows a
         # session model override is in effect (and clears it).
         shell.model_override = canonical
+        if not set_local_config_value(f"{provider}.model", canonical):
+            print("[WARN] Could not save the model to ./.janito/config.json for this project.")
 
-        print(f"[OK] Model switched to '{canonical}' for this session " "(config default unchanged).")
+        print(f"[OK] Model switched to '{canonical}' " "(saved to ./.janito/config.json).")
 
         # The switch takes effect in real time: rebuild the turn function
         # with the new model so subsequent turns use it (the factory's

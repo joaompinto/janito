@@ -4,7 +4,9 @@ Config storage: read/write primitives for ``~/.janito/config.json``.
 Provides :class:`ConfigStore` (load/save/get/set/unset with provider- and
 model-scoped key handling) plus the module-level delegating functions
 (``load_config``, ``get_config_value``, ``set_config_value``,
-``unset_config_value``).  Extracted from :mod:`janito.general_config` so the
+``unset_config_value``).  The ``*_local_config_*`` variants address the
+project-local ``./.janito/config.json`` explicitly, regardless of the
+active write target.  Extracted from :mod:`janito.general_config` so the
 core config module stays focused on resolution and provider helpers.
 """
 
@@ -122,16 +124,18 @@ class ConfigStore:
             merged = _deep_merge(merged, data)
         return merged
 
-    def save(self, config: dict[str, Any]) -> None:
+    def save(self, config: dict[str, Any], path: Path | None = None) -> None:
         """Save the config dictionary to config.json.
 
         Args:
             config: Dictionary to save to config.json
+            path: Optional explicit config.json path to write to; defaults to
+                the active write target (``get_config_path()``)
 
         Raises:
             IOError: If unable to write to the config file
         """
-        config_path = get_config_path()
+        config_path = path if path is not None else get_config_path()
         config_path.parent.mkdir(parents=True, exist_ok=True)
         with open(config_path, "w") as f:
             json.dump(config, f, indent=2)
@@ -199,7 +203,15 @@ class ConfigStore:
             providers[provider] = provider_config
         return provider_config
 
-    def _set_model_scoped(self, config: dict, provider: str, model: str, leaf: str, value: Any) -> None:
+    def _set_model_scoped(
+        self,
+        config: dict,
+        provider: str,
+        model: str,
+        leaf: str,
+        value: Any,
+        path: Path | None = None,
+    ) -> None:
         """Write a model-scoped value into the nested providers/models map."""
         provider_config = self._ensure_provider(config, provider)
         models = provider_config.get("models")
@@ -211,9 +223,9 @@ class ConfigStore:
             model_config = {}
             models[model] = model_config
         model_config[leaf] = value
-        self.save(config)
+        self.save(config, path)
 
-    def set(self, key: str, value: Any) -> None:
+    def set(self, key: str, value: Any, path: Path | None = None) -> None:
         """Set a config value.
 
         Supports flat keys, provider-scoped keys (``"openai.model"``) and
@@ -223,18 +235,20 @@ class ConfigStore:
         Args:
             key: The config key to set
             value: The value to set
+            path: Optional explicit config.json path to write to; defaults to
+                the active write target (``get_config_path()``)
         """
         logger.debug(f"Setting config '{key}' = {value}")
         # Writes target the primary config file only (never the merged view),
         # so a --set in -l/--local mode stores the value in ./.janito without
         # copying the global entries into the local file.
-        config = _load_config_file(get_config_path())
+        config = _load_config_file(get_config_path() if path is None else path)
 
         # Model-scoped key (<provider>.models.<model>.<key>).
         model_scoped = split_model_scoped_key(key)
         if model_scoped is not None:
             provider, model, leaf = model_scoped
-            self._set_model_scoped(config, provider, model, leaf, value)
+            self._set_model_scoped(config, provider, model, leaf, value, path)
             return
 
         # Provider-scoped key (e.g., "openai.model").
@@ -244,14 +258,14 @@ class ConfigStore:
                 provider, subkey = parts
                 provider_config = self._ensure_provider(config, provider)
                 provider_config[subkey] = value
-                self.save(config)
+                self.save(config, path)
                 return
 
         # Fall back to flat key storage
         config[key] = value
-        self.save(config)
+        self.save(config, path)
 
-    def unset(self, key: str) -> bool:
+    def unset(self, key: str, path: Path | None = None) -> bool:
         """Remove a config value by key.
 
         Supports flat keys, provider-scoped keys (``"openai.model"``) and
@@ -263,17 +277,19 @@ class ConfigStore:
 
         Args:
             key: The config key to remove
+            path: Optional explicit config.json path to write to; defaults to
+                the active write target (``get_config_path()``)
 
         Returns:
             bool: True if the key was removed, False if it didn't exist
         """
         # Writes target the primary config file only (see set).
-        config = _load_config_file(get_config_path())
+        config = _load_config_file(get_config_path() if path is None else path)
 
         # Model-scoped key (<provider>.models.<model>.<key>).
         model_scoped = split_model_scoped_key(key)
         if model_scoped is not None:
-            return self._unset_model_scoped(config, *model_scoped)
+            return self._unset_model_scoped(config, *model_scoped, path=path)
 
         # Provider-scoped keys (e.g., "openai.model") live in the nested
         # providers structure.
@@ -282,12 +298,12 @@ class ConfigStore:
             if len(parts) == 2:
                 provider, subkey = parts
                 if subkey in PROVIDER_SCOPED_KEYS:
-                    return self._unset_provider_scoped(config, provider, subkey)
+                    return self._unset_provider_scoped(config, provider, subkey, path=path)
 
         # Fall back to flat key removal
         if key in config:
             del config[key]
-            self.save(config)
+            self.save(config, path)
             logger.info(f"Removed config key: {key}")
             return True
         logger.debug(f"Config key not found for removal: {key}")
@@ -312,13 +328,20 @@ class ConfigStore:
         if not providers:
             config.pop("providers", None)
 
-    def _unset_provider_scoped(self, config: dict[str, Any], provider: str, subkey: str) -> bool:
+    def _unset_provider_scoped(
+        self,
+        config: dict[str, Any],
+        provider: str,
+        subkey: str,
+        path: Path | None = None,
+    ) -> bool:
         """Remove a provider-scoped key from the nested providers map.
 
         Args:
             config: The primary config dict (mutated in place).
             provider: The provider (or variant) name.
             subkey: A provider-scoped config key (e.g. ``model``).
+            path: Optional explicit config.json path to write to.
 
         Returns:
             bool: True if the key was removed, False if it didn't exist.
@@ -336,11 +359,18 @@ class ConfigStore:
             return False
         del provider_config[subkey]
         self._prune_provider_entry(config, providers, provider)
-        self.save(config)
+        self.save(config, path)
         logger.info(f"Removed config key: {provider}.{subkey}")
         return True
 
-    def _unset_model_scoped(self, config: dict[str, Any], provider: str, model: str, leaf: str) -> bool:
+    def _unset_model_scoped(
+        self,
+        config: dict[str, Any],
+        provider: str,
+        model: str,
+        leaf: str,
+        path: Path | None = None,
+    ) -> bool:
         """Remove a model-scoped key from the nested providers/models map.
 
         When the model's dict becomes empty it is pruned; an emptied
@@ -369,13 +399,28 @@ class ConfigStore:
         if not models:
             del provider_config["models"]
         self._prune_provider_entry(config, providers, provider)
-        self.save(config)
+        self.save(config, path)
         logger.info(f"Removed config key: {provider}.models.{model}.{leaf}")
         return True
 
 
 # Module-level singleton store backing the functions below.
 _store = ConfigStore()
+
+
+def get_local_config_path() -> Path:
+    """Get the path to the project-local config.json (``./.janito/config.json``).
+
+    The project directory is resolved from the current working directory on
+    every call (see :func:`janito.config_dir.get_local_config_dir`),
+    independent of ``-l`` / ``--local`` mode.
+
+    Returns:
+        Path: The ``config.json`` file inside the project-local ``.janito`` directory.
+    """
+    from .config_dir import get_local_config_dir
+
+    return get_local_config_dir() / "config.json"
 
 
 def load_config() -> dict[str, Any]:
@@ -437,3 +482,49 @@ def unset_config_value(key: str) -> bool:
         bool: True if the key was removed, False if it didn't exist
     """
     return _store.unset(key)
+
+
+def set_local_config_value(key: str, value: Any) -> bool:
+    """Set a config value in the project-local config (``./.janito/config.json``).
+
+    Same key semantics as :func:`set_config_value` (flat, provider-scoped and
+    model-scoped keys), but the write always targets the project-local file,
+    regardless of ``-l`` / ``--local`` mode.  Reads merge the local file over
+    the base one, so a locally stored key wins at startup in this project.
+
+    Best-effort (issue #198, used by the shell's ``/provider`` / ``/model``
+    switches): a failed write is logged and reported through the return
+    value, it never breaks the running session.
+
+    Args:
+        key: The config key to set
+        value: The value to set
+
+    Returns:
+        bool: True when the value was persisted, False when the write failed
+    """
+    try:
+        _store.set(key, value, path=get_local_config_path())
+    except OSError as e:
+        logger.warning(f"Could not persist '{key}' to {get_local_config_path()}: {e}")
+        return False
+    return True
+
+
+def unset_local_config_value(key: str) -> bool:
+    """Remove a config value from the project-local config (``./.janito/config.json``).
+
+    Same key semantics as :func:`unset_config_value`, bound to the
+    project-local file.  Best-effort like :func:`set_local_config_value`.
+
+    Args:
+        key: The config key to remove
+
+    Returns:
+        bool: True if the key was removed from the local file, False otherwise
+    """
+    try:
+        return _store.unset(key, path=get_local_config_path())
+    except OSError as e:
+        logger.warning(f"Could not unset '{key}' from {get_local_config_path()}: {e}")
+        return False

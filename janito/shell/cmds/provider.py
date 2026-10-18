@@ -7,13 +7,17 @@ Usage:
 
 The provider name is validated against the built-in providers (the
 ``janito.providers`` registry) and the registered provider variants
-(``janito --create-variant``).  The switch is **runtime-only**: it updates
-the shell's displayed provider (bottom toolbar) and model and rebinds the
-send function to the new provider (its API type re-resolved), but it does
-**not** change the configured default ``provider`` in config.json -- use
-``janito --set provider=<name>`` to persist a new default.  The switch takes
-effect immediately for the running session, whether or not the session was
-started with ``--provider``.
+(``janito --create-variant``).  A successful switch is persisted to the
+**project-local** config (``./.janito/config.json``, ``provider`` key):
+the next session started in the same project resumes with this provider,
+because config reads merge the local file over the global one.  The
+global ``~/.janito/config.json`` is never touched from the shell -- use
+``janito --set provider=<name>`` to persist a machine-level default.
+The switch takes effect immediately for the running session, whether or
+not the session was started with ``--provider``.
+
+Persistence (issue #198) is best-effort: a failed local write is reported
+but never breaks the switching session.
 
 Switching the provider clears the LLM conversation history (system prompt
 preserved) so the previous provider's/model's context does not leak into the
@@ -98,6 +102,7 @@ class ProviderCmdHandler(CmdHandler):
     def _switch_provider(shell, provider_name: str) -> None:
         """Validate and apply the new provider for this shell session only."""
         from janito.config_loaders import load_model_from_config
+        from janito.config_store import set_local_config_value
         from janito.general_config import get_active_provider
         from janito.providers.registry import get_provider
         from janito.providers.validation import validate_provider_name
@@ -114,10 +119,13 @@ class ProviderCmdHandler(CmdHandler):
         # runtime update below so it reflects the *old* state.
         previous = getattr(shell, "provider", None) or get_active_provider()
 
-        # Runtime-only switch: the shell's provider changes for this session,
-        # but the configured default in config.json is left untouched (use
-        # ``janito --set provider=<name>`` to persist a new default).
+        # Runtime switch plus project-local persistence (issue #198): the
+        # flat ``provider`` key is written to ./.janito/config.json so the
+        # next session in this project resumes with the same provider.  The
+        # global ~/.janito/config.json is never touched from the shell.
         shell.provider = canonical
+        if not set_local_config_value("provider", canonical):
+            print("[WARN] Could not save the provider to ./.janito/config.json for this project.")
 
         # Keep the toolbar's model display truthful: re-resolve the effective
         # model for the new provider (configured model, else built-in default).
@@ -135,7 +143,7 @@ class ProviderCmdHandler(CmdHandler):
         if model:
             shell.model = model
 
-        print(f"[OK] Provider switched to '{canonical}' for this session " "(config default unchanged).")
+        print(f"[OK] Provider switched to '{canonical}' " "(saved to ./.janito/config.json).")
 
         # The switch takes effect in real time: rebind the shell's send
         # function to the new provider (its API type re-resolved), so
