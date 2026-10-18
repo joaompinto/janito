@@ -191,6 +191,37 @@ if pytest is not None:
         config_dir_mod.set_local_config_mode(False)
         assert config_dir_mod.get_config_dir() == global_dir
 
+    def test_set_local_config_value_targets_project_file(monkeypatch, tmp_path):
+        global_dir, project_dir = _use_temp_dirs(monkeypatch, tmp_path)
+        config_dir_mod.set_local_config_mode(False)
+        assert cs.set_local_config_value("provider", "deepseek")
+
+        local_config = json.loads((project_dir / ".janito" / "config.json").read_text())
+        assert local_config == {"provider": "deepseek"}
+        assert not (global_dir / "config.json").exists()
+        assert cs.get_config_value("provider") == "deepseek"
+
+    def test_set_local_config_value_provider_scoped_key(monkeypatch, tmp_path):
+        global_dir, project_dir = _use_temp_dirs(monkeypatch, tmp_path)
+        config_dir_mod.set_local_config_mode(False)
+        assert cs.set_local_config_value("openai.model", "gpt-6.1-sol")
+
+        local_config = json.loads((project_dir / ".janito" / "config.json").read_text())
+        assert local_config == {"providers": {"openai": {"model": "gpt-6.1-sol"}}}
+        assert not (global_dir / "config.json").exists()
+        assert cs.get_config_value("openai.model") == "gpt-6.1-sol"
+        assert cl.load_model_from_config("openai") == "gpt-6.1-sol"
+
+    def test_unset_local_config_value_removes_and_prunes(monkeypatch, tmp_path):
+        global_dir, project_dir = _use_temp_dirs(monkeypatch, tmp_path)
+        config_dir_mod.set_local_config_mode(False)
+        assert cs.set_local_config_value("openai.model", "gpt-6.1-sol")
+        assert cs.unset_local_config_value("openai.model")
+
+        assert json.loads((project_dir / ".janito" / "config.json").read_text()) == {}
+        assert cs.get_config_value("openai.model") is None
+        assert not (global_dir / "config.json").exists()
+
 else:  # pragma: no cover - fallback runner without pytest
 
     def _run_one(name, fn, tmp_path):
