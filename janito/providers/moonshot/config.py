@@ -33,5 +33,51 @@ PROVIDER_CONFIG: dict = {
                 },
             ],
         },
+        "kimi-k3.1-pro": {
+            "supported_api_types": ["Completions"],
+            "default_api_type": "Completions",  # built-in default (the first supported type)
+            "max_input_tokens": 1048576,  # 1M context window
+            "max_output_tokens": 131072,  # 128k (API default)
+            # Per the Moonshot/Kimi API reference, reasoning_effort accepts
+            # low/high/max (default max). Kimi K3.1 models always reason.
+            "default_reasoning_effort": "max",
+            "supported_reasoning_efforts": [
+                {
+                    "effort": "low",
+                    "description": "Lighter reasoning for fast responses",
+                },
+                {
+                    "effort": "high",
+                    "description": "Standard reasoning depth",
+                },
+                {
+                    "effort": "max",
+                    "description": "Maximum reasoning depth (the API default)",
+                },
+            ],
+        },
+        "kimi-k3.1-pro-highspeed": {
+            "supported_api_types": ["Completions"],
+            "default_api_type": "Completions",  # built-in default (the first supported type)
+            "max_input_tokens": 1048576,  # 1M context window
+            "max_output_tokens": 131072,  # 128k (API default)
+            # Same reasoning levels as kimi-k3.1-pro: low/high/max,
+            # default max. Higher-throughput deployment of K3.1 Pro.
+            "default_reasoning_effort": "max",
+            "supported_reasoning_efforts": [
+                {
+                    "effort": "low",
+                    "description": "Lighter reasoning for fast responses",
+                },
+                {
+                    "effort": "high",
+                    "description": "Standard reasoning depth",
+                },
+                {
+                    "effort": "max",
+                    "description": "Maximum reasoning depth (the API default)",
+                },
+            ],
+        },
     },
 }

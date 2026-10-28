@@ -3,18 +3,20 @@
 Rates source
 ------------
 The per-1M-token rates below are taken from the official Moonshot AI
-pricing for the Kimi K3 model family (``kimi-k3``) and apply as of the
-verification date.  The rate card lists prices in CNY (¥20.00 input cache
+pricing for the Kimi K3 / K3.1 model families and apply as of the
+verification date.  ``kimi-k3`` lists prices in CNY (¥20.00 input cache
 miss, ¥2.00 input cache hit, ¥100.00 output per 1M tokens), which
-correspond to approximately $2.75 / $0.28 / $13.75 per 1M tokens.  Moonshot
-adjusts figures frequently, so cross-check the official rate card before
-relying on them.
+correspond to approximately $2.75 / $0.28 / $13.75 per 1M tokens.
+``kimi-k3.1-pro`` is priced at $2.00 input / $0.20 cache hit / $10.00
+output per 1M tokens, and ``kimi-k3.1-pro-highspeed`` at $4.00 input /
+$0.20 cache hit / $20.00 output per 1M tokens.  Moonshot adjusts figures
+frequently, so cross-check the official rate card before relying on them.
 
 Prompt caching
 --------------
 Moonshot applies automatic context caching: cached input tokens are billed
-at the much lower cache-hit rate (¥2.00/1M, 10% of the cache-miss input
-rate) instead of the cache-miss rate.  There is no peak-hour surcharge.
+at the much lower cache-hit rate (10% of the cache-miss input rate)
+instead of the cache-miss rate.  There is no peak-hour surcharge.
 """
 
 #: Per-1M-token rates (USD) keyed by model name:
@@ -25,6 +27,8 @@ rate) instead of the cache-miss rate.  There is no peak-hour surcharge.
 #: the much lower cache-hit rate instead of the cache-miss rate.
 _MODEL_RATES: dict[str, tuple[float, float, float]] = {
     "kimi-k3": (2.75, 0.28, 13.75),
+    "kimi-k3.1-pro": (2.00, 0.20, 10.00),
+    "kimi-k3.1-pro-highspeed": (4.00, 0.20, 20.00),
 }
 
 

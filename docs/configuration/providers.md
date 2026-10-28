@@ -819,14 +819,17 @@ janito --set-api-key="your-moonshot-api-key" --provider moonshot
 
 | Model | Description |
 |-------|-------------|
-| `kimi-k3` | Latest Kimi model with configurable reasoning (default, built-in) |
+| `kimi-k3` | Kimi model with configurable reasoning (default, built-in) |
+| `kimi-k3.1-pro` | Latest Kimi K3.1 Pro model (1M context, configurable reasoning) |
+| `kimi-k3.1-pro-highspeed` | Higher-throughput deployment of K3.1 Pro (1M context) |
 
 Model selection is restricted to the built-in models above.
 `janito --list-models` shows the accepted names.
 
 ### Reasoning Level
 
-The default model `kimi-k3` supports configurable reasoning depth via the
+All Moonshot models (`kimi-k3`, `kimi-k3.1-pro`,
+`kimi-k3.1-pro-highspeed`) support configurable reasoning depth via the
 OpenAI-compatible `reasoning_effort` parameter. The supported levels are
 `low`, `high` and `max`, and the built-in default is `max` (the API's own
 default).
