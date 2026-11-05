@@ -156,6 +156,10 @@ The server prints the URL it's listening on, then opens your default browser
   `--web-session-ttl SECONDS`, sessions idle longer than that are dropped from
   memory lazily (no background task) and transparently reloaded from disk when
   reopened, so the sidebar list shrinks without ever losing a conversation.
+  Saves are published by atomic replacement after writing and flushing a
+  temporary file in the same directory. A failed save preserves the previous
+  complete conversation on disk; the current in-memory conversation stays
+  available. Temporary files left by an interrupted process are ignored on reload.
 - **Provider switcher** — combo in the topbar lists the providers that have an
   API key set; picking one switches the provider for the **current browser /
   server session only** — it is applied to the running server (the very next

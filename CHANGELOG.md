@@ -8,3 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased](https://github.com/joaompinto/janito/compare/v4.50.0...HEAD)
 
 Changes since `v4.50.0` (2026-10-19).
+
+### Fixed
+
+- Web session saves atomically replace metadata only after the full JSON has
+  been written and flushed, preserving the last complete save on failure.
