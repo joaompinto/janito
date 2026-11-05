@@ -196,16 +196,33 @@ The server prints the URL it's listening on, then opens your default browser
   **read-only** (issue #85): only the READ tools are offered, and the status
   bar shows the read badge active with write/exec off. Explicit `-r`/`-w`/`-x`
   flags take priority (`-r -w` grants read + write, `-r -w -x` everything).
-- **Optional bearer-token auth.** Set the `JANITO_WEB_TOKEN` environment variable
-  to require a token on all `/api` requests:
+- **Optional authentication.** Set a long, random `JANITO_WEB_TOKEN` to protect
+  the chat page, API and API documentation. Never commit this token:
 
   ```bash
-  export JANITO_WEB_TOKEN=my-secret-token
-  janito --web --web-host 0.0.0.0
+   export JANITO_WEB_TOKEN="$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
+   janito --web
   ```
 
-  The token is sent via `Authorization: Bearer <token>` (REST) or
-  `?token=<token>` (WebSocket).
+  Open the page and enter the configured token on the sign-in screen. The
+  server exchanges it for a signed **HttpOnly**, **SameSite=Strict** cookie
+  (also **Secure** over HTTPS), valid for 12 hours and invalidated by a
+  server restart. The shared token is never embedded in HTML, saved in browser
+  storage, or put in a WebSocket URL. REST and WebSocket browser connections
+  use the cookie automatically. The **Sign out** button clears that browser's
+  cookie; it does not rotate the shared token or disconnect other clients.
+  Cookie-authenticated writes and WebSockets reject foreign browser origins.
+
+  Programmatic clients can send `Authorization: Bearer <token>` on HTTP
+  requests or WebSocket handshakes. **Query-string tokens are not accepted.**
+  Static JS/CSS and the login page remain public but contain no credentials.
+  When no token is configured, local usage is unchanged and no login is required.
+
+  Keep the default localhost bind. For remote access, use an SSH tunnel or a
+  TLS reverse proxy, and configure rate limiting there for login attempts.
+  Plain remote HTTP would expose both login credentials and session cookies.
+  The proxy must forward the external scheme/host correctly for same-origin
+  checks and secure cookies; trust forwarded headers only from your proxy.
 
 ---
 

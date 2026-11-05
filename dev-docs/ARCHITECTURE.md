@@ -563,7 +563,11 @@ interactive-shell command.
   TTL-based expiry (`--web-session-ttl`, lazy reaping + disk reload; disabled
   by default) and conversations persisted to `.janito/sessions/` so they
   survive restarts.
-- **`security.py`** â€” optional bearer-token auth (`JANITO_WEB_TOKEN`) and CORS.
+- **`security.py`** â€” optional bearer-token auth (`JANITO_WEB_TOKEN`), signed
+  HttpOnly browser sessions, same-origin checks and CORS. `WebAuthenticator`
+  owns credential/session validation; the auth router renders login and
+  exchanges a user-entered token for a 12-hour cookie signed with a per-app
+  random key (restart invalidates sessions). Templates never receive the token.
 - **`agent/`** â€” the async agent loop (`loop.py` orchestrates; `turn.py`
   runs tool turns; `completions.py`, `responses.py`, `anthropic.py`,
   `dashscope.py`, `gemini.py` are the per-API-type runners â€” one module

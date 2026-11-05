@@ -1,94 +1,130 @@
-"""Security middleware for the web backend.
+"""Optional bearer/API and browser-session authentication for the web backend."""
 
-- Localhost-only by default (the server binds to 127.0.0.1 unless --web-host is set).
-- Optional bearer-token auth via the ``JANITO_WEB_TOKEN`` env var.
-- CORS middleware for development.
-"""
+import secrets
+import time
+from urllib.parse import urlsplit
 
-import logging
-from urllib.parse import parse_qs
-
-from fastapi import FastAPI, Request
+import jwt
+from fastapi import FastAPI, Request, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 
-logger = logging.getLogger(__name__)
+SESSION_COOKIE = "janito_web_session"
+SESSION_MAX_AGE = 12 * 60 * 60
 
 
 def add_cors(app: FastAPI) -> None:
-    """Add permissive CORS middleware (for dev / same-machine usage)."""
+    """Allow development API clients, without cross-origin cookie access."""
     app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=False,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        CORSMiddleware, allow_origins=["*"], allow_credentials=False,
+        allow_methods=["*"], allow_headers=["*"],
     )
 
 
-class TokenAuthMiddleware:
-    """Optional bearer-token authentication.
+def same_origin(connection: Request | WebSocket) -> bool:
+    """Reject browser requests from another origin, including opaque origins."""
+    origin = connection.headers.get("origin")
+    if origin is None:
+        return True  # Non-browser clients need not send Origin.
+    expected_scheme = {"ws": "http", "wss": "https"}.get(connection.url.scheme, connection.url.scheme)
+    try:
+        actual = urlsplit(origin)
+        expected = urlsplit(f"{expected_scheme}://{connection.url.netloc}")
+        actual_port = actual.port if actual.port is not None else (443 if actual.scheme == "https" else 80)
+        expected_port = expected.port if expected.port is not None else (443 if expected.scheme == "https" else 80)
+        return (
+            actual.scheme == expected.scheme
+            and actual.hostname == expected.hostname
+            and actual_port == expected_port
+            and actual.username is None and actual.password is None
+            and not actual.path and not actual.query and not actual.fragment
+        )
+    except ValueError:
+        return False
 
-    Enabled only when ``auth_token`` is not None. Requests without a matching
-    ``Authorization: Bearer <token>`` header (or ``?token=`` query param for
-    WebSockets) receive a 401 response.
 
-    The root path and static assets are always allowed so the login-less UI
-    can load; API routes under ``/api`` are protected.
-    """
+class WebAuthenticator:
+    """Own token validation and short-lived, process-local browser sessions."""
 
-    def __init__(self, app, auth_token: str | None):
-        self.app = app
+    def __init__(self, auth_token: str | None):
         self.auth_token = auth_token
+        self._session_key = secrets.token_bytes(32)
+
+    @property
+    def enabled(self) -> bool:
+        return self.auth_token is not None
+
+    def valid_token(self, token: object) -> bool:
+        if not isinstance(token, str) or not 0 < len(token) <= 4096 or self.auth_token is None:
+            return False
+        return secrets.compare_digest(
+            token.encode("utf-8", errors="surrogatepass"), self.auth_token.encode("utf-8", errors="surrogatepass")
+        )
+
+    def bearer_authorized(self, connection: Request | WebSocket) -> bool:
+        header = connection.headers.get("authorization", "")
+        scheme, _, token = header.partition(" ")
+        return scheme.lower() == "bearer" and self.valid_token(token)
+
+    def issue_session(self) -> str:
+        return jwt.encode(
+            {"exp": int(time.time()) + SESSION_MAX_AGE, "aud": "janito-web"},
+            self._session_key, algorithm="HS256",
+        )
+
+    def session_authorized(self, connection: Request | WebSocket) -> bool:
+        cookie = connection.cookies.get(SESSION_COOKIE)
+        if not cookie:
+            return False
+        try:
+            jwt.decode(
+                cookie, self._session_key, algorithms=["HS256"], audience="janito-web",
+                options={"require": ["exp", "aud"]},
+            )
+        except jwt.InvalidTokenError:
+            return False
+        return True
+
+
+class TokenAuthMiddleware:
+    """Protect the UI and API; browser credentials never enter page scripts."""
+
+    def __init__(self, app, authenticator: WebAuthenticator):
+        self.app = app
+        self.authenticator = authenticator
 
     async def __call__(self, scope, receive, send):
-        if self.auth_token is None:
+        if not self.authenticator.enabled or scope["type"] not in {"http", "websocket"}:
             await self.app(scope, receive, send)
             return
-
-        if scope["type"] == "http":
-            request = Request(scope, receive)
-            path = request.url.path
-            # Always allow non-API paths (frontend assets, docs)
-            if not path.startswith("/api"):
-                await self.app(scope, receive, send)
-                return
-            if self._authorized(request.headers.get("authorization"), request.query_params.get("token")):
-                await self.app(scope, receive, send)
-                return
-            logger.warning("[auth] HTTP 401 Unauthorized: %s %s", request.method, path)
-            response = JSONResponse({"detail": "Unauthorized"}, status_code=401)
-            await response(scope, receive, send)
-
-        elif scope["type"] == "websocket":
-            # For WebSockets, check the token query param during handshake.
-            # The client sends it URL-encoded (encodeURIComponent), so decode
-            # it with parse_qs before comparing.
-            path = scope.get("path", "")
-            query_string = scope.get("query_string", b"").decode()
-            token = None
-            params = parse_qs(query_string)
-            if "token" in params:
-                token = params["token"][0]
-            logger.warning(
-                "[auth] WS handshake path=%s token_present=%s token_match=%s",
-                path,
-                token is not None,
-                token == self.auth_token,
-            )
-            if token == self.auth_token:
-                await self.app(scope, receive, send)
-                return
-            # Reject the handshake
-            logger.warning("[auth] WS handshake REJECTED (1008) for %s", path)
-            close_message = {"type": "websocket.close", "code": 1008}
-            await send(close_message)
-        else:
+        if scope["type"] == "websocket":
+            await self._websocket(scope, receive, send)
+            return
+        request = Request(scope, receive)
+        path = request.url.path
+        # Assets are public and contain no credentials; protect the page/API/docs.
+        protected = path == "/" or path.startswith(("/api", "/docs", "/redoc", "/openapi.json"))
+        if not protected or self.authenticator.bearer_authorized(request):
             await self.app(scope, receive, send)
+            return
+        if self.authenticator.session_authorized(request):
+            if request.method in {"GET", "HEAD", "OPTIONS"} or same_origin(request):
+                await self.app(scope, receive, send)
+                return
+            response = JSONResponse({"detail": "Cross-origin request denied"}, status_code=403)
+        elif path == "/":
+            response = RedirectResponse("/login", status_code=303)
+        else:
+            response = JSONResponse({"detail": "Unauthorized"}, status_code=401)
+        response.headers["Cache-Control"] = "no-store"
+        await response(scope, receive, send)
 
-    def _authorized(self, auth_header: str | None, query_token: str | None) -> bool:
-        if query_token and query_token == self.auth_token:
-            return True
-        if auth_header and auth_header.startswith("Bearer "):
-            return auth_header[len("Bearer ") :] == self.auth_token
-        return False
+    async def _websocket(self, scope, receive, send):
+        connection = WebSocket(scope, receive, send)
+        authorized = self.authenticator.bearer_authorized(connection) or (
+            self.authenticator.session_authorized(connection) and same_origin(connection)
+        )
+        if authorized:
+            await self.app(scope, receive, send)
+        else:
+            await send({"type": "websocket.close", "code": 1008})

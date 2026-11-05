@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <title>Sign in — Janito Web</title>
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <main style="max-width: 28rem; margin: 10vh auto; padding: 1rem;">
+        <h1>Sign in to Janito</h1>
+        <p>Enter the web access token configured by the server operator.</p>
+        <form id="login-form">
+            <label for="token">Access token</label>
+            <input id="token" type="password" required autocomplete="current-password" autofocus>
+            <button type="submit">Sign in</button>
+            <p id="error" role="alert"></p>
+        </form>
+    </main>
+    <script src="/js/login.js"></script>
+</body>
+</html>
