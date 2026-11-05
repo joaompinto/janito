@@ -2,6 +2,9 @@
 
 janito supports multiple AI providers. This guide covers configuration for each.
 
+For Cloudflare's OpenAI-compatible endpoint, see the
+[Cloudflare Workers AI setup guide](cloudflare-workers-ai.md) (`custom` provider).
+
 janito talks to models through **two kinds of API**:
 
 - **OpenAI-compatible APIs** — the `Responses` and `Completions` API types,

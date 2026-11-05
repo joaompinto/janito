@@ -8,3 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased](https://github.com/joaompinto/janito/compare/v4.50.0...HEAD)
 
 Changes since `v4.50.0` (2026-10-19).
+
+### Added
+
+- Cloudflare Workers AI setup guide using the custom provider, with account
+  and token setup, verified configuration keys, and streaming/API limitations (#32).

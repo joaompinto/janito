@@ -44,6 +44,7 @@ nav:
   - Configuration:
       - configuration/index.md
       - configuration/providers.md
+      - Cloudflare Workers AI: configuration/cloudflare-workers-ai.md
       - configuration/variants.md
       - configuration/secrets.md
   - Usage:
