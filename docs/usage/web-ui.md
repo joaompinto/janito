@@ -156,6 +156,10 @@ The server prints the URL it's listening on, then opens your default browser
   `--web-session-ttl SECONDS`, sessions idle longer than that are dropped from
   memory lazily (no background task) and transparently reloaded from disk when
   reopened, so the sidebar list shrinks without ever losing a conversation.
+  Session IDs must be 1–128 ASCII letters, digits, hyphens or underscores,
+  starting with a letter or digit. Session directories and metadata cannot be
+  symbolic links. On reload, metadata whose ID differs from its directory is
+  skipped rather than trusted as another conversation.
 - **Provider switcher** — combo in the topbar lists the providers that have an
   API key set; picking one switches the provider for the **current browser /
   server session only** — it is applied to the running server (the very next
