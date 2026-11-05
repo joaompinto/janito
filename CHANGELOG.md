@@ -8,3 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased](https://github.com/joaompinto/janito/compare/v4.50.0...HEAD)
 
 Changes since `v4.50.0` (2026-10-19).
+
+### Fixed
+
+- Advanced web-settings tests isolate configuration, clients and workspaces
+  per test and derive model-scoped keys from the provider registry.

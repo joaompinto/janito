@@ -93,3 +93,13 @@ pytest tests/ -q -n 0           # force serial (e.g. when debugging ordering)
   globals (config dir, registries) in fixtures so files stay
   order-independent. When adding a new process-global, extend the
   conftest snapshot.
+
+### Web configuration tests
+
+Use function-scoped app/client fixtures when tests mutate configuration.
+Each case should set its own config directory and change to its own `tmp_path`
+so workspace-local settings and sessions cannot leak across cases. The shared
+autouse fixture restores the config-directory globals after each test.
+For model-scoped settings, obtain the current default from the provider
+registry and build keys with `model_scoped_config_key`; do not pin a model
+name that can become stale when provider defaults change.
