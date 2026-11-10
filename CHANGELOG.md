@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Changes since `v4.50.0` (2026-10-19).
 
+### Fixed
+
+- Web session saves atomically replace metadata only after the full JSON has
+  been written and flushed, preserving the last complete save on failure.
+
 ### Security
 
 - Confine web session storage to validated session IDs, reject symlinked

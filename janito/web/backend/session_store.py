@@ -25,7 +25,9 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
+import tempfile
 import threading
 from pathlib import Path
 from typing import Any
@@ -79,6 +81,25 @@ def _session_meta(session) -> dict[str, Any]:
     }
 
 
+def _write_metadata(meta_path: Path, payload: dict[str, Any]) -> None:
+    """Publish complete JSON atomically; failures leave the last save intact."""
+    serialized = json.dumps(payload, ensure_ascii=False, indent=2) + "\n"
+    temporary_path = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", dir=meta_path.parent,
+            prefix=".metadata-", suffix=".tmp", delete=False,
+        ) as temporary_file:
+            temporary_path = Path(temporary_file.name)
+            temporary_file.write(serialized)
+            temporary_file.flush()
+            os.fsync(temporary_file.fileno())
+        os.replace(temporary_path, meta_path)
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+
+
 def save_session(session) -> None:
     """Rewrite ``<session_id>/metadata.json`` with metadata + messages.
 
@@ -93,9 +114,7 @@ def save_session(session) -> None:
                 **_session_meta(session),
                 "messages": list(session.messages),
             }
-            with meta_path.open("w", encoding="utf-8") as meta_file:
-                json.dump(payload, meta_file, ensure_ascii=False, indent=2)
-                meta_file.write("\n")
+            _write_metadata(meta_path, payload)
     except Exception as e:  # noqa: BLE001 - persistence must never break the server
         logger.debug(f"Failed to save session {session.session_id}: {e}")
 

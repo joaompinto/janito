@@ -160,6 +160,10 @@ The server prints the URL it's listening on, then opens your default browser
   starting with a letter or digit. Session directories and metadata cannot be
   symbolic links. On reload, metadata whose ID differs from its directory is
   skipped rather than trusted as another conversation.
+  Saves are published by atomic replacement after writing and flushing a
+  temporary file in the same directory. A failed save preserves the previous
+  complete conversation on disk; the current in-memory conversation stays
+  available. Temporary files left by an interrupted process are ignored on reload.
 - **Provider switcher** — combo in the topbar lists the providers that have an
   API key set; picking one switches the provider for the **current browser /
   server session only** — it is applied to the running server (the very next
