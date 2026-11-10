@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import threading
 from pathlib import Path
 from typing import Any
@@ -39,6 +40,8 @@ SESSIONS_DIR = Path(".janito") / "sessions"
 # Serialises access from the multiple threads the web backend uses.
 _lock = threading.Lock()
 
+_SESSION_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,127}", re.ASCII)
+
 
 def get_sessions_dir() -> Path:
     """Return the absolute path to the sessions directory.
@@ -50,8 +53,17 @@ def get_sessions_dir() -> Path:
 
 
 def metadata_file_path(session_id: str) -> Path:
-    """Return the per-conversation metadata path."""
-    return get_sessions_dir() / session_id / "metadata.json"
+    """Return a confined metadata path, rejecting invalid IDs and symlinks."""
+    if not isinstance(session_id, str) or _SESSION_ID.fullmatch(session_id) is None:
+        raise ValueError("Invalid session ID")
+    directory = get_sessions_dir()
+    session_dir = directory / session_id
+    meta_path = session_dir / "metadata.json"
+    if session_dir.is_symlink() or meta_path.is_symlink():
+        raise ValueError("Session paths must not be symbolic links")
+    if not meta_path.resolve().is_relative_to(directory.resolve()):
+        raise ValueError("Session path escapes the sessions directory")
+    return meta_path
 
 
 def _session_meta(session) -> dict[str, Any]:
@@ -100,6 +112,9 @@ def delete_session_file(session_id: str) -> bool:
         with _lock:
             removed = False
             meta_path = metadata_file_path(session_id)
+            legacy_path = get_sessions_dir() / f"{session_id}.jsonl"
+            if legacy_path.is_symlink():
+                raise ValueError("Session paths must not be symbolic links")
             if meta_path.exists():
                 removed = True
                 meta_path.unlink()
@@ -107,7 +122,6 @@ def delete_session_file(session_id: str) -> bool:
                     meta_path.parent.rmdir()
                 except OSError:
                     pass
-            legacy_path = get_sessions_dir() / f"{session_id}.jsonl"
             if legacy_path.exists():
                 removed = True
                 legacy_path.unlink()
@@ -120,9 +134,10 @@ def delete_session_file(session_id: str) -> bool:
 def _read_directory_session(meta_path: Path) -> dict[str, Any] | None:
     """Read a session stored in its ``<id>/metadata.json`` file."""
     try:
+        meta_path = metadata_file_path(meta_path.parent.name)
         with meta_path.open("r", encoding="utf-8") as f:
             parsed = json.load(f)
-        if isinstance(parsed, dict) and "session_id" in parsed:
+        if isinstance(parsed, dict) and parsed.get("session_id") == meta_path.parent.name:
             parsed.setdefault("messages", [])
             return parsed
         logger.debug(f"Skipping session file without metadata: {meta_path}")
@@ -167,9 +182,12 @@ def load_session(session_id: str) -> dict[str, Any] | None:
         system_prompt, messages, ...}`` for the session, or ``None`` when
         the file is missing, malformed or unreadable. Never raises.
     """
-    meta_path = metadata_file_path(session_id)
-    if meta_path.exists():
-        return _read_directory_session(meta_path)
+    try:
+        meta_path = metadata_file_path(session_id)
+        if meta_path.exists():
+            return _read_directory_session(meta_path)
+    except (OSError, ValueError, RuntimeError):
+        logger.debug("Failed to load session %r", session_id, exc_info=True)
     return None
 
 
