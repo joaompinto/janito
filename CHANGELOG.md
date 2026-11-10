@@ -18,6 +18,8 @@ Changes since `v4.50.0` (2026-10-19).
 
 - Web session saves atomically replace metadata only after the full JSON has
   been written and flushed, preserving the last complete save on failure.
+- Advanced web-settings tests isolate configuration, clients and workspaces
+  per test and derive model-scoped keys from the provider registry.
 
 ### Security
 

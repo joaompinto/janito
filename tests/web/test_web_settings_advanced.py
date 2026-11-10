@@ -36,7 +36,6 @@ types OUT of the combobox and shows the info instead.
 """
 
 import sys
-import tempfile
 from pathlib import Path
 
 # Add the repo root to sys.path to allow importing the package directly.
@@ -47,6 +46,8 @@ import pytest
 import janito.config_dir as config_dir_mod
 import janito.config_loaders as cl
 import janito.config_store as cs
+from janito.config_keys import model_scoped_config_key
+from janito.providers.registry import get_provider
 from janito.providers.validation import is_api_type_available
 
 # The web routes need the optional `web` extra (fastapi). Skip gracefully
@@ -75,20 +76,14 @@ requires_no_anthropic = pytest.mark.skipif(
 )
 
 
-@pytest.fixture(scope="module", autouse=True)
-def clean_config(request):
-    """Isolate the config dir in a temp dir so tests never touch the real one."""
-    prev_dir = config_dir_mod.get_config_dir()
-    tmp = tempfile.mkdtemp(prefix="janito_settings_advanced_tests_")
-    config_dir_mod.set_config_dir(tmp)
-
-    def restore():
-        config_dir_mod.set_config_dir(str(prev_dir))
-
-    request.addfinalizer(restore)
+@pytest.fixture(autouse=True)
+def clean_config(tmp_path, monkeypatch):
+    """Give every test its own configuration and project-local workspace."""
+    monkeypatch.chdir(tmp_path)
+    config_dir_mod.set_config_dir(str(tmp_path / "config"))
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def client(clean_config):
     """A TestClient wired to a fresh Janito web app (isolated config dir)."""
     from janito.web.backend.app import create_app
@@ -113,8 +108,6 @@ def _providers_by_name(client):
 @requires_fastapi
 def test_patch_endpoint_persists_per_provider(client):
     """{endpoint, provider} writes providers.<provider>.endpoint to config.json."""
-    cs.unset_config_value("minimax.endpoint")
-
     resp = client.patch(
         "/api/config",
         json={"endpoint": "https://minimax.example/v1", "provider": "minimax"},
@@ -147,8 +140,6 @@ def test_patch_empty_endpoint_clears_override(client):
 @requires_fastapi
 def test_patch_api_type_persists_and_normalizes(client):
     """api_type is canonicalized (Responses/Completions) and stored per provider."""
-    cs.unset_config_value("openai.models.gpt-6-luna.api-type")
-
     resp = client.patch("/api/config", json={"api_type": "completions", "provider": "openai"})
     assert resp.status_code == 200
     assert resp.json()["updated"]["api_type"] == "Completions"
@@ -163,7 +154,6 @@ def test_patch_api_type_persists_and_normalizes(client):
 @requires_fastapi
 def test_patch_api_type_rejects_unknown_value(client):
     """A bogus API type is rejected with 400 and nothing is written."""
-    cs.unset_config_value("openai.models.gpt-6-luna.api-type")
     before = cs.load_config()
 
     resp = client.patch("/api/config", json={"api_type": "Bogus", "provider": "openai"})
@@ -178,7 +168,6 @@ def test_patch_api_type_anthropic_aborts_without_package(client):
     """The native Anthropic SDK API type is rejected with 400 (nothing is
     written) when the optional `anthropic` package is not installed, with a
     message naming the package."""
-    cs.unset_config_value("anthropic.models.claude-sonnet-5-5.api-type")
     before = cs.load_config()
 
     resp = client.patch("/api/config", json={"api_type": "Anthropic", "provider": "anthropic"})
@@ -196,7 +185,8 @@ def test_patch_api_type_empty_clears_override(client):
     # api-type is model-scoped: seed the real key (not the flat
     # "openai.api-type" form nothing reads) so this test passes
     # regardless of execution order / xdist grouping.
-    cs.set_config_value("openai.models.gpt-6-luna.api-type", "Completions")
+    model = get_provider("openai").default_model()
+    cs.set_config_value(model_scoped_config_key("openai", model, "api-type"), "Completions")
     assert cl.load_api_type("openai") == "Completions"
 
     resp = client.patch("/api/config", json={"api_type": "", "provider": "openai"})
@@ -210,8 +200,6 @@ def test_patch_api_type_empty_clears_override(client):
 @requires_fastapi
 def test_patch_stateless_mode_persists(client):
     """stateless_mode is stored per provider/model and exposed effectively."""
-    cs.unset_config_value("openai.models.gpt-6-luna.stateless-mode")
-
     resp = client.patch(
         "/api/config",
         json={"stateless_mode": False, "provider": "openai"},
@@ -248,7 +236,6 @@ def test_patch_stateless_mode_accepts_string_bool(client):
 @requires_fastapi
 def test_patch_stateless_mode_rejects_invalid(client):
     """A non-boolean stateless_mode is rejected with 400."""
-    cs.unset_config_value("openai.models.gpt-6-luna.stateless-mode")
     before = cs.load_config()
 
     resp = client.patch(
@@ -281,10 +268,6 @@ def test_patch_advanced_unknown_provider_rejected(client):
 @requires_fastapi
 def test_providers_endpoint_exposes_advanced_fields(client):
     """Each provider entry carries the Advanced fields the drawer reads."""
-    # Clear any model-scoped stateless-mode override left by earlier
-    # tests in this module (they share the module-scoped config dir).
-    cs.unset_config_value("openai.models.gpt-6-luna.stateless-mode")
-    cs.unset_config_value("deepseek.models.deepseek-flash.stateless-mode")
     entries = _providers_by_name(client)
 
     openai = entries["openai"]
