@@ -6,17 +6,15 @@ const Api = {
     async request(method, path, body = null) {
         const opts = {
             method,
+            credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
         };
         if (body !== null) {
             opts.body = JSON.stringify(body);
         }
-        const token = window.__JANITO_TOKEN__;
-        if (token) {
-            opts.headers['Authorization'] = `Bearer ${token}`;
-        }
         const res = await fetch(this.baseUrl + path, opts);
         if (!res.ok) {
+            if (res.status === 401) window.location.replace('/login');
             let detail = res.statusText;
             try {
                 const data = await res.json();

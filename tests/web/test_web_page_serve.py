@@ -5,9 +5,7 @@ composed server-side with Jinja2.  These tests pin down the serving contract:
 
 1. ``GET /`` returns ``200`` with ``Cache-Control: no-store`` and the fully
    composed page (all major UI sections present);
-2. the bearer token (``JANITO_WEB_TOKEN``) is injected as
-   ``window.__JANITO_TOKEN__`` (JSON-escaped) so websocket.js / api.js can
-   authenticate;
+2. the bearer token is never injected into page HTML;
 3. local ``/js/`` + ``/css/`` assets are cache-busted with an mtime query
    string while CDN scripts/styles are left untouched.
 """
@@ -57,7 +55,6 @@ def test_index_serves_composed_page(client):
     html = resp.text
     # The page shell + the partials that make up the UI.
     for marker in (
-        "window.__JANITO_TOKEN__ = null;",
         'x-data="appComponent()"',
         'x-data="chatComponent()"',
         "providerSwitcherComponent()",
@@ -75,17 +72,21 @@ def test_index_serves_composed_page(client):
 
 
 @requires_fastapi
-def test_index_injects_escaped_auth_token(client):
-    """The bearer token lands in window.__JANITO_TOKEN__ as JSON."""
+def test_index_never_injects_auth_token(tmp_path, monkeypatch):
+    """Only an authenticated browser sees the page, without shared credentials."""
     from janito.web.backend.app import create_app
     from janito.web.backend.config import WebServerConfig
 
-    config = WebServerConfig(web_host="127.0.0.1", web_port=0, no_web_open=True, auth_token='tok"en<>&')
+    monkeypatch.chdir(tmp_path)
+    token = 'tok"en<>&'
+    config = WebServerConfig(web_host="127.0.0.1", web_port=0, no_web_open=True, auth_token=token, no_history=True)
     app = create_app(config)
     with TestClient(app) as c:
+        assert c.get("/", follow_redirects=False).status_code == 303
+        assert c.post("/auth/login", json={"token": token}).status_code == 200
         html = c.get("/").text
-    # tojson escapes <, >, & for script-context safety.
-    assert 'window.__JANITO_TOKEN__ = "tok\\"en\\u003c\\u003e\\u0026";' in html
+    assert token not in html
+    assert "__JANITO_TOKEN__" not in html
 
 
 @requires_fastapi

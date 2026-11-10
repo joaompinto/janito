@@ -15,7 +15,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import WebServerConfig
-from .security import TokenAuthMiddleware, add_cors
+from .security import TokenAuthMiddleware, WebAuthenticator, add_cors
 from .session import SessionManager
 from .templating import make_environment
 
@@ -60,6 +60,7 @@ def create_app(config: WebServerConfig) -> FastAPI:
 
     enable_browser_prompts()
 
+    from .routers import auth as auth_router
     from .routers import chat as chat_router
     from .routers import config as config_router
     from .routers import images as images_router
@@ -70,6 +71,7 @@ def create_app(config: WebServerConfig) -> FastAPI:
 
     # Store config + session manager on app state
     app.state.config = config
+    app.state.web_auth = WebAuthenticator(config.auth_token)
     app.state.sessions = SessionManager(config)
     # Restore conversations persisted to .janito/sessions/ (issue #36) so
     # they survive a server restart. No-op with --no-history.
@@ -79,12 +81,13 @@ def create_app(config: WebServerConfig) -> FastAPI:
     config.apply_toolsets()
 
     # Optional bearer-token auth (no-op when auth_token is None)
-    app.add_middleware(TokenAuthMiddleware, auth_token=config.auth_token)
+    app.add_middleware(TokenAuthMiddleware, authenticator=app.state.web_auth)
 
     # CORS for development
     add_cors(app)
 
     # API routers
+    app.include_router(auth_router.router)
     app.include_router(chat_router.router, prefix="/api/chat", tags=["chat"])
     app.include_router(config_router.router, prefix="/api/config", tags=["config"])
     app.include_router(tools_router.router, prefix="/api/tools", tags=["tools"])
@@ -98,12 +101,8 @@ def create_app(config: WebServerConfig) -> FastAPI:
     # Serve frontend (no build step — plain HTML/JS/CSS)
     frontend_dir = Path(__file__).parent.parent / "frontend"
     if frontend_dir.exists():
-        # Serve the page via Jinja2 templates (templates/base.html + the
-        # partials under templates/partials/). The auth token is passed as
-        # template context (window.__JANITO_TOKEN__) so websocket.js / api.js
-        # can authenticate when JANITO_WEB_TOKEN is set. Without it the WS
-        # handshake is rejected by TokenAuthMiddleware and the UI shows
-        # "Not connected".
+        # Authentication is handled by the middleware and an HttpOnly cookie;
+        # no credentials are passed into templates or browser scripts.
         template_env = make_environment()
 
         @app.get("/", response_class=HTMLResponse, include_in_schema=False)
@@ -112,7 +111,7 @@ def create_app(config: WebServerConfig) -> FastAPI:
             # the server (Jinja2's FileSystemLoader auto-reloads on mtime
             # changes), and send ``no-store`` so browsers never serve a
             # stale shell.
-            html = template_env.get_template("base.html").render(auth_token=config.auth_token)
+            html = template_env.get_template("base.html").render(auth_enabled=app.state.web_auth.enabled)
             # Cache-bust local /js/ + /css/ assets by fingerprinting each
             # reference with its file mtime. Browsers aggressively cache
             # these scripts, so without this a frontend edit (e.g. a new

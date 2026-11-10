@@ -17,11 +17,7 @@ class ChatSocket {
     connect() {
         this.manualClose = false;
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        let url = `${protocol}//${window.location.host}/api/chat/ws/${encodeURIComponent(this.sessionId)}`;
-        const token = window.__JANITO_TOKEN__;
-        if (token) {
-            url += `?token=${encodeURIComponent(token)}`;
-        }
+        const url = `${protocol}//${window.location.host}/api/chat/ws/${encodeURIComponent(this.sessionId)}`;
 
         this.ws = new WebSocket(url);
 
@@ -61,7 +57,8 @@ class ChatSocket {
                 attempts: this.reconnectAttempts,
             });
             if (e.code === 1008) {
-                console.error('[WS] close 1008 = policy violation -> token rejected by server (check JANITO_WEB_TOKEN / window.__JANITO_TOKEN__)');
+                this.manualClose = true;
+                window.location.replace('/login');
             }
             if (this.handlers.onClose) this.handlers.onClose(e);
             if (!this.manualClose && this.reconnectAttempts < this.maxReconnectAttempts) {

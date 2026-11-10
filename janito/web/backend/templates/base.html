@@ -48,11 +48,13 @@
     <script src="/js/providerSwitcher.js"></script>
     <script src="/js/app.js"></script>
 
-    <!-- Bearer token for the WebSocket/API calls (injected by the server so
-         websocket.js / api.js can authenticate when JANITO_WEB_TOKEN is set). -->
-    <script>window.__JANITO_TOKEN__ = {{ auth_token|tojson }};</script>
 </head>
 <body>
+
+{% if auth_enabled %}
+<button id="sign-out" type="button">Sign out</button>
+<script src="/js/logout.js"></script>
+{% endif %}
 
 <div class="app-layout" x-data="appComponent()" x-cloak>
 
