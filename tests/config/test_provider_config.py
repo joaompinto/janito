@@ -310,7 +310,8 @@ if pytest is not None:
         # Other built-in models share API types and token limits.
         for name, max_input, max_output in (
             ("claude-opus-5-5", 1000000, 128000),
-            ("claude-fable-5-1", 1000000, 128000),
+            ("claude-fable-5-2", 1000000, 128000),
+            ("claude-mythos-5-2", 1000000, 128000),
             ("claude-haiku-5-5", 1000000, 128000),
         ):
             entry = info["models"][name]

@@ -327,8 +327,10 @@ if pytest is not None:
         assert get_provider_cost("Anthropic", "claude-sonnet-5-5", 1_000_000, 1_000_000, 0) == "12.0$"
         # claude-opus-5-5 at $4 / $0.40 (cache hit) / $20 output per 1M tokens.
         assert get_provider_cost("anthropic", "claude-opus-5-5", 1_000_000, 1_000_000, 0) == "24.0$"
-        # claude-fable-5-1 at $10 / $1 (cache hit) / $50 output per 1M tokens.
-        assert get_provider_cost("anthropic", "claude-fable-5-1", 1_000_000, 1_000_000, 0) == "60.0$"
+        # claude-fable-5-2 at $8 / $0.80 (cache hit) / $40 output per 1M tokens.
+        assert get_provider_cost("anthropic", "claude-fable-5-2", 1_000_000, 1_000_000, 0) == "48.0$"
+        # claude-mythos-5-2 shares Fable 5.2 pricing.
+        assert get_provider_cost("anthropic", "claude-mythos-5-2", 1_000_000, 1_000_000, 0) == "48.0$"
         # Unknown models within the provider fall back to "N/A".
         assert get_provider_cost("deepseek", "bogus-model", 1000, 500, 100) == "N/A"
         assert get_provider_cost("alibaba", "bogus-model", 1000, 500, 100) == "N/A"

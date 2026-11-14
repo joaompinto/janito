@@ -51,7 +51,7 @@ PROVIDER_CONFIG: dict = {
             "max_input_tokens": 1000000,
             "max_output_tokens": 128000,
         },
-        "claude-fable-5-1": {
+        "claude-fable-5-2": {
             "supported_api_types": [
                 "Completions",
                 "Anthropic",  # native Anthropic SDK (requires the `anthropic` package)
@@ -59,6 +59,15 @@ PROVIDER_CONFIG: dict = {
             "default_api_type": "Completions",  # built-in default (the first supported type)
             # Claude 4.6 and later include the full 1M-token context window
             # at standard pricing.
+            "max_input_tokens": 1000000,
+            "max_output_tokens": 128000,
+        },
+        "claude-mythos-5-2": {
+            "supported_api_types": [
+                "Completions",
+                "Anthropic",
+            ],
+            "default_api_type": "Completions",
             "max_input_tokens": 1000000,
             "max_output_tokens": 128000,
         },

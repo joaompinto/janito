@@ -982,7 +982,8 @@ janito --set-api-key="your-anthropic-api-key" --provider anthropic
 
 | Model | Description |
 |-------|-------------|
-| `claude-fable-5-1` | Newest frontier model (1M context) |
+| `claude-fable-5-2` | Newest frontier model (1M context) |
+| `claude-mythos-5-2` | Limited-access frontier model, verified orgs only (1M context) |
 | `claude-opus-5-5` | Highest capability model (1M context) |
 | `claude-sonnet-5-5` | Latest flagship model (1M context; default) |
 | `claude-haiku-5-5` | Fastest model for high-volume, latency-sensitive tasks (1M context; 128K output) |
