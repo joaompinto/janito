@@ -69,13 +69,18 @@ def _adapt_cost_string(raw: str) -> str:
 def _cost_module(base: str):
     """Import and cache a provider's ``cost`` module by base provider name.
 
-    The module object is cached (the ``get_cost`` attribute is still read
-    per call, so runtime monkeypatches of the module's ``get_cost`` keep
-    working).  Raises ``ImportError`` for providers without a cost module.
+    Hyphens in the provider name map to underscores in the package name
+    (``opencode-go`` -> :mod:`janito.providers.opencode_go`).  The module
+    object is cached (the ``get_cost`` attribute is still read per call, so
+    runtime monkeypatches of the module's ``get_cost`` keep working).
+    Raises ``ImportError`` for providers without a cost module.
     """
     from importlib import import_module
 
-    return import_module(f"janito.providers.{base}.cost")
+    # Provider names may contain hyphens (``opencode-go``); their package
+    # directory uses underscores (``opencode_go``).
+    module_base = base.replace("-", "_")
+    return import_module(f"janito.providers.{module_base}.cost")
 
 
 def _provider_cost_raw(

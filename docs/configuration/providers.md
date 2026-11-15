@@ -40,6 +40,7 @@ The API type is selected per provider with `--set api-type=...` (see the
 | `anthropic` | Anthropic (Claude models) |
 | `apertus` | Apertus (Swiss AI Initiative models via Swisscom) |
 | `atria` | Atria (Atria-Dawn-Preview) |
+| `opencode-go` | OpenCode Go (subscription gateway for OpenCode Go models) |
 | `openrouter` | OpenRouter (aggregator of many models) |
 
 !!! note
@@ -74,7 +75,7 @@ janito --show-providers
 ```
 
 ```
-Supported Providers (16):
+Supported Providers (17):
 ============================================================
   openai [active]
     Model:         gpt-6.1-sol (default)
@@ -1176,6 +1177,113 @@ OpenRouter model IDs use the `vendor/model` form (e.g.
 The `openrouter` provider talks to OpenRouter's OpenAI-compatible endpoint
 (`https://openrouter.ai/api/v1`) through the standard **Chat Completions**
 API, so its built-in API type is `Completions`.
+
+## OpenCode Go
+
+Use OpenCode Go to access the models included in an
+[OpenCode Go](https://opencode.ai/docs/console/go) subscription. Go is part
+of the OpenCode Console gateway: it is a monthly plan with per-model usage
+limits and works from clients other than OpenCode.
+
+> **Get an API key:** Sign in to the [OpenCode Console](https://opencode.ai/console),
+> subscribe to Go, and create a personal API key under **Account** (it starts
+> with `oc_sk_`). The key must belong to a workspace subscribed to Go.
+
+### Configuration
+
+```bash
+# Step 1: Set provider and (optionally) a model
+janito --set provider=opencode-go --set model=glm-5.3-flash
+# Step 2: Store the Console API key
+janito --set-api-key="oc_sk_..." --provider opencode-go
+# Step 3: Run prompt
+janito "Explain quantum computing"
+```
+
+The built-in default model is `glm-5.3-flash`. Model selection is restricted
+to the built-in Go catalog below; `janito --list-models` shows the accepted
+names.
+
+### API Type and Endpoint
+
+Go is served from a dedicated base URL (`https://opencode.ai/inference/go`),
+separate from pay-as-you-go Console. janito talks to its OpenAI-compatible
+Chat Completions endpoint
+(`https://opencode.ai/inference/go/openai/v1`) through the **Completions**
+API type. The gateway translates the request to each model's native API
+(OpenAI Responses, Anthropic Messages, Gemini) when needed, so every text
+model in the catalog works through the same API type.
+
+### Models
+
+| Model | Context | Output | Reasoning efforts |
+|-------|---------|--------|-------------------|
+| `glm-5.3-flash` | 1M | 128K | low, high, max (default) |
+| `glm-5.3` | 1M | 128K | low, high, max |
+| `glm-5.2` | 1M | 128K | high, max |
+| `kimi-k3.1-pro` | 1M | 1M | low, high, max |
+| `kimi-k3` | 1M | 1M | max |
+| `kimi-k2.7-code` | 256K | 256K | — |
+| `deepseek-v4.1-flash` | 1M | 384K | low, high, max |
+| `deepseek-v4-pro` | 1M | 384K | high, max |
+| `qwen3.8-max` | 1M | 128K | low, medium, xhigh |
+| `qwen3.8-flash` | 1M | 128K | low, medium, xhigh |
+| `qwen3.7-plus` | 1M | 64K | — |
+| `minimax-m3` | 1M | 128K | — |
+| `minimax-m3.1-flash` | 1M | 512K | low, medium, high, xhigh, max |
+| `mimo-v2.6-pro` | 1M | 128K | — |
+| `mimo-v2.6-flash` | 1M | 128K | — |
+| `mimo-v2.5-pro` | 1M | 128K | — |
+| `mimo-v2.5` | 1M | 128K | — |
+| `muse-spark-1.3-contributor` | 1M | 128K | minimal, low, medium, high, xhigh |
+| `muse-spark-1.2-contributor` | 1M | 128K | minimal, low, medium, high, xhigh |
+| `claude-haiku-5-5` | 1M | 128K | low, medium, high, xhigh, max |
+| `gpt-6-luna` | 1.05M | 128K | none, low, medium, high, xhigh, max |
+| `gpt-5.6-luna` | 1.05M | 128K | none, low, medium, high, xhigh, max |
+| `grok-4.7` | 500K | 500K | low, medium, high, xhigh |
+| `gemini-4-argon` | 1M | 64K | low, medium, high |
+| `longcat-2.0` | 1M | 128K | — |
+| `step-5-preview` | 1M | 64K | low, medium, high |
+| `hy4` | 1M | 64K | none, high |
+| `hy4-preview` | 1M | 64K | none, high |
+| `hy3` | 256K | 128K | none, low, high |
+| `beam-free` | 1M | 128K | low, medium, high, xhigh, max |
+| `iceman-contributor-free` | 256K | 128K | — |
+| `longcat-2.5-free` | 1M | 256K | — |
+
+The catalog mirrors the Go model list and is updated as OpenCode adds or
+retires models. Deprecated models are not included.
+
+### Reasoning Level
+
+Models that declare reasoning efforts accept `--effort` with the values
+listed above. There is no built-in default, so the API's own default applies
+unless you set one:
+
+```bash
+# Per call
+janito --provider opencode-go --model glm-5.3 --effort high "Your prompt"
+
+# Per provider/model (persisted)
+janito --provider opencode-go --set effort=high
+```
+
+### Usage Limits and Cost Estimates
+
+Go usage is counted against a monthly dollar allowance per model (for
+example `$60` for `glm-5.3-flash`, `$15` for `glm-5.3`). janito's cost
+estimate uses the same token rates the gateway counts, including cache-read
+rates and the context tiers some models apply above 272K (GPT Luna), 200K
+(Grok 4.7), 100K (Claude Haiku 5.5), 512K (MiniMax M3) and 256K (Qwen3.7
+Plus) tokens. The free models (`beam-free`, `iceman-contributor-free`,
+`longcat-2.5-free`) estimate as `$0`.
+
+### Known Limitation
+
+OpenCode asks third-party clients to send a stable `x-opencode-session`
+header for routing and prompt-cache reuse. janito does not send custom
+headers, so Go requests work but cannot reuse the session header's cache
+hints across turns.
 
 ## Provider Comparison
 
