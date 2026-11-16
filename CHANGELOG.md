@@ -8,14 +8,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased](https://github.com/joaompinto/janito/compare/v4.52.0...HEAD)
 
 Changes since `v4.52.0` (2026-11-16).
-
-## [v4.52.0](https://github.com/joaompinto/janito/compare/v4.51.0...v4.52.0) - 2026-11-16
-
-Changes since `v4.51.0` (2026-11-11).
-
-### Added
-
-- OpenCode Go provider (`opencode-go`): built-in support for the OpenCode Go
-  subscription gateway (`https://opencode.ai/inference/go/openai/v1`) with
-  the Go model catalog (context/output limits and reasoning efforts),
-  context-tier cost estimates, tests and docs.
