@@ -27,6 +27,7 @@ from .minimax.config import PROVIDER_CONFIG as _MINIMAX_CONFIG
 from .mistral.config import PROVIDER_CONFIG as _MISTRAL_CONFIG
 from .moonshot.config import PROVIDER_CONFIG as _MOONSHOT_CONFIG
 from .openai.config import PROVIDER_CONFIG as _OPENAI_CONFIG
+from .opencode_go.config import PROVIDER_CONFIG as _OPENCODE_GO_CONFIG
 from .openrouter.config import PROVIDER_CONFIG as _OPENROUTER_CONFIG
 from .xai.config import PROVIDER_CONFIG as _XAI_CONFIG
 from .xiaomi.config import PROVIDER_CONFIG as _XIAOMI_CONFIG
@@ -51,6 +52,9 @@ _PROVIDER_CONFIGS: dict[str, dict] = {
     "anthropic": _ANTHROPIC_CONFIG,
     "apertus": _APERTUS_CONFIG,
     "atria": _ATRIA_CONFIG,
+    # Subscription gateway for the OpenCode Go plan: many models behind one
+    # OpenAI-compatible endpoint, all served through Chat Completions.
+    "opencode-go": _OPENCODE_GO_CONFIG,
     # Aggregator provider: proxies many models behind a single
     # OpenAI-compatible endpoint.  Its built-in default model is the
     # "custom" placeholder (no usable default) -- the user must supply a

@@ -100,6 +100,7 @@ janito --show-config
 | Alibaba  | qwen3.8-flash | Pay as you go |
 | Moonshot | kimi-k3 | $15/month (Moderato)|
 | z.ai     | glm-5.3-flash | $12.6/month (Lite)|
+| OpenCode Go | glm-5.3-flash | $10/month (Go) |
 | openai   | gpt-6.1-sol | Pay as you go / ChatGPT plan (OAuth) |
 
 
