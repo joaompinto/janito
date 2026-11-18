@@ -8,6 +8,7 @@ from . import (
     ask,
     changes,
     compact,
+    costs,
     effort,
     exit,
     help,
@@ -34,7 +35,6 @@ from . import (
     tasks,
     thinking,
     tools,
-    use_stats,
     write,
 )
 from .base import CmdHandler
@@ -46,6 +46,7 @@ __all__ = [
     "ask",
     "changes",
     "compact",
+    "costs",
     "effort",
     "exit",
     "get_registered_commands",
@@ -74,6 +75,5 @@ __all__ = [
     "tasks",
     "thinking",
     "tools",
-    "use_stats",
     "write",
 ]

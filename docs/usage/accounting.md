@@ -52,7 +52,7 @@ other database access — it never raises and never breaks startup.
 
 ## Inspecting the log
 
-The interactive shell offers a `/use_stats` command (issue #75) that reads
+The interactive shell offers a `/costs` command (issue #75) that reads
 the accounting database and prints the **last 10 days** as two rich tables.
 The first groups the rows **by calendar day** — one row per day with the
 summed input/cached/output tokens and the summed estimated cost. The

@@ -1,5 +1,5 @@
 """
-/use_stats command handler - displays overall-use statistics per day.
+/costs command handler - displays overall-use statistics per day.
 
 Reads the per-turn usage rows persisted by :mod:`janito.tooling.accounting`
 in the ``accounting.db`` SQLite database, aggregates them by calendar day and
@@ -16,19 +16,19 @@ from .base import CmdHandler
 from .registry import register_command
 
 
-class UseStatsCmdHandler(CmdHandler):
-    """Command handler for the /use_stats command."""
+class CostsCmdHandler(CmdHandler):
+    """Command handler for the /costs command."""
 
     @property
     def name(self) -> str:
-        return "/use_stats"
+        return "/costs"
 
     @property
     def description(self) -> str:
         return "Show overall-use statistics grouped by day (last 10 days)"
 
     def handle(self, shell, user_input: str) -> bool:
-        """Handle the /use_stats command."""
+        """Handle the /costs command."""
         if user_input.strip().lower() == self.name.lower():
             self._print_stats()
             return True
@@ -176,5 +176,5 @@ class UseStatsCmdHandler(CmdHandler):
 
 
 # Register this handler
-_handler = UseStatsCmdHandler()
+_handler = CostsCmdHandler()
 register_command(_handler)

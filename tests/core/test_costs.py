@@ -1,4 +1,4 @@
-"""Tests for the ``/use_stats`` shell command (behavior over strings)."""
+"""Tests for the ``/costs`` shell command (behavior over strings)."""
 
 import re
 import sys
@@ -10,7 +10,7 @@ import pytest
 
 import janito.config_dir as config_dir_mod
 import janito.tooling.accounting as accounting
-from janito.shell.cmds.use_stats import UseStatsCmdHandler
+from janito.shell.cmds.costs import CostsCmdHandler
 from tests.conftest import assert_command_matching, assert_command_registered
 
 
@@ -60,10 +60,10 @@ def _pct(rendered: str) -> int:
 if pytest is not None:
 
     def test_command_matching():
-        assert_command_matching(UseStatsCmdHandler(), "/use_stats")
+        assert_command_matching(CostsCmdHandler(), "/costs")
 
     def test_command_is_registered():
-        assert_command_registered("/use_stats")
+        assert_command_registered("/costs")
 
     def test_table_built_from_recorded_usage(monkeypatch, tmp_path):
         _point_at(monkeypatch, tmp_path)
@@ -81,16 +81,16 @@ if pytest is not None:
         assert by_day["2026-08-28"]["input_tokens"] == 1000 + 1001 + 1002
         assert by_day["2026-08-28"]["output_tokens"] == 1500
 
-        handler = UseStatsCmdHandler()
+        handler = CostsCmdHandler()
         table = handler._build_table(stats)
         assert table.row_count == len(stats)
         assert table.columns[0].header == "Day"  # single header assert
         # Smoke: renderer produced output (Rule 2).
-        assert handler.handle(_DummyShell(), "/use_stats") is True
+        assert handler.handle(_DummyShell(), "/costs") is True
         assert _render(handler, stats).strip() != ""
 
     def test_cached_percentage_is_numeric_ratio():
-        handler = UseStatsCmdHandler()
+        handler = CostsCmdHandler()
         assert _pct(handler._format_cached_tokens(600, 2400)) == 25
         assert _pct(handler._format_cached_tokens(300, 1200)) == 25
         assert _pct(handler._format_cached_tokens(1, 999)) == 0
@@ -99,11 +99,11 @@ if pytest is not None:
         assert handler._format_cached_tokens(10, 0) == "10"
 
     def test_cached_percentage_regression_almost_all_cached():
-        handler = UseStatsCmdHandler()
+        handler = CostsCmdHandler()
         assert _pct(handler._format_cached_tokens(16_011_904, 16_166_625)) == 99
 
     def test_cached_ratio_rendered_in_table():
-        handler = UseStatsCmdHandler()
+        handler = CostsCmdHandler()
         stats = [
             {
                 "day": "2026-08-29",
@@ -127,7 +127,7 @@ if pytest is not None:
         assert _render(handler, stats).strip() != ""
 
     def test_cost_adaptive_format_fallback():
-        handler = UseStatsCmdHandler()
+        handler = CostsCmdHandler()
         stats = [
             {
                 "day": "2026-08-29",
@@ -160,7 +160,7 @@ if pytest is not None:
         assert "N/A" in out  # unknown-cost fallback only
 
     def test_model_table_cost_is_numeric():
-        handler = UseStatsCmdHandler()
+        handler = CostsCmdHandler()
         stats = [
             {
                 "day": "2026-08-28",
@@ -217,7 +217,7 @@ if pytest is not None:
             timestamp="2026-08-29T12:00:00+00:00",
         )
 
-        handler = UseStatsCmdHandler()
+        handler = CostsCmdHandler()
         stats = accounting.get_per_model_stats()
         assert [row["model"] for row in stats] == [
             "gpt-6-luna",
@@ -244,7 +244,7 @@ if pytest is not None:
             cost=None,
             timestamp="2026-08-28T12:00:00+00:00",
         )
-        handler = UseStatsCmdHandler()
+        handler = CostsCmdHandler()
         stats = accounting.get_per_model_stats()
         assert stats[0]["provider"] is None
         assert stats[0]["cost"] is None
@@ -255,7 +255,7 @@ if pytest is not None:
     def test_print_stats_smoke_and_db_caption(monkeypatch, tmp_path, capsys):
         _point_at(monkeypatch, tmp_path)
         _record_day("2026-08-28", 1, cost=0.005)
-        UseStatsCmdHandler()._print_stats()
+        CostsCmdHandler()._print_stats()
         out = capsys.readouterr().out
         assert out.strip() != ""
         assert "accounting.db" in out  # single stable marker
@@ -263,7 +263,7 @@ if pytest is not None:
     def test_print_stats_prints_both_tables(monkeypatch, tmp_path, capsys):
         _point_at(monkeypatch, tmp_path)
         _record_day("2026-08-28", 1, cost=0.005)
-        UseStatsCmdHandler()._print_stats()
+        CostsCmdHandler()._print_stats()
         out = capsys.readouterr().out
         assert out.strip() != ""
         assert len(accounting.get_daily_stats()) == 1
@@ -271,7 +271,7 @@ if pytest is not None:
 
     def test_empty_stats_prints_message(monkeypatch, tmp_path, capsys):
         _point_at(monkeypatch, tmp_path)
-        UseStatsCmdHandler()._print_stats()
+        CostsCmdHandler()._print_stats()
         out = capsys.readouterr().out
         assert accounting.get_daily_stats() == []
         assert out.strip() != ""
