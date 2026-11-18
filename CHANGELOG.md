@@ -5,13 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased](https://github.com/joaompinto/janito/compare/v4.52.0...HEAD)
+## [Unreleased](https://github.com/joaompinto/janito/compare/v4.53.0...HEAD)
+
+Changes since `v4.53.0` (2026-11-18).
+
+## [v4.53.0](https://github.com/joaompinto/janito/compare/v4.52.0...v4.53.0) - 2026-11-18
 
 Changes since `v4.52.0` (2026-11-16).
 
 ### Changed
 
 - Alibaba provider default model is now `qwen4-max` (was `qwen3.8-flash`).
+- Renamed the `/use_stats` shell command to `/costs`.
 
 ### Added
 
