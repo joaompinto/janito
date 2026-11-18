@@ -36,6 +36,14 @@ def _patch_config_start(monkeypatch, start):
     monkeypatch.setattr(config_loaders_mod, "load_system_prompt_start", lambda: (start, None))
 
 
+@pytest.fixture(autouse=True)
+def _no_tool_hints(monkeypatch):
+    """Keep the real tools' system prompt hints out of the resolved prompt."""
+    import janito.tooling.tools_registry as tools_registry
+
+    monkeypatch.setattr(tools_registry, "get_system_prompt_hints", lambda: [])
+
+
 if pytest is not None:
     # ---- resolution chain ----------------------------------------------
 

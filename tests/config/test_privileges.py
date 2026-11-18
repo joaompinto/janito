@@ -30,12 +30,13 @@ from janito.privileges import Privileges
 from janito.tooling.executor import ToolExecutor, extract_tool_names, run_tool
 
 
-def _fake_tool(name, permissions=""):
+def _fake_tool(name, permissions="", hint=""):
     def fake(**kwargs):
         return {"success": True}
 
     fake.__name__ = name
     fake._tool_permissions = permissions
+    fake._tool_system_prompt_hint = hint
     return fake
 
 
@@ -122,6 +123,57 @@ def test_session_schemas_filtered_by_read_write_privileges(monkeypatch):
 
     names = {s["function"]["name"] for s in tools_registry.get_session_tool_schemas()}
     assert names == {"ReadFile", "CreateFile", "MoveFile", "LoadSkill"}
+
+
+# ---------------------------------------------------------------------------
+# Tool system-prompt hints follow the session privileges
+# ---------------------------------------------------------------------------
+
+
+def _hinted_tools():
+    return {
+        "ReadFile": _fake_tool("ReadFile", "r", "use max_lines"),
+        "CreateFile": _fake_tool("CreateFile", "w", "prefer ReplaceTextInFile"),
+        "RunBashCode": _fake_tool("RunBashCode", "x", "prefer RunPowerShellCode on Windows"),
+        # No hint declared -> never contributes.
+        "LoadSkill": _fake_tool("LoadSkill", ""),
+    }
+
+
+def test_system_prompt_hints_unrestricted_session(monkeypatch):
+    """With no privilege restriction every hint is collected, sorted by name."""
+    _patch_registry(monkeypatch, _hinted_tools())
+    _privileges_mod.running_privileges = None
+
+    assert tools_registry.get_system_prompt_hints() == [
+        ("CreateFile", "prefer ReplaceTextInFile"),
+        ("ReadFile", "use max_lines"),
+        ("RunBashCode", "prefer RunPowerShellCode on Windows"),
+    ]
+
+
+def test_system_prompt_hints_filtered_by_privileges(monkeypatch):
+    """Hints of tools the session may not use are not advertised."""
+    _patch_registry(monkeypatch, _hinted_tools())
+    _privileges_mod.running_privileges = Privileges(READ=True, WRITE=False, EXEC=False)
+
+    assert tools_registry.get_system_prompt_hints() == [("ReadFile", "use max_lines")]
+
+
+def test_system_prompt_hints_empty_when_no_tool_declares_one(monkeypatch):
+    """Tools without a hint yield an empty list (the section is omitted)."""
+    _patch_registry(monkeypatch, {"ReadFile": _fake_tool("ReadFile", "r")})
+    _privileges_mod.running_privileges = None
+
+    assert tools_registry.get_system_prompt_hints() == []
+
+
+def test_system_prompt_hints_strip_whitespace_only_hint(monkeypatch):
+    """A blank hint is treated as no hint at all."""
+    _patch_registry(monkeypatch, {"ReadFile": _fake_tool("ReadFile", "r", "   \n ")})
+    _privileges_mod.running_privileges = None
+
+    assert tools_registry.get_system_prompt_hints() == []
 
 
 # ---------------------------------------------------------------------------

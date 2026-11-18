@@ -240,6 +240,29 @@ class ToolsRegistry:
             if name not in disabled and tool_is_allowed_by_privileges(getattr(tool, "_tool_permissions", "") or "")
         ]
 
+    def system_prompt_hints(self) -> list[tuple[str, str]]:
+        """System prompt hints contributed by the session's tools.
+
+        Tools may declare a ``system_prompt_hint`` class attribute (see
+        :class:`janito.tooling.base_tool.BaseTool`) with usage guidance for
+        the LLM.  This collects the non-empty hints of the tools the current
+        session may actually use -- the same privilege / model-disabled
+        filtering as :meth:`session_tool_names` -- so a restricted session
+        never gets advertised hints for tools it cannot call.
+
+        Returns:
+            List[Tuple[str, str]]: ``(tool name, hint)`` pairs sorted by tool
+            name (empty when no tool contributes a hint).
+        """
+        self.ensure_initialized()
+        allowed = self.session_tool_names()
+        hints: list[tuple[str, str]] = []
+        for name, tool in AVAILABLE_TOOLS.items():
+            hint = (getattr(tool, "_tool_system_prompt_hint", "") or "").strip()
+            if hint and name in allowed:
+                hints.append((name, hint))
+        return sorted(hints)
+
     def session_tool_names(self) -> set[str]:
         """Names of the tools the current session may offer by default.
 
@@ -515,6 +538,20 @@ def get_skills_section() -> str:
         String with skill names, descriptions, and tool instructions
     """
     return _registry.skills_section()
+
+
+def get_system_prompt_hints() -> list[tuple[str, str]]:
+    """
+    Get the system prompt hints contributed by the session's tools.
+
+    See :meth:`ToolsRegistry.system_prompt_hints`: only tools the current
+    privileges allow are included, and each hint is the tool's stripped
+    ``system_prompt_hint`` class attribute.
+
+    Returns:
+        List[Tuple[str, str]]: ``(tool name, hint)`` pairs sorted by name.
+    """
+    return _registry.system_prompt_hints()
 
 
 def enable_skills() -> None:

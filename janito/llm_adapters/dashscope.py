@@ -55,7 +55,7 @@ def _is_multimodal_model(model: str) -> bool:
     ``qwen-flash``, ``qwen3-max``, ``qwen3.7-max``, ...) from the
     ``text-generation`` endpoint (``Generation.call``) and multimodal models
     (Qwen-VL / Qwen-Omni, the ``qwen3.x-plus`` generation, and the
-    ``qwen3.8-max`` flagship) from the ``multimodal-generation`` endpoint
+    ``qwen3.8-max`` / ``qwen4-max`` flagships) from the ``multimodal-generation`` endpoint
     (``MultiModalConversation.call``).  Calling a model on the wrong endpoint
     fails with ``InvalidParameter: url error, please check url``.
 
@@ -72,12 +72,14 @@ def _is_multimodal_model(model: str) -> bool:
     # Vision / omni model families are multimodal by naming convention.
     if "-vl" in name or "omni" in name:
         return True
-    # The qwen3.x-plus generation and the qwen3.8-max flagship are served by
+    # The qwen3.x-plus generation and the qwen3.8-max / qwen4-max flagships
+    # are served by
     # the multimodal-generation endpoint, while the qwen3.x-max text models
     # (e.g. qwen3.7-max) are not.
     if re.match(r"^qwen3\.\d+-plus$", name) or name in (
         "qwen3.8-max",
         "qwen3.8-max-0902",
+        "qwen4-max",
     ):
         return True
     return False

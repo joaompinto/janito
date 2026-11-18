@@ -379,7 +379,8 @@ janito --set-api-key="your-dashscope-api-key" --provider alibaba
 | Model | Description |
 |-------|-------------|
 | `qwen3.8-flash` | Default model: fast and cost-effective, with built-in token limits, reasoning levels and tools |
-| `qwen3.8-max` | Flagship model with built-in token limits, reasoning levels and tools |
+| `qwen4-max` | Next-gen flagship (GA 2026-11-16, MoE 2.4T/71B active, native vision) with built-in token limits, reasoning levels and tools |
+| `qwen3.8-max` | Previous flagship model with built-in token limits, reasoning levels and tools |
 | `qwen3.8-max-0902` | Dated flagship snapshot, same limits/reasoning/tools as `qwen3.8-max` |
 
 Model selection is restricted to the built-in models above.
@@ -390,7 +391,9 @@ Model selection is restricted to the built-in models above.
 Both Qwen models (`qwen3.8-max` and the default `qwen3.8-flash`) support
 configurable reasoning depth via the OpenAI-compatible `reasoning_effort`
 parameter. The supported levels are `low`, `medium` and `xhigh`; the
-built-in default is the standard level (`medium`).
+built-in default is the standard level (`medium`). `qwen4-max` uses the
+next-gen scale instead: `low`, `high` and `xhigh` with a built-in default
+of `high` (`medium` maps to `high`).
 
 ```bash
 # Override the reasoning depth for a single call (qwen3.8-max)
@@ -438,7 +441,7 @@ janito --provider alibaba --api-type completions "Your prompt"
 The default model `qwen3.8-flash` declares **built-in (native) tools** —
 `code_interpreter`, `i2i_search`, `t2i_search`, `web_extractor` and
 `web_search` — enabled **per API type** (the `tools_by_api_type` model-config
-field); the flagship `qwen3.8-max` declares `code_interpreter`, `web_search`
+field); the flagships `qwen4-max` and `qwen3.8-max` declare `code_interpreter`, `web_search`
 and `web_extractor`. These are *not* function tools: each `type` is a model
 capability enabled through request-body flags on the API call, so they are
 always on whenever the model declares them for an API type — even with
@@ -501,7 +504,7 @@ for parity but not mapped to a DashScope parameter.
 The DashScope native API serves models from two generation endpoints:
 `text-generation` for plain-text models and
 `multimodal-generation` for multimodal models (Qwen-VL / Qwen-Omni, the
-`qwen3.x-plus` generation, and the `qwen3.8-max` flagship). janito picks
+`qwen3.x-plus` generation, and the `qwen3.8-max` / `qwen4-max` flagships). janito picks
 the endpoint from the model name automatically and, if the API ever rejects
 the model for that endpoint (`InvalidParameter: url error, please check
 url`), retries once on the other endpoint — so models work out of the box

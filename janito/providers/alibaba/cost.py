@@ -4,8 +4,10 @@ Rates source
 ------------
 The per-1M-token rates below were taken from the official QwenCloud model
 marketplace pages https://www.qwencloud.com/models/qwen3.8-max (last
-verified 2026-08-15) and https://www.qwencloud.com/models/qwen3.8-flash
-(verified 2026-08-27) and apply as of the verification dates.  Alibaba
+verified 2026-08-15), https://www.qwencloud.com/models/qwen3.8-flash
+(verified 2026-08-27) and https://www.qwencloud.com/models/qwen4-max
+(verified 2026-11-18, Qwen4-Max GA 2026-11-16) and apply as of the
+verification dates.  Alibaba
 adjusts figures frequently, so cross-check the official rate card at
 https://www.qwencloud.com/pricing/token-plan before relying on them.
 """
@@ -20,6 +22,9 @@ https://www.qwencloud.com/pricing/token-plan before relying on them.
 _MODEL_RATES: dict[str, tuple[float, float, float]] = {
     "qwen3.8-max": (2.0, 0.25, 6.0),
     "qwen3.8-max-0902": (2.0, 0.25, 6.0),
+    # qwen4-max: $1.50 input / $0.075 implicit cache hit / $4.50 output
+    # per 1M tokens (https://www.qwencloud.com/models/qwen4-max).
+    "qwen4-max": (1.5, 0.075, 4.5),
     # qwen3.8-flash: $0.15 input / $0.016 implicit cache hit / $0.47 output
     # per 1M tokens (https://www.qwencloud.com/models/qwen3.8-flash).
     "qwen3.8-flash": (0.15, 0.016, 0.47),

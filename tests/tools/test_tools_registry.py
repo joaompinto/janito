@@ -20,12 +20,13 @@ import janito.tooling.tools_registry as tools_registry
 from janito.tooling.tools_registry import ToolsRegistry
 
 
-def _fake_tool(name, permissions=""):
+def _fake_tool(name, permissions="", hint=""):
     def fake(**kwargs):
         return {"success": True}
 
     fake.__name__ = name
     fake._tool_permissions = permissions
+    fake._tool_system_prompt_hint = hint
     return fake
 
 
@@ -276,6 +277,55 @@ if pytest is not None:
     def test_skills_section_empty_when_disabled(monkeypatch):
         registry = _fresh_registry(monkeypatch, {}, skills_enabled=False)
         assert registry.skills_section() == ""
+
+    def test_system_prompt_hints_collects_declared_hints(monkeypatch):
+        """Only tools declaring a non-empty hint are returned, sorted by name."""
+        registry = _fresh_registry(
+            monkeypatch,
+            {
+                "Zeta": _fake_tool("Zeta", "r", "zeta hint"),
+                "Alpha": _fake_tool("Alpha", "r", "alpha hint"),
+                "NoHint": _fake_tool("NoHint", "r"),
+                "BlankHint": _fake_tool("BlankHint", "r", "  \n "),
+            },
+        )
+
+        assert registry.system_prompt_hints() == [
+            ("Alpha", "alpha hint"),
+            ("Zeta", "zeta hint"),
+        ]
+
+    def test_make_class_tool_propagates_system_prompt_hint():
+        """Discovery copies `system_prompt_hint` onto the wrapper callable."""
+        from janito.tooling.base_tool import BaseTool
+        from janito.tooling.decorator import tool
+        from janito.tooling.discovery import _make_class_tool
+
+        @tool(permissions="x")
+        class Hinted(BaseTool):
+            """Tool with a hint."""
+
+            system_prompt_hint = "prefer openpyxl for xlsx"
+
+            def run(self, code: str) -> dict:
+                return {"success": True}
+
+        @tool(permissions="r")
+        class Unhinted(BaseTool):
+            """Tool without a hint."""
+
+            def run(self, path: str) -> dict:
+                return {"success": True}
+
+        assert _make_class_tool(Hinted)._tool_system_prompt_hint == "prefer openpyxl for xlsx"
+        # BaseTool defaults the attribute to empty, so tools opt in only by
+        # declaring it.
+        assert _make_class_tool(Unhinted)._tool_system_prompt_hint == ""
+
+    def test_base_tool_hint_defaults_to_empty():
+        from janito.tooling.base_tool import BaseTool
+
+        assert BaseTool.system_prompt_hint == ""
 
     def test_module_functions_delegate_to_registry(monkeypatch):
         """The module-level functions behave identically to the class API."""

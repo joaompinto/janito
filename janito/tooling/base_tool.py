@@ -38,6 +38,13 @@ class BaseTool(ABC):
     # Tools may set this inside should_load() before returning False.
     _load_skip_reason: str = ""
 
+    # Optional text this tool contributes to the system prompt (a usage hint
+    # for the LLM).  Subclasses set it as a class attribute; the registry
+    # collects the hints of the tools a session may actually use into the
+    # ``tools`` section (see :func:`janito.system_prompt.sync_default_sections`).
+    # Empty (the default) means the tool contributes nothing.
+    system_prompt_hint: str = ""
+
     def __init__(self):
         """Initialize the base tool."""
 

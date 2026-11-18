@@ -184,6 +184,9 @@ def _make_class_tool(cls: type) -> Callable:
     class_tool_wrapper.__doc__ = cls.__doc__
     class_tool_wrapper._is_tool = True
     class_tool_wrapper._tool_permissions = getattr(cls, "_tool_permissions", "")
+    # Propagate the system prompt hint (see BaseTool.system_prompt_hint) so
+    # the registry can collect it from the wrapped tool.
+    class_tool_wrapper._tool_system_prompt_hint = getattr(cls, "system_prompt_hint", "")
     # Propagate the load validation hook for later introspection
     class_tool_wrapper.should_load = getattr(cls, "should_load", None)
 

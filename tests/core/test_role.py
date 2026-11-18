@@ -19,6 +19,7 @@ def isolated_config(monkeypatch, tmp_path):
     set_local_config_mode(False)
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(tools_registry, "get_skills_section", lambda: "")
+    monkeypatch.setattr(tools_registry, "get_system_prompt_hints", lambda: [])
 
 
 def test_role_default_configuration_and_override():

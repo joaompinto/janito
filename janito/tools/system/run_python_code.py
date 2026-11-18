@@ -38,6 +38,15 @@ class RunPythonCode(BaseTool):
     - Consider the security implications of arbitrary code execution
     """
 
+    system_prompt_hint = (
+        "Prefer Python libraries over manual parsing when reading binary "
+        "documents: python-docx for .docx, openpyxl or pandas.read_excel for "
+        ".xlsx/.xlsm, xlrd for legacy .xls, pdfplumber or pypdf for PDFs. "
+        "Check a library is installed before importing it "
+        "(importlib.util.find_spec('openpyxl')) and report which one is "
+        "missing instead of failing silently."
+    )
+
     def run(
         self,
         code: str,

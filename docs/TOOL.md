@@ -15,12 +15,13 @@ step-by-step walkthrough with a working example.
 5. [Schema Generation (How the LLM Sees Your Tool)](#schema-generation-how-the-llm-sees-your-tool)
 6. [The Permission System](#the-permission-system)
 7. [The `should_load()` Gate](#the-should_load-gate)
-8. [Progress Reporting](#progress-reporting)
-9. [Toolset Organization and Discovery](#toolset-organization-and-discovery)
-10. [Return Value Contract](#return-value-contract)
-11. [CLI Testing Harness](#cli-testing-harness)
-12. [Complete Worked Example](#complete-worked-example)
-13. [Checklist Before Submitting](#checklist-before-submitting)
+8. [Contributing to the System Prompt](#contributing-to-the-system-prompt)
+9. [Progress Reporting](#progress-reporting)
+10. [Toolset Organization and Discovery](#toolset-organization-and-discovery)
+11. [Return Value Contract](#return-value-contract)
+12. [CLI Testing Harness](#cli-testing-harness)
+13. [Complete Worked Example](#complete-worked-example)
+14. [Checklist Before Submitting](#checklist-before-submitting)
 
 ---
 
@@ -128,7 +129,17 @@ not met (missing binary, unsupported OS, absent credentials, …). Set
 `cls._load_skip_reason` to a human-readable explanation before returning
 `False`.
 
-### 5. (Recommended) Provides a `main()` CLI harness
+### 5. (Optional) Declares a `system_prompt_hint`
+
+```python
+system_prompt_hint = "one short paragraph of usage guidance for the LLM"
+```
+
+Text contributed to the system prompt's `tools` section, shown only when the
+session may actually use the tool — see
+[Contributing to the System Prompt](#contributing-to-the-system-prompt).
+
+### 6. (Recommended) Provides a `main()` CLI harness
 
 A `main()` function guarded by `if __name__ == "__main__"` allows developers
 to test the tool directly from the command line.
@@ -394,6 +405,56 @@ Rules:
 - Must **not** raise; exceptions are caught and recorded as skip reasons.
 - Common checks: binary on `PATH`, platform / OS, environment variables,
   credentials in the secrets store.
+
+---
+
+## Contributing to the System Prompt
+
+A tool can advertise *usage guidance* for the LLM by declaring the optional
+`system_prompt_hint` class attribute on its `BaseTool` subclass:
+
+```python
+@tool(permissions="x")
+class RunPythonCode(BaseTool):
+    """Tool for executing Python code and scripts."""
+
+    system_prompt_hint = (
+        "Prefer Python libraries over manual parsing when reading binary "
+        "documents: python-docx for .docx, openpyxl or pandas.read_excel for "
+        ".xlsx/.xlsm, pdfplumber or pypdf for PDFs."
+    )
+```
+
+How the hint reaches the model:
+
+1. Discovery copies `system_prompt_hint` onto the wrapped callable as
+   `_tool_system_prompt_hint` (`janito/tooling/discovery.py`).
+2. `ToolsRegistry.system_prompt_hints()` (module function
+   `get_system_prompt_hints()`) collects the non-empty hints of the tools the
+   **current session may actually use** — the same privilege
+   (`-r`/`-w`/`-x`) and model-disabled filtering as the session tool schemas —
+   sorted by tool name.
+3. `janito.system_prompt.get_tools_section()` renders them as the `tools`
+   section of the system prompt, and `sync_default_sections()` keeps it in
+   sync (it is omitted entirely when no available tool declares a hint):
+
+   ```text
+   ## Tool Usage Notes
+   - RunPythonCode: Prefer Python libraries over manual parsing ...
+   ```
+
+Guidelines:
+
+- Keep it to **one short paragraph**, plain text (no markdown headings — the
+  section provides the heading and each hint becomes a `- <Tool>: <hint>`
+  bullet).
+- Hint at *how to use the tool well* (preferred libraries, formats, gotchas),
+  not at *what the tool does* — that is the class docstring's job, already in
+  the tool schema.
+- `BaseTool.system_prompt_hint` defaults to `""`, so opting in means declaring
+  it; plugin tools (`docs/PLUGINS.md`) work exactly the same way.
+- Verify the result with `janito --show-system-prompt` or the shell `/prompt`
+  command: both list the `tools` section as a table row.
 
 ---
 
@@ -788,6 +849,9 @@ if __name__ == "__main__":
 - [ ] **`norm_path()`** — use for any paths shown to the user.
 - [ ] **`should_load()`** — override if the tool has runtime dependencies
       (binaries, credentials, platform). Set `_load_skip_reason`.
+- [ ] **`system_prompt_hint`** — (optional) declare usage guidance for the
+      system prompt and check it renders with
+      `janito --show-system-prompt` / the shell `/prompt`.
 - [ ] **CLI `main()`** — include an argparse-based test harness under
       `if __name__ == "__main__"`.
 - [ ] **Autoload / on-demand** — if new toolset, decide whether to add it to

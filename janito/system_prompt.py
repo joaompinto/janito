@@ -7,9 +7,10 @@ is seeded with an empty ``start`` section; the built-in base prompt is read
 lazily from the packaged resource ``janito/system-prompt.txt`` by
 :func:`get_builtin_system_prompt` when the default prompt is resolved
 (:func:`default_system_prompt_manager`).  :func:`sync_default_sections` keeps
-the ``skills`` and ``agents.md`` sections in sync with the tool registry and
-the cwd ``AGENTS.md``; plugins register ``plugins:<name>`` sections at load
-time (see ``janito.plugin_manager``).
+the ``tools``, ``skills`` and ``agents.md`` sections in sync with the tool
+registry (tools advertise usage hints through their ``system_prompt_hint``
+class attribute) and the cwd ``AGENTS.md``; plugins register ``plugins:<name>``
+sections at load time (see ``janito.plugin_manager``).
 
 Every consumer (``janito.cli.session_setup.SessionSetup``, the shell ``/prompt``
 command, ``--show-system-prompt`` and the web backend) manipulates the prompt
@@ -63,6 +64,7 @@ def get_builtin_system_prompt(role: str | None = None) -> str:
 
 # Section names used when building the default prompt.
 SECTION_START = "start"
+SECTION_TOOLS = "tools"
 SECTION_SKILLS = "skills"
 SECTION_AGENTS_MD = "agents.md"
 SECTION_PLUGINS = "plugins"
@@ -207,21 +209,50 @@ def _set_section(manager: SysPromptManager, name: str, text: str | None) -> None
         manager.add_section(name, text)
 
 
+def get_tools_section() -> str | None:
+    """Build the ``tools`` section from the tools' system prompt hints.
+
+    Tools contribute usage guidance through their ``system_prompt_hint``
+    class attribute (see :class:`janito.tooling.base_tool.BaseTool`); the
+    registry returns the hints of the tools the session may actually use.
+    The section renders as a bullet list grouped under a single heading::
+
+        ## Tool Usage Notes
+        - RunPythonCode: ...
+        - ReadFile: ...
+
+    Returns:
+        The section text, or ``None`` when no available tool contributes a
+        hint (the section is then omitted from the prompt).
+    """
+    from .tooling.tools_registry import get_system_prompt_hints
+
+    hints = get_system_prompt_hints()
+    if not hints:
+        return None
+    lines = ["## Tool Usage Notes"]
+    lines += [f"- {name}: {hint}" for name, hint in hints]
+    return "\n".join(lines)
+
+
 def sync_default_sections(
     manager: SysPromptManager | None = None,
 ) -> SysPromptManager:
-    """Sync the ``skills`` and ``agents.md`` sections and return the manager.
+    """Sync the ``tools``, ``skills`` and ``agents.md`` sections and return the manager.
 
-    The ``skills`` section mirrors the current tool registry advertisement and
-    the ``agents.md`` section mirrors the cwd ``AGENTS.md``; sections that no
-    longer apply are removed.  Uses the shared :data:`SYSTEM_PROMPT_MANAGER`
-    when ``manager`` is ``None``.  Plugin sections are never touched here;
-    they are registered at load time by ``janito.plugin_manager``.
+    The ``tools`` section mirrors the hints contributed by the tools the
+    session may use, the ``skills`` section mirrors the current tool registry
+    advertisement and the ``agents.md`` section mirrors the cwd ``AGENTS.md``;
+    sections that no longer apply are removed.  Uses the shared
+    :data:`SYSTEM_PROMPT_MANAGER` when ``manager`` is ``None``.  Plugin
+    sections are never touched here; they are registered at load time by
+    ``janito.plugin_manager``.
     """
     from .tooling.tools_registry import get_skills_section
 
     target = manager if manager is not None else SYSTEM_PROMPT_MANAGER
 
+    _set_section(target, SECTION_TOOLS, get_tools_section())
     _set_section(target, SECTION_SKILLS, get_skills_section())
     _set_section(target, SECTION_AGENTS_MD, _load_agents_md())
 
@@ -241,7 +272,7 @@ def apply_start_section(
     included) and the ``start`` section replaced.  This keeps a
     config-provided start from leaking across sessions (e.g. long-lived web
     mode, where ``effective_system_prompt()`` is called once per session)
-    while keeping every other section (``skills``, ``agents.md``,
+    while keeping every other section (``tools``, ``skills``, ``agents.md``,
     ``plugins:...``) unchanged.
 
     Args:
@@ -271,7 +302,7 @@ def default_system_prompt_manager(role: str | None = None) -> SysPromptManager:
     ``role`` overrides configuration only for the built-in prompt; custom
     prompt text is never interpolated.
 
-    The ``skills`` / ``agents.md`` sections are synced as usual; the
+    The ``tools`` / ``skills`` / ``agents.md`` sections are synced as usual; the
     ``start`` section comes from config (``system-prompt-file`` /
     ``system-prompt``, see
     :func:`janito.config_loaders.load_system_prompt_start`) when set, else

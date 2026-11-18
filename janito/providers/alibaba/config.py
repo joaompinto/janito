@@ -148,6 +148,53 @@ PROVIDER_CONFIG: dict = {
                 },
             ],
         },
+        "qwen4-max": {
+            # Responses is the built-in default API type (same surface as
+            # qwen3.8-max: OpenAI-compatible Chat Completions / Responses
+            # plus the native DashScope SDK).
+            "supported_api_types": ["Completions", "Responses", "DashScope"],
+            "default_api_type": "Responses",  # built-in default
+            # Qwen4-Max GA (2026-11-16, https://www.qwencloud.com/models/
+            # qwen4-max): 1M context window; max input 991,808
+            # (non-thinking) / 983,616 (thinking); max output 131,072
+            # (non-thinking) / 262,144 (thinking + final answer combined).
+            # Thinking is on by default, so the thinking-mode ceilings apply.
+            "max_input_tokens": 983616,
+            "max_output_tokens": 262144,  # thinking + answer budget
+            # Per the QwenCloud API reference, reasoning_effort accepts
+            # low/high/xhigh (medium maps to high).  The built-in default
+            # is high.
+            "default_reasoning_effort": "high",
+            "thinking": True,  # Qwen models reason by default
+            # See the qwen3.8-max entry: multi-turn reasoning is preserved by
+            # sending extra_body['preserve_thinking'] on the OpenAI-compatible
+            # Completions / Responses calls.
+            "preserve_thinking": True,
+            # Built-in (native) tools, enabled per API type.  Same
+            # Responses-only policy as qwen3.8-max until the deployment is
+            # confirmed to accept them on Completions / DashScope native.
+            "tools_by_api_type": {
+                "Responses": [
+                    {"type": "code_interpreter"},
+                    {"type": "web_search"},
+                    {"type": "web_extractor"},
+                ],
+            },
+            "supported_reasoning_efforts": [
+                {
+                    "effort": "low",
+                    "description": "Fast responses with lighter reasoning",
+                },
+                {
+                    "effort": "high",
+                    "description": "Greater reasoning depth for complex problems",
+                },
+                {
+                    "effort": "xhigh",
+                    "description": "Extra high reasoning depth for complex problems",
+                },
+            ],
+        },
         "qwen3.8-flash": {
             # Same API-type surface as qwen3.8-max (see its entry for the
             # endpoint notes): the OpenAI-compatible Chat Completions /

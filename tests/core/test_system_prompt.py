@@ -38,6 +38,25 @@ def _patch_skills_section(monkeypatch):
     monkeypatch.setattr(tools_registry_mod, "get_skills_section", lambda: SKILLS_SECTION)
 
 
+def _patch_tool_hints(monkeypatch, hints):
+    """Patch the tools' system prompt hints (the ``tools`` section source).
+
+    ``hints`` is the list of ``(tool name, hint)`` pairs the registry would
+    return; ``[]`` means no tool contributes anything.
+    """
+    monkeypatch.setattr(tools_registry_mod, "get_system_prompt_hints", lambda: list(hints))
+
+
+@pytest.fixture(autouse=True)
+def _no_tool_hints(monkeypatch):
+    """Keep the real tool hints out of the default prompt by default.
+
+    Tests that exercise the ``tools`` section re-patch
+    ``get_system_prompt_hints`` (last monkeypatch wins).
+    """
+    _patch_tool_hints(monkeypatch, [])
+
+
 # --- SysPromptManager unit tests -------------------------------------------
 
 
@@ -299,6 +318,82 @@ def test_sync_removes_sections_that_no_longer_apply(monkeypatch, tmp_path):
 
     (tmp_path / "AGENTS.md").unlink()
     assert [section.name for section in sync_default_sections(manager).get_all_sections()] == ["start", "skills"]
+
+
+# --- tool-contributed hints (the tools section) ----------------------------
+
+
+def test_tools_section_built_from_hints(monkeypatch, tmp_path):
+    """Each tool hint becomes a bullet under the Tool Usage Notes heading."""
+    _patch_skills_section(monkeypatch)
+    _patch_tool_hints(monkeypatch, [("ReadFile", "use max_lines"), ("RunPythonCode", "use pandas")])
+    monkeypatch.chdir(tmp_path)
+
+    manager = sync_default_sections(SysPromptManager("start text"))
+    sections = {section.name: section for section in manager.get_all_sections()}
+
+    assert sections["tools"].text == ("## Tool Usage Notes\n- ReadFile: use max_lines\n- RunPythonCode: use pandas")
+
+
+def test_tools_section_absent_without_hints(monkeypatch, tmp_path):
+    """No tool contributes a hint -> no tools section in the prompt."""
+    _patch_skills_section(monkeypatch)
+    _patch_tool_hints(monkeypatch, [])
+    monkeypatch.chdir(tmp_path)
+
+    manager = sync_default_sections(SysPromptManager("start text"))
+
+    assert [section.name for section in manager.get_all_sections()] == ["start", "skills"]
+    assert "Tool Usage Notes" not in manager.render()
+
+
+def test_tools_section_order_and_render(monkeypatch, tmp_path):
+    """The tools section comes after start and before skills/agents.md."""
+    _patch_skills_section(monkeypatch)
+    _patch_tool_hints(monkeypatch, [("RunPythonCode", "use openpyxl for xlsx")])
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "AGENTS.md").write_text("agent line", encoding="utf-8")
+
+    manager = sync_default_sections(SysPromptManager("start text"))
+
+    assert [section.name for section in manager.get_all_sections()] == ["start", "tools", "skills", "agents.md"]
+    assert manager.render() == (
+        "start text\n"
+        + "## Tool Usage Notes\n- RunPythonCode: use openpyxl for xlsx\n"
+        + SKILLS_SECTION
+        + "\nagent line\n"
+    )
+
+
+def test_tools_section_removed_when_hints_disappear(monkeypatch, tmp_path):
+    """Re-syncing with no hints drops the tools section (mirrors agents.md)."""
+    _patch_skills_section(monkeypatch)
+    monkeypatch.chdir(tmp_path)
+
+    _patch_tool_hints(monkeypatch, [("RunPythonCode", "use python-docx")])
+    manager = sync_default_sections(SysPromptManager("start text"))
+    assert "tools" in [section.name for section in manager.get_all_sections()]
+
+    _patch_tool_hints(monkeypatch, [])
+    manager = sync_default_sections(manager)
+    assert [section.name for section in manager.get_all_sections()] == ["start", "skills"]
+
+
+def test_get_tools_section_none_without_hints(monkeypatch):
+    """get_tools_section returns None when the registry has no hints."""
+    _patch_tool_hints(monkeypatch, [])
+    from janito.system_prompt import get_tools_section
+
+    assert get_tools_section() is None
+
+
+def test_run_python_code_advertises_office_libraries():
+    """RunPythonCode hints at libraries for Word/Excel/PDF (issue-driven)."""
+    from janito.tools.system.run_python_code import RunPythonCode
+
+    hint = RunPythonCode.system_prompt_hint
+    assert "python-docx" in hint
+    assert "openpyxl" in hint
 
 
 # --- configured start section (system-prompt / system-prompt-file) ---------

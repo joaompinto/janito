@@ -279,7 +279,7 @@ def _stream_response(client, call_kwargs, tools_schemas, cancel_event=None):
     the caller builds the remaining kwargs per round.
 
     The native DashScope API serves multimodal models (e.g. alibaba's
-    ``qwen3.8-max`` flagship) from the ``multimodal-generation`` endpoint
+    ``qwen3.8-max`` / ``qwen4-max`` flagships) from the ``multimodal-generation`` endpoint
     (``MultiModalConversation``) and plain-text models from
     ``text-generation`` (``Generation``).  The endpoint is inferred from the
     model name; when the API rejects the model with the "url error"

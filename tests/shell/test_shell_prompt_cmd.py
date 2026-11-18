@@ -39,6 +39,34 @@ def _patch_config_start(monkeypatch, start, label=None):
     monkeypatch.setattr(config_loaders_mod, "load_system_prompt_start", lambda: (start, label))
 
 
+@pytest.fixture(autouse=True)
+def _no_tool_hints(monkeypatch):
+    """Isolate the display tests from the real registry's tool hints."""
+    monkeypatch.setattr(tools_registry_mod, "get_system_prompt_hints", lambda: [])
+
+
+def test_prompt_cmd_shows_tools_section(monkeypatch, tmp_path, capfd):
+    """A tool hint is displayed as its own `tools` row in the section table."""
+    from janito.system_prompt import default_system_prompt_manager
+
+    _patch_skills_section(monkeypatch)
+    _patch_config_start(monkeypatch, None)
+    monkeypatch.setattr(
+        tools_registry_mod, "get_system_prompt_hints", lambda: [("RunPythonCode", "use openpyxl for xlsx")]
+    )
+    monkeypatch.chdir(tmp_path)
+
+    shell = InteractiveShell(model="test-model", no_history=True)
+    shell.initialize_history(system_prompt=default_system_prompt_manager().render())
+
+    assert PromptCmdHandler().handle(shell, "/prompt") is True
+
+    out = capfd.readouterr().out
+    assert "Tool Usage Notes" in out
+    assert "use openpyxl for xlsx" in out  # test input
+    assert "tools" in out  # the section row label
+
+
 def test_prompt_cmd_shows_section_table(monkeypatch, tmp_path, capfd):
     """The default prompt is displayed as a rich table with per-section rows."""
     from janito.system_prompt import default_system_prompt_manager
