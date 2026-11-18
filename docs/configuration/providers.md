@@ -87,12 +87,12 @@ Supported Providers (17):
     Max tokens:    1,050,000 in / 128,000 out
   ...
   alibaba
-    Model:         qwen3.8-flash (default)
+    Model:         qwen4-max (default)
     API types:     Completions, Responses (default), DashScope
     Tools:         code_interpreter, i2i_search, t2i_search, web_extractor, web_search (Responses)
     ...
   alibaba-tokenplan (variant of alibaba)
-    Model:         qwen3.8-max (configured; default qwen3.8-flash)
+    Model:         qwen3.8-max (configured; default qwen4-max)
     ...
 ```
 
@@ -369,7 +369,7 @@ Use Alibaba Cloud DashScope to access Qwen models.
 
 ```bash
 # Step 1: Set provider and model
-janito --set provider=alibaba --set model=qwen3.8-flash
+janito --set provider=alibaba --set model=qwen4-max
 # Step 2: Store API key
 janito --set-api-key="your-dashscope-api-key" --provider alibaba
 ```
@@ -378,8 +378,8 @@ janito --set-api-key="your-dashscope-api-key" --provider alibaba
 
 | Model | Description |
 |-------|-------------|
-| `qwen3.8-flash` | Default model: fast and cost-effective, with built-in token limits, reasoning levels and tools |
-| `qwen4-max` | Next-gen flagship (GA 2026-11-16, MoE 2.4T/71B active, native vision) with built-in token limits, reasoning levels and tools |
+| `qwen4-max` | Default model: next-gen flagship (GA 2026-11-16, MoE 2.4T/71B active, native vision) with built-in token limits, reasoning levels and tools |
+| `qwen3.8-flash` | Fast and cost-effective, with built-in token limits, reasoning levels and tools |
 | `qwen3.8-max` | Previous flagship model with built-in token limits, reasoning levels and tools |
 | `qwen3.8-max-0902` | Dated flagship snapshot, same limits/reasoning/tools as `qwen3.8-max` |
 
@@ -388,7 +388,7 @@ Model selection is restricted to the built-in models above.
 
 ### Reasoning Level
 
-Both Qwen models (`qwen3.8-max` and the default `qwen3.8-flash`) support
+Qwen models (`qwen3.8-max`, `qwen3.8-flash`, default `qwen4-max`) support
 configurable reasoning depth via the OpenAI-compatible `reasoning_effort`
 parameter. The supported levels are `low`, `medium` and `xhigh`; the
 built-in default is the standard level (`medium`). `qwen4-max` uses the
@@ -414,7 +414,7 @@ the `alibaba` provider: every call sends
 `extra_body={'enable_thinking': True}`. Pass `-t` / `--thinking` to force it
 on for any provider.
 
-Both built-in Qwen models (`qwen3.8-max` and the default `qwen3.8-flash`)
+Built-in Qwen models (`qwen3.8-max`, `qwen3.8-flash`, default `qwen4-max`)
 also send `extra_body={'preserve_thinking': True}` on the OpenAI-compatible
 Completions / Responses calls. `preserve_thinking` is a Qwen extension (not
 an OpenAI standard parameter): it makes the API append the assistant
@@ -425,7 +425,7 @@ built-in model default in janito, not a configurable setting.
 ### API Type
 
 The `alibaba` provider defaults to the Responses API for its built-in default
-model `qwen3.8-flash`. The Chat Completions API remains fully supported and can
+model `qwen4-max`. The Chat Completions API remains fully supported and can
 be selected per provider or per call with:
 
 ```bash
@@ -438,11 +438,10 @@ janito --provider alibaba --api-type completions "Your prompt"
 
 ### Built-in Tools
 
-The default model `qwen3.8-flash` declares **built-in (native) tools** —
-`code_interpreter`, `i2i_search`, `t2i_search`, `web_extractor` and
-`web_search` — enabled **per API type** (the `tools_by_api_type` model-config
-field); the flagships `qwen4-max` and `qwen3.8-max` declare `code_interpreter`, `web_search`
-and `web_extractor`. These are *not* function tools: each `type` is a model
+The default model `qwen4-max` declares **built-in (native) tools** —
+`code_interpreter`, `web_search` and `web_extractor` — enabled **per API type** (the `tools_by_api_type` model-config
+field); the flagship `qwen3.8-max` declares the same three, while `qwen3.8-flash` additionally
+declares `i2i_search` and `t2i_search`. These are *not* function tools: each `type` is a model
 capability enabled through request-body flags on the API call, so they are
 always on whenever the model declares them for an API type — even with
 `--no-tools` / an empty function-tools list (mirroring the Responses
@@ -467,15 +466,15 @@ that enables them:
 
 ```
   alibaba
-    Model:         qwen3.8-flash (default)
-    Tools:         code_interpreter, i2i_search, t2i_search, web_extractor, web_search (Responses)
+    Model:         qwen4-max (default)
+    Tools:         code_interpreter, web_search, web_extractor (Responses)
 ```
 
 ### Native DashScope SDK (optional)
 
 By default the `alibaba` provider talks to DashScope's OpenAI-compatible
 endpoint through the **Responses** API (the built-in default API type for
-`qwen3.8-flash`; the Chat Completions API is also fully supported — see
+`qwen4-max`; the Chat Completions API is also fully supported — see
 [API Type](#api-type)). A **native DashScope SDK** API type (`DashScope`) is
 also available: it uses the official `dashscope` Python package against the
 DashScope native API (`https://dashscope-intl.aliyuncs.com/api/v1`,
@@ -514,7 +513,7 @@ here too.
 
 ```bash
 # Step 1: Set provider and model
-janito --set provider=alibaba --set model=qwen3.8-flash
+janito --set provider=alibaba --set model=qwen4-max
 # Step 2: Store API key
 janito --set-api-key="your-dashscope-api-key" --provider alibaba
 # Step 3: Run prompt

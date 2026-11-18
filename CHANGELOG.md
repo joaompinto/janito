@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Changes since `v4.52.0` (2026-11-16).
 
+### Changed
+
+- Alibaba provider default model is now `qwen4-max` (was `qwen3.8-flash`).
+
 ### Added
 
 - Tools can now contribute text to the system prompt: declare the optional

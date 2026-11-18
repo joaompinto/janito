@@ -450,11 +450,12 @@ if pytest is not None:
     def test_default_model_and_max_tokens():
         # Providers expose built-in default models / max tokens.
         assert get_default_model_from_provider("openai") == "gpt-6.1-sol"
-        assert get_default_model_from_provider("alibaba") == "qwen3.8-flash"
+        assert get_default_model_from_provider("alibaba") == "qwen4-max"
         assert get_default_max_input_tokens_from_provider("openai") == 1050000
         assert get_default_max_output_tokens_from_provider("openai") == 128000
         # Alibaba's built-in models declare their token limits (qwen3.8-max
-        # 1M input / 131K output; qwen3.8-flash 991K input / 131K output).
+        # 1M input / 131K output; qwen3.8-flash 991K input / 131K output;
+        # qwen4-max 983,616 input / 262,144 output in thinking mode).
         assert get_default_max_input_tokens_from_provider("alibaba", "qwen3.8-flash") == 991000
         assert get_default_max_output_tokens_from_provider("alibaba", "qwen3.8-flash") == 131072
         # Z.ai's default is the GLM-5.3-Flash model (1M input / 128K output).
@@ -471,15 +472,15 @@ if pytest is not None:
         assert get_default_max_output_tokens_from_provider("bogus") is None
 
     def test_default_and_supported_reasoning_efforts():
-        # Both Alibaba Qwen models (the default qwen3.8-flash and the
-        # flagship qwen3.8-max) declare configurable reasoning levels
-        # (low/medium/xhigh per the QwenCloud API reference); the built-in
-        # default is the standard level (medium) for both.
-        assert get_default_reasoning_effort_from_provider("alibaba") == "medium"
+        # Both Alibaba Qwen models (the default qwen4-max and the
+        # flagship qwen3.8-max) declare configurable reasoning levels;
+        # qwen4-max uses low/high/xhigh with default high, qwen3.8-max
+        # uses low/medium/xhigh with default medium.
+        assert get_default_reasoning_effort_from_provider("alibaba") == "high"
         assert get_supported_reasoning_efforts_from_provider("alibaba") is not None
         assert [entry["effort"] for entry in get_supported_reasoning_efforts_from_provider("alibaba")] == [
             "low",
-            "medium",
+            "high",
             "xhigh",
         ]
         assert get_default_reasoning_effort_from_provider("alibaba", "qwen3.8-max") == "medium"
@@ -603,7 +604,7 @@ if pytest is not None:
         # preserve_thinking True: their API appends the assistant messages'
         # reasoning_content to the next input, so multi-turn reasoning stays
         # in context.  The no-model lookup resolves to the default model
-        # (qwen3.8-flash), which declares it too.
+        # (qwen4-max), which declares it too.
         assert get_preserve_thinking_from_provider("alibaba") is True
         assert get_preserve_thinking_from_provider("alibaba", "qwen3.8-max") is True
         assert get_preserve_thinking_from_provider("alibaba", "qwen3.8-flash") is True
@@ -702,7 +703,7 @@ if pytest is not None:
         The official QwenCloud page advertises code_interpreter /
         i2i_search / t2i_search / web_extractor / web_search for the
         Responses API; like qwen3.8-max they are left off the Completions
-        and native DashScope APIs until confirmed.  qwen3.8-flash is the
+        and native DashScope APIs until confirmed.  qwen4-max is now the
         provider's default model, so the no-model lookup resolves to it.
         """
         assert get_default_tools_from_provider("alibaba") is None
@@ -710,10 +711,8 @@ if pytest is not None:
         assert get_default_tools_from_provider("alibaba", api_type="DashScope") is None
         assert get_default_tools_from_provider("alibaba", api_type="Responses") == [
             {"type": "code_interpreter"},
-            {"type": "i2i_search"},
-            {"type": "t2i_search"},
-            {"type": "web_extractor"},
             {"type": "web_search"},
+            {"type": "web_extractor"},
         ]
         assert get_default_tools_from_provider("alibaba", "qwen3.8-flash") is None
         assert get_default_tools_from_provider("alibaba", "qwen3.8-flash", api_type="Completions") is None
@@ -797,7 +796,7 @@ if pytest is not None:
         # Case-insensitive lookups work.
         assert get_default_api_type_from_provider("OpenAI") == "Responses"
         # Alibaba supports both APIs; Responses is the built-in default for
-        # its default model qwen3.8-flash. The native DashScope SDK API type
+        # its default model qwen4-max. The native DashScope SDK API type
         # is also supported.
         assert get_supported_api_types_from_provider("alibaba") == [
             "Completions",

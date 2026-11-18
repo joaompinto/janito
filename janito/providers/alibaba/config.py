@@ -7,7 +7,7 @@ CONFIG option.
 
 #: The config entry for the ``alibaba`` provider.
 PROVIDER_CONFIG: dict = {
-    "default_model": "qwen3.8-flash",
+    "default_model": "qwen4-max",
     "endpoint": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
     # Per-API-type endpoints: the OpenAI-compatible Chat Completions /
     # Responses base URL (DashScope's plain compatible-mode gateway, the

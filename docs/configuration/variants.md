@@ -64,7 +64,7 @@ janito --provider alibaba-tokenplan --set effort=medium
 
 Everything you don't set falls back to the **base provider's** built-in
 defaults. For example, `alibaba-tokenplan` without an explicit model uses
-`qwen3.8-flash`, the `alibaba` provider's default.
+`qwen4-max`, the `alibaba` provider's default.
 
 A variant's model must be valid for its base provider: only the base's
 built-in models are accepted (model-scoped settings are likewise restricted
