@@ -7,10 +7,11 @@ is seeded with an empty ``start`` section; the built-in base prompt is read
 lazily from the packaged resource ``janito/system-prompt.txt`` by
 :func:`get_builtin_system_prompt` when the default prompt is resolved
 (:func:`default_system_prompt_manager`).  :func:`sync_default_sections` keeps
-the ``tools``, ``skills`` and ``agents.md`` sections in sync with the tool
-registry (tools advertise usage hints through their ``system_prompt_hint``
-class attribute) and the cwd ``AGENTS.md``; plugins register ``plugins:<name>``
-sections at load time (see ``janito.plugin_manager``).
+the ``tools`` header, the per-tool ``tools:<Toolname>`` sections, ``skills``
+and ``agents.md`` in sync with the tool registry (tools advertise usage
+hints through their ``system_prompt_hint`` class attribute) and the cwd
+``AGENTS.md``; plugins register ``plugins:<name>`` sections at load time
+(see ``janito.plugin_manager``).
 
 Every consumer (``janito.cli.session_setup.SessionSetup``, the shell ``/prompt``
 command, ``--show-system-prompt`` and the web backend) manipulates the prompt
@@ -69,6 +70,15 @@ SECTION_SKILLS = "skills"
 SECTION_AGENTS_MD = "agents.md"
 SECTION_PLUGINS = "plugins"
 
+# Per-tool sections are named ``tools:<Toolname>`` (mirroring the
+# ``plugins:<name>`` convention): the ``tools`` section carries only the
+# heading, each tool's hint lives in its own section (issue #207).
+TOOL_SECTION_PREFIX = f"{SECTION_TOOLS}:"
+
+# Heading of the ``tools`` section; the per-tool hints follow it, one
+# ``tools:<Toolname>`` section each.
+TOOLS_HEADER = "## Tool Usage Notes"
+
 # Labels describing where the ``start`` section came from live in the leaf
 # :mod:`janito.system_labels` (issue #86 for the labels, #110 for the
 # location): ``LABEL_BUILTIN`` marks the packaged base prompt, ``LABEL_CLI``
@@ -103,20 +113,27 @@ class SysPromptManager:
     def __init__(self, start_prompt: str, start_label: str | None = None) -> None:
         self._sections: list[Section] = [Section(SECTION_START, start_prompt, start_label)]
 
-    def add_section(self, name: str, prompt: str, label: str | None = None) -> None:
-        """Append a new section.
+    def add_section(self, name: str, prompt: str, label: str | None = None, index: int | None = None) -> None:
+        """Insert a new section (appended by default).
 
         Args:
             name: Unique section name.
             prompt: Section text.
             label: Optional display label (``None`` falls back to ``name``).
+            index: Position to insert at (``None`` appends at the end).
+                Clamped to ``[1, len(sections)]`` so the ``start`` section
+                always stays first.
 
         Raises:
             ValueError: if a section named ``name`` already exists.
         """
         if self._find(name) is not None:
             raise ValueError(f"a section named {name!r} already exists")
-        self._sections.append(Section(name, prompt, label))
+        section = Section(name, prompt, label)
+        if index is None:
+            self._sections.append(section)
+        else:
+            self._sections.insert(max(1, min(index, len(self._sections))), section)
 
     def update_section(self, name: str, prompt: str) -> None:
         """Replace the text of an existing section, keeping its label.
@@ -210,49 +227,88 @@ def _set_section(manager: SysPromptManager, name: str, text: str | None) -> None
 
 
 def get_tools_section() -> str | None:
-    """Build the ``tools`` section from the tools' system prompt hints.
+    """Build the ``tools`` header section from the tools' system prompt hints.
 
     Tools contribute usage guidance through their ``system_prompt_hint``
     class attribute (see :class:`janito.tooling.base_tool.BaseTool`); the
     registry returns the hints of the tools the session may actually use.
-    The section renders as a bullet list grouped under a single heading::
-
-        ## Tool Usage Notes
-        - RunPythonCode: ...
-        - ReadFile: ...
+    The ``tools`` section itself carries only the heading
+    (:data:`TOOLS_HEADER`); each hint lives in its own ``tools:<Toolname>``
+    section (see :func:`sync_tool_sections`).
 
     Returns:
-        The section text, or ``None`` when no available tool contributes a
-        hint (the section is then omitted from the prompt).
+        The heading text, or ``None`` when no available tool contributes a
+        hint (the header and the per-tool sections are then omitted).
+    """
+    from .tooling.tools_registry import get_system_prompt_hints
+
+    return TOOLS_HEADER if get_system_prompt_hints() else None
+
+
+def sync_tool_sections(manager: SysPromptManager) -> None:
+    """Sync the per-tool ``tools:<Toolname>`` sections with the registry hints.
+
+    Each hint becomes its own section named ``tools:<Toolname>`` whose text
+    is the hint alone (no tool-name prefix or heading -- hints are written
+    function-first and mention their tool inline, issue #207).  Sections
+    are kept in registry order (sorted by tool name) directly after the
+    ``tools`` header (or after ``start`` when no header is present);
+    sections for tools that no longer contribute a hint are removed.
     """
     from .tooling.tools_registry import get_system_prompt_hints
 
     hints = get_system_prompt_hints()
-    if not hints:
-        return None
-    lines = ["## Tool Usage Notes"]
-    lines += [f"- {name}: {hint}" for name, hint in hints]
-    return "\n".join(lines)
+    wanted = [(f"{TOOL_SECTION_PREFIX}{name}", hint) for name, hint in hints]
+    wanted_names = {name for name, _ in wanted}
+
+    for section in list(manager.get_all_sections()):
+        if section.name.startswith(TOOL_SECTION_PREFIX) and section.name not in wanted_names:
+            manager.del_section(section.name)
+
+    anchor = manager._find(SECTION_TOOLS)
+    position = (anchor + 1) if anchor is not None else 1
+    for name, hint in wanted:
+        existing = manager._find(name)
+        if existing is not None and existing != position:
+            # Re-insert at the expected slot so the registry order (sorted
+            # by tool name) holds even when hints appear/disappear between
+            # syncs.
+            label = next(s.label for s in manager.get_all_sections() if s.name == name)
+            manager.del_section(name)
+            manager.add_section(name, hint, label=label, index=position)
+        elif existing is not None:
+            manager.update_section(name, hint)
+        else:
+            manager.add_section(name, hint, index=position)
+        position += 1
 
 
 def sync_default_sections(
     manager: SysPromptManager | None = None,
 ) -> SysPromptManager:
-    """Sync the ``tools``, ``skills`` and ``agents.md`` sections and return the manager.
+    """Sync the tool, ``skills`` and ``agents.md`` sections and return the manager.
 
-    The ``tools`` section mirrors the hints contributed by the tools the
-    session may use, the ``skills`` section mirrors the current tool registry
-    advertisement and the ``agents.md`` section mirrors the cwd ``AGENTS.md``;
-    sections that no longer apply are removed.  Uses the shared
-    :data:`SYSTEM_PROMPT_MANAGER` when ``manager`` is ``None``.  Plugin
-    sections are never touched here; they are registered at load time by
-    ``janito.plugin_manager``.
+    The ``tools`` section carries only the header for the hints contributed
+    by the tools the session may use, each hint lives in its own
+    ``tools:<Toolname>`` section right after it, the ``skills`` section
+    mirrors the current tool registry advertisement and the ``agents.md``
+    section mirrors the cwd ``AGENTS.md``; sections that no longer apply are
+    removed.  Uses the shared :data:`SYSTEM_PROMPT_MANAGER` when ``manager``
+    is ``None``.  Plugin sections are never touched here; they are
+    registered at load time by ``janito.plugin_manager``.
     """
     from .tooling.tools_registry import get_skills_section
 
     target = manager if manager is not None else SYSTEM_PROMPT_MANAGER
 
-    _set_section(target, SECTION_TOOLS, get_tools_section())
+    header = get_tools_section()
+    if target._find(SECTION_TOOLS) is None and header:
+        # Anchor the header right after start so late-registered plugin
+        # sections never end up before the tool hints.
+        target.add_section(SECTION_TOOLS, header, index=1)
+    else:
+        _set_section(target, SECTION_TOOLS, header)
+    sync_tool_sections(target)
     _set_section(target, SECTION_SKILLS, get_skills_section())
     _set_section(target, SECTION_AGENTS_MD, _load_agents_md())
 

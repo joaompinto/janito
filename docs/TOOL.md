@@ -135,8 +135,9 @@ not met (missing binary, unsupported OS, absent credentials, …). Set
 system_prompt_hint = "one short paragraph of usage guidance for the LLM"
 ```
 
-Text contributed to the system prompt's `tools` section, shown only when the
-session may actually use the tool — see
+Text contributed to the system prompt as the tool's own `tools:<Toolname>`
+section (under the `tools` header), shown only when the session may actually
+use the tool — see
 [Contributing to the System Prompt](#contributing-to-the-system-prompt).
 
 ### 6. (Recommended) Provides a `main()` CLI harness
@@ -419,9 +420,10 @@ class RunPythonCode(BaseTool):
     """Tool for executing Python code and scripts."""
 
     system_prompt_hint = (
-        "Prefer Python libraries over manual parsing when reading binary "
-        "documents: python-docx for .docx, openpyxl or pandas.read_excel for "
-        ".xlsx/.xlsm, pdfplumber or pypdf for PDFs."
+        "Read binary documents with Python libraries instead of manual "
+        "parsing: read .docx with python-docx, .xlsx/.xlsm with openpyxl or "
+        "pandas.read_excel, legacy .xls with xlrd, and PDFs with pdfplumber "
+        "or pypdf."
     )
 ```
 
@@ -434,27 +436,32 @@ How the hint reaches the model:
    **current session may actually use** — the same privilege
    (`-r`/`-w`/`-x`) and model-disabled filtering as the session tool schemas —
    sorted by tool name.
-3. `janito.system_prompt.get_tools_section()` renders them as the `tools`
-   section of the system prompt, and `sync_default_sections()` keeps it in
-   sync (it is omitted entirely when no available tool declares a hint):
+3. `janito.system_prompt.get_tools_section()` provides the header-only
+   `tools` section (`## Tool Usage Notes`), and each hint becomes its own
+   `tools:<Toolname>` section whose text is the hint alone.
+   `sync_default_sections()` keeps them in sync (all omitted when no
+   available tool declares a hint). The rendered prompt looks like:
 
    ```text
    ## Tool Usage Notes
-   - RunPythonCode: Prefer Python libraries over manual parsing ...
+   Read binary documents with Python libraries instead of manual parsing: ...
    ```
 
 Guidelines:
 
-- Keep it to **one short paragraph**, plain text (no markdown headings — the
-  section provides the heading and each hint becomes a `- <Tool>: <hint>`
-  bullet).
+- Keep it to **one short paragraph**, plain text (no markdown headings and
+  no tool-name prefix — the tool name lives in the section name,
+  `tools:<Toolname>`).
+- Write the hint **function-first**, mentioning the tool inline where it
+  matters, e.g. "Read PDFs using RunPythonCode with pdfplumber or pypdf".
 - Hint at *how to use the tool well* (preferred libraries, formats, gotchas),
   not at *what the tool does* — that is the class docstring's job, already in
   the tool schema.
 - `BaseTool.system_prompt_hint` defaults to `""`, so opting in means declaring
   it; plugin tools (`docs/PLUGINS.md`) work exactly the same way.
 - Verify the result with `janito --show-system-prompt` or the shell `/prompt`
-  command: both list the `tools` section as a table row.
+  command: both list the `tools` header and each `tools:<Toolname>` section
+  as table rows.
 
 ---
 

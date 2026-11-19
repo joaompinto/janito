@@ -22,6 +22,7 @@ from janito.system_labels import LABEL_BUILTIN
 from janito.system_prompt import (
     SECTION_START,
     SYSTEM_PROMPT_MANAGER,
+    TOOLS_HEADER,
     Section,
     SysPromptManager,
     apply_start_section,
@@ -95,6 +96,22 @@ def test_add_section_duplicate_name_raises():
     manager.add_section("extra", "extra text")
     with pytest.raises(ValueError):
         manager.add_section("extra", "other text")
+
+
+def test_add_section_at_index_inserts_in_place():
+    """add_section(index=...) inserts at the given position."""
+    manager = SysPromptManager("start text")
+    manager.add_section("first", "first text")
+    manager.add_section("last", "last text")
+    manager.add_section("middle", "middle text", index=2)
+    assert [section.name for section in manager.get_all_sections()] == ["start", "first", "middle", "last"]
+
+
+def test_add_section_index_clamped_keeps_start_first():
+    """An index below 1 never displaces the start section."""
+    manager = SysPromptManager("start text")
+    manager.add_section("extra", "extra text", index=0)
+    assert [section.name for section in manager.get_all_sections()] == ["start", "extra"]
 
 
 def test_add_section_duplicate_start_name_raises():
@@ -320,23 +337,28 @@ def test_sync_removes_sections_that_no_longer_apply(monkeypatch, tmp_path):
     assert [section.name for section in sync_default_sections(manager).get_all_sections()] == ["start", "skills"]
 
 
-# --- tool-contributed hints (the tools section) ----------------------------
+# --- tool-contributed hints (tools header + tools:<Toolname> sections) -----
 
 
-def test_tools_section_built_from_hints(monkeypatch, tmp_path):
-    """Each tool hint becomes a bullet under the Tool Usage Notes heading."""
+def test_tools_sections_built_from_hints(monkeypatch, tmp_path):
+    """The tools section is header-only; each hint gets its own tools:<Toolname> section."""
     _patch_skills_section(monkeypatch)
-    _patch_tool_hints(monkeypatch, [("ReadFile", "use max_lines"), ("RunPythonCode", "use pandas")])
+    _patch_tool_hints(
+        monkeypatch,
+        [("ReadFile", "read large files with max_lines"), ("RunPythonCode", "read xlsx with openpyxl")],
+    )
     monkeypatch.chdir(tmp_path)
 
     manager = sync_default_sections(SysPromptManager("start text"))
     sections = {section.name: section for section in manager.get_all_sections()}
 
-    assert sections["tools"].text == ("## Tool Usage Notes\n- ReadFile: use max_lines\n- RunPythonCode: use pandas")
+    assert sections["tools"].text == TOOLS_HEADER
+    assert sections["tools:ReadFile"].text == "read large files with max_lines"
+    assert sections["tools:RunPythonCode"].text == "read xlsx with openpyxl"
 
 
 def test_tools_section_absent_without_hints(monkeypatch, tmp_path):
-    """No tool contributes a hint -> no tools section in the prompt."""
+    """No tool contributes a hint -> no tools header or per-tool sections."""
     _patch_skills_section(monkeypatch)
     _patch_tool_hints(monkeypatch, [])
     monkeypatch.chdir(tmp_path)
@@ -344,39 +366,76 @@ def test_tools_section_absent_without_hints(monkeypatch, tmp_path):
     manager = sync_default_sections(SysPromptManager("start text"))
 
     assert [section.name for section in manager.get_all_sections()] == ["start", "skills"]
-    assert "Tool Usage Notes" not in manager.render()
+    assert TOOLS_HEADER not in manager.render()
 
 
-def test_tools_section_order_and_render(monkeypatch, tmp_path):
-    """The tools section comes after start and before skills/agents.md."""
+def test_tools_sections_order_and_render(monkeypatch, tmp_path):
+    """The header and per-tool sections come after start, before skills/agents.md."""
     _patch_skills_section(monkeypatch)
-    _patch_tool_hints(monkeypatch, [("RunPythonCode", "use openpyxl for xlsx")])
+    _patch_tool_hints(monkeypatch, [("RunPythonCode", "read xlsx with openpyxl")])
     monkeypatch.chdir(tmp_path)
     (tmp_path / "AGENTS.md").write_text("agent line", encoding="utf-8")
 
     manager = sync_default_sections(SysPromptManager("start text"))
 
-    assert [section.name for section in manager.get_all_sections()] == ["start", "tools", "skills", "agents.md"]
+    assert [section.name for section in manager.get_all_sections()] == [
+        "start",
+        "tools",
+        "tools:RunPythonCode",
+        "skills",
+        "agents.md",
+    ]
     assert manager.render() == (
-        "start text\n"
-        + "## Tool Usage Notes\n- RunPythonCode: use openpyxl for xlsx\n"
-        + SKILLS_SECTION
-        + "\nagent line\n"
+        "start text\n" + TOOLS_HEADER + "\n" + "read xlsx with openpyxl\n" + SKILLS_SECTION + "\nagent line\n"
     )
 
 
-def test_tools_section_removed_when_hints_disappear(monkeypatch, tmp_path):
-    """Re-syncing with no hints drops the tools section (mirrors agents.md)."""
+def test_tools_sections_removed_when_hints_disappear(monkeypatch, tmp_path):
+    """Re-syncing with no hints drops the header and per-tool sections."""
     _patch_skills_section(monkeypatch)
     monkeypatch.chdir(tmp_path)
 
-    _patch_tool_hints(monkeypatch, [("RunPythonCode", "use python-docx")])
+    _patch_tool_hints(monkeypatch, [("RunPythonCode", "read docx with python-docx")])
     manager = sync_default_sections(SysPromptManager("start text"))
-    assert "tools" in [section.name for section in manager.get_all_sections()]
+    assert "tools:RunPythonCode" in [section.name for section in manager.get_all_sections()]
 
     _patch_tool_hints(monkeypatch, [])
     manager = sync_default_sections(manager)
     assert [section.name for section in manager.get_all_sections()] == ["start", "skills"]
+
+
+def test_tools_sections_resync_keeps_registry_order(monkeypatch, tmp_path):
+    """Hints appearing/disappearing between syncs keep the sorted per-tool order."""
+    _patch_skills_section(monkeypatch)
+    monkeypatch.chdir(tmp_path)
+
+    _patch_tool_hints(monkeypatch, [("Zebra", "z hint"), ("Middle", "m hint")])
+    manager = sync_default_sections(SysPromptManager("start text"))
+
+    # A new tool sorts before the existing ones; another one disappears.
+    _patch_tool_hints(monkeypatch, [("Alpha", "a hint"), ("Zebra", "z hint updated")])
+    manager = sync_default_sections(manager)
+
+    names = [section.name for section in manager.get_all_sections()]
+    assert names == ["start", "tools", "tools:Alpha", "tools:Zebra", "skills"]
+    sections = {section.name: section for section in manager.get_all_sections()}
+    assert sections["tools:Zebra"].text == "z hint updated"
+
+
+def test_tools_sections_inserted_before_plugin_sections(monkeypatch, tmp_path):
+    """New per-tool sections land after the tools header, not after plugins."""
+    _patch_skills_section(monkeypatch)
+    monkeypatch.chdir(tmp_path)
+
+    manager = SysPromptManager("start text")
+    manager.add_section("plugins:testplugin", "plugin text")
+    _patch_tool_hints(monkeypatch, [("RunPythonCode", "read xlsx with openpyxl")])
+    manager = sync_default_sections(manager)
+
+    names = [section.name for section in manager.get_all_sections()]
+    assert names.index("tools") == 1
+    assert names.index("tools:RunPythonCode") == 2
+    assert names.index("tools:RunPythonCode") < names.index("plugins:testplugin")
 
 
 def test_get_tools_section_none_without_hints(monkeypatch):
@@ -385,6 +444,14 @@ def test_get_tools_section_none_without_hints(monkeypatch):
     from janito.system_prompt import get_tools_section
 
     assert get_tools_section() is None
+
+
+def test_get_tools_section_header_only_with_hints(monkeypatch):
+    """get_tools_section returns just the heading when hints exist."""
+    _patch_tool_hints(monkeypatch, [("RunPythonCode", "read xlsx with openpyxl")])
+    from janito.system_prompt import get_tools_section
+
+    assert get_tools_section() == TOOLS_HEADER
 
 
 def test_run_python_code_advertises_office_libraries():

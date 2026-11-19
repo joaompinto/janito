@@ -116,12 +116,14 @@ where the prompt came from: `built-in` for the packaged base prompt, `-S`
 for a `--system-prompt` override, `(config) <file>` when
 `system-prompt-file` is set, and `(config) <config-file>:system-prompt`
 when the literal `system-prompt` key is used. Sections without a label
-(`tools`, `skills`, `agents.md`, `plugins:<name>`) keep showing their name.
+(`tools`, `tools:<Toolname>`, `skills`, `agents.md`, `plugins:<name>`) keep
+showing their name.
 
 The `tools` section collects the usage hints that tools declare through their
 `system_prompt_hint` class attribute (see the tool guide, `docs/TOOL.md`),
-listed under a `## Tool Usage Notes` heading and limited to the tools the
-session may actually use. It is omitted entirely when no available tool
+limited to the tools the session may actually use. It carries only the
+`## Tool Usage Notes` heading; each hint lives in its own `tools:<Toolname>`
+section right after it. All of them are omitted when no available tool
 declares a hint.
 
 By default (neither key set) the `start` section is the built-in base prompt,

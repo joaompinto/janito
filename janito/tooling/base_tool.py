@@ -40,9 +40,12 @@ class BaseTool(ABC):
 
     # Optional text this tool contributes to the system prompt (a usage hint
     # for the LLM).  Subclasses set it as a class attribute; the registry
-    # collects the hints of the tools a session may actually use into the
-    # ``tools`` section (see :func:`janito.system_prompt.sync_default_sections`).
-    # Empty (the default) means the tool contributes nothing.
+    # collects the hints of the tools a session may actually use into
+    # per-tool ``tools:<Toolname>`` sections under the ``tools`` header (see
+    # :func:`janito.system_prompt.sync_default_sections`).  Write the hint
+    # function-first without a tool-name prefix ("read PDFs with pdfplumber
+    # or pypdf"); the tool name lives in the section name.  Empty (the
+    # default) means the tool contributes nothing.
     system_prompt_hint: str = ""
 
     def __init__(self):

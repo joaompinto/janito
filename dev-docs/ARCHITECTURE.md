@@ -690,8 +690,9 @@ from the resource location when the default prompt is resolved. Its
 `-R/--role` session override, the global `role` config key, then the default
 `software developer`. `SessionSetup` passes the override for CLI and web
 sessions; custom prompt text is not interpolated. The
-composition is built from ordered sections (`start`, `tools`, `skills`,
-`agents.md`, `plugins:<name>`) stored in a shared `SysPromptManager`; each
+composition is built from ordered sections (`start`, `tools`,
+`tools:<Toolname>`, `skills`, `agents.md`, `plugins:<name>`) stored in a
+shared `SysPromptManager`; each
 section is a
 `Section` dataclass carrying its name, text and an optional display `label`
 (issue #86) â€” `built-in` for the packaged base prompt, `-S` for a
@@ -699,13 +700,15 @@ section is a
 `system-prompt` / `system-prompt-file` config keys (resolved by
 `load_system_prompt_start`, which returns `(text, label)`).
 `sync_default_sections()` keeps the dynamic sections in sync and
-`render()` joins every section with a trailing newline. The `tools` section is
-assembled by `get_tools_section()` from the hints tools declare through their
-`BaseTool.system_prompt_hint` class attribute: the registry
+`render()` joins every section with a trailing newline. The `tools` section
+carries only the `## Tool Usage Notes` heading (`get_tools_section()`); each
+hint tools declare through their `BaseTool.system_prompt_hint` class
+attribute becomes its own `tools:<Toolname>` section whose text is the hint
+alone (`sync_tool_sections()`). The registry
 (`ToolsRegistry.system_prompt_hints()`) returns the non-empty hints of the
 tools the current session may actually use (same privilege / model-disabled
-filtering as `session_tool_names()`), and with no hint at all the section is
-omitted. The shell
+filtering as `session_tool_names()`), and with no hint at all the header and
+per-tool sections are omitted. The shell
 `/prompt` command and `janito --show-system-prompt` display each section as a
 row of a rich table (Section, Lines, Content) via `get_all_sections()`,
 showing the label when set and falling back to the section name.

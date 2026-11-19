@@ -45,14 +45,14 @@ def _no_tool_hints(monkeypatch):
     monkeypatch.setattr(tools_registry_mod, "get_system_prompt_hints", lambda: [])
 
 
-def test_prompt_cmd_shows_tools_section(monkeypatch, tmp_path, capfd):
-    """A tool hint is displayed as its own `tools` row in the section table."""
+def test_prompt_cmd_shows_tools_sections(monkeypatch, tmp_path, capfd):
+    """A tool hint is displayed as its own `tools:<Toolname>` row in the table."""
     from janito.system_prompt import default_system_prompt_manager
 
     _patch_skills_section(monkeypatch)
     _patch_config_start(monkeypatch, None)
     monkeypatch.setattr(
-        tools_registry_mod, "get_system_prompt_hints", lambda: [("RunPythonCode", "use openpyxl for xlsx")]
+        tools_registry_mod, "get_system_prompt_hints", lambda: [("RunPythonCode", "read xlsx with openpyxl")]
     )
     monkeypatch.chdir(tmp_path)
 
@@ -62,9 +62,10 @@ def test_prompt_cmd_shows_tools_section(monkeypatch, tmp_path, capfd):
     assert PromptCmdHandler().handle(shell, "/prompt") is True
 
     out = capfd.readouterr().out
-    assert "Tool Usage Notes" in out
-    assert "use openpyxl for xlsx" in out  # test input
-    assert "tools" in out  # the section row label
+    assert "read xlsx with openpyxl" in out  # test input
+    # Registry-driven (Rule 3): every section from the source of truth appears.
+    for section in default_system_prompt_manager().get_all_sections():
+        assert (section.label or section.name) in out
 
 
 def test_prompt_cmd_shows_section_table(monkeypatch, tmp_path, capfd):
