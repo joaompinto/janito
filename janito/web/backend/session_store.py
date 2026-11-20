@@ -2,7 +2,9 @@
 
 Each conversation is stored as ``./.janito/sessions/<session_id>/metadata.json``
 (relative to the current working directory, mirroring ``./.janito/changes.jsonl``
-from :mod:`janito.tooling.changes`).
+from :mod:`janito.tooling.changes`).  Set ``JANITO_SESSIONS_DIR`` to an absolute
+path to store sessions elsewhere — the Docker image uses it to keep history in
+the persisted ``~/.janito`` volume instead of the read-only workspace.
 
 File format (single JSON object)::
 
@@ -39,6 +41,12 @@ logger = logging.getLogger(__name__)
 # holds the shell ``history.log`` and the ``changes.jsonl`` log).
 SESSIONS_DIR = Path(".janito") / "sessions"
 
+# Environment variable overriding the sessions directory with an absolute
+# path (or a path relative to the process CWD).  The Docker image sets it to
+# the persisted ``~/.janito/sessions`` volume so history survives container
+# recreation instead of landing in the read-only ``/app`` workspace.
+SESSIONS_DIR_ENV = "JANITO_SESSIONS_DIR"
+
 # Serialises access from the multiple threads the web backend uses.
 _lock = threading.Lock()
 
@@ -48,9 +56,16 @@ _SESSION_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,127}", re.ASCII)
 def get_sessions_dir() -> Path:
     """Return the absolute path to the sessions directory.
 
+    ``JANITO_SESSIONS_DIR`` takes precedence when set (expanded with
+    :func:`pathlib.Path.expanduser`); otherwise sessions live under the
+    current working directory.
+
     Returns:
-        pathlib.Path: ``<cwd>/.janito/sessions``.
+        pathlib.Path: ``$JANITO_SESSIONS_DIR`` or ``<cwd>/.janito/sessions``.
     """
+    override = os.environ.get(SESSIONS_DIR_ENV)
+    if override:
+        return Path(override).expanduser()
     return Path.cwd() / SESSIONS_DIR
 
 
@@ -212,6 +227,7 @@ def load_session(session_id: str) -> dict[str, Any] | None:
 
 __all__ = [
     "SESSIONS_DIR",
+    "SESSIONS_DIR_ENV",
     "get_sessions_dir",
     "metadata_file_path",
     "save_session",

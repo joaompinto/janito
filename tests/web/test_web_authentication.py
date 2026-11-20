@@ -37,7 +37,7 @@ def sign_in(client):
     return response
 
 
-@pytest.mark.parametrize("path", ["/api/health", "/api/config", "/docs", "/redoc", "/openapi.json"])
+@pytest.mark.parametrize("path", ["/api/tools", "/api/config", "/docs", "/redoc", "/openapi.json"])
 def test_api_and_docs_require_authentication(client, path):
     assert client.get(path).status_code == 401
 
@@ -62,7 +62,7 @@ def test_invalid_login_does_not_issue_credentials(client, body):
     response = client.post("/auth/login", content=json.dumps(body), headers={"Content-Type": "application/json"})
     assert response.status_code == 401
     assert SESSION_COOKIE not in client.cookies
-    assert client.get("/api/health").status_code == 401
+    assert client.get("/api/config").status_code == 401
 
 
 def test_malformed_login_body_is_rejected(client):
@@ -79,7 +79,7 @@ def test_login_issues_httponly_cookie_without_shared_secret(client):
     assert f"max-age={SESSION_MAX_AGE}" in cookie
     assert TOKEN not in response.text
     assert TOKEN not in client.cookies[SESSION_COOKIE]
-    assert client.get("/api/health").status_code == 200
+    assert client.get("/api/config").status_code == 200
     assert client.get("/").status_code == 200
     assert "__JANITO_TOKEN__" not in client.get("/").text
 
@@ -87,25 +87,25 @@ def test_login_issues_httponly_cookie_without_shared_secret(client):
 def test_https_cookie_is_secure(app):
     with TestClient(app, base_url="https://testserver") as client:
         assert "secure" in sign_in(client).headers["set-cookie"].lower()
-        assert client.get("/api/health").status_code == 200
+        assert client.get("/api/config").status_code == 200
 
 
 def test_logout_clears_browser_credentials(client):
     sign_in(client)
     assert client.post("/auth/logout", headers={"Origin": "http://testserver"}).status_code == 200
     assert SESSION_COOKIE not in client.cookies
-    assert client.get("/api/health").status_code == 401
+    assert client.get("/api/config").status_code == 401
 
 
 def test_bearer_header_still_authenticates_api_clients(client):
-    assert client.get("/api/health", headers={"Authorization": "Bearer wrong"}).status_code == 401
+    assert client.get("/api/config", headers={"Authorization": "Bearer wrong"}).status_code == 401
     # HTTP headers are Latin-1; exercise Unicode tokens through JSON login instead.
     client.app.state.web_auth.auth_token = "ascii-api-token"
-    assert client.get("/api/health", headers={"Authorization": "Bearer ascii-api-token"}).status_code == 200
+    assert client.get("/api/config", headers={"Authorization": "Bearer ascii-api-token"}).status_code == 200
 
 
 def test_query_tokens_are_not_credentials(client):
-    assert client.get("/api/health", params={"token": TOKEN}).status_code == 401
+    assert client.get("/api/config", params={"token": TOKEN}).status_code == 401
     with pytest.raises(WebSocketDisconnect) as closed:
         with client.websocket_connect("/api/chat/ws/unknown?" + urlencode({"token": TOKEN})):
             pass
@@ -129,7 +129,7 @@ def test_cross_origin_login_and_logout_are_rejected(client, origin):
     assert client.post("/auth/login", json={"token": TOKEN}, headers={"Origin": origin}).status_code == 403
     sign_in(client)
     assert client.post("/auth/logout", headers={"Origin": origin}).status_code == 403
-    assert client.get("/api/health").status_code == 200
+    assert client.get("/api/config").status_code == 200
 
 
 @pytest.mark.parametrize("origin", ["http://evil.example", "https://testserver", "null"])
@@ -160,7 +160,7 @@ def test_unauthorized_or_cross_origin_websocket_is_rejected(client, logged_in, o
 
 def test_invalid_session_cookie_is_rejected(client):
     client.cookies.set(SESSION_COOKIE, "forged")
-    assert client.get("/api/health").status_code == 401
+    assert client.get("/api/config").status_code == 401
 
 
 def test_expired_session_is_rejected(client, monkeypatch):
@@ -169,7 +169,7 @@ def test_expired_session_is_rejected(client, monkeypatch):
         patch.setattr(time, "time", lambda: now - SESSION_MAX_AGE - 60)
         expired = client.app.state.web_auth.issue_session()
     client.cookies.set(SESSION_COOKIE, expired)
-    assert client.get("/api/health").status_code == 401
+    assert client.get("/api/config").status_code == 401
 
 
 def test_server_restart_invalidates_cookie(client):
@@ -177,12 +177,12 @@ def test_server_restart_invalidates_cookie(client):
     restarted = create_app(WebServerConfig(auth_token=TOKEN, no_history=True))
     with TestClient(restarted) as fresh:
         fresh.cookies.set(SESSION_COOKIE, client.cookies[SESSION_COOKIE])
-        assert fresh.get("/api/health").status_code == 401
+        assert fresh.get("/api/config").status_code == 401
 
 
 def test_auth_disabled_keeps_local_ui_and_api_usable(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     with TestClient(create_app(WebServerConfig(no_history=True))) as client:
         assert client.get("/").status_code == 200
-        assert client.get("/api/health").status_code == 200
+        assert client.get("/api/config").status_code == 200
         assert client.get("/login", follow_redirects=False).status_code == 303

@@ -1,6 +1,7 @@
 """CLI argument parser for janito."""
 
 import argparse
+import os
 
 from .. import __version__
 
@@ -517,9 +518,10 @@ Note: --set and --set-api-key must be used in separate commands.
     parser.add_argument(
         "--web-port",
         type=int,
-        default=8080,
+        default=int(os.getenv("JANITO_WEB_PORT", "8080")),
         metavar="PORT",
-        help="Port for the web server (default: 8080, used with --web)",
+        help="Port for the web server (default: 8080, or JANITO_WEB_PORT "
+        "when set; used with --web)",
     )
 
     parser.add_argument(
