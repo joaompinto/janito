@@ -102,6 +102,20 @@ def test_create_session_writes_metadata(client, isolated_cwd):
 
 
 @requires_fastapi
+def test_sessions_dir_env_override(client, isolated_cwd, monkeypatch):
+    """JANITO_SESSIONS_DIR redirects persistence (e.g. to a mounted volume)."""
+    target = isolated_cwd / "mounted" / "sessions"
+    monkeypatch.setenv("JANITO_SESSIONS_DIR", str(target))
+
+    resp = client.post("/api/chat/sessions")
+    assert resp.status_code == 200
+    session_id = resp.json()["session_id"]
+
+    assert (target / session_id / "metadata.json").exists()
+    assert not (isolated_cwd / ".janito" / "sessions").exists()
+
+
+@requires_fastapi
 def test_turn_messages_are_persisted(client, isolated_cwd):
     """Messages appended to a session (as the agent loop does) hit the file."""
     resp = client.post("/api/chat/sessions")

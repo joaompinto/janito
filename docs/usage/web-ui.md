@@ -26,7 +26,7 @@ feature-by-feature breakdown is on [CLI vs Web UI](cli-vs-web.md); in short:
 **Web-only features**
 
 - Session sidebar (new chat, delete, rename, auto-naming) with persistence to
-  `./.janito/sessions/`
+  `./.janito/sessions/` (override with `JANITO_SESSIONS_DIR`)
 - Settings drawer and provider switcher (runtime model / providers / API keys)
 - MCP dashboard (connect / disconnect services)
 - `/tools` rendered as a client-side card panel (the only slash command the web
@@ -114,7 +114,7 @@ The server prints the URL it's listening on, then opens your default browser
 | Flag | Effect on the web server |
 |---|---|
 | `--web` | Start the web UI instead of the terminal chat (alpha) |
-| `--web-port PORT` | Bind port (default `8080`) |
+| `--web-port PORT` | Bind port (default `8080`, or `JANITO_WEB_PORT` when set; `--web-port` wins) |
 | `--web-host HOST` | Bind address (default `127.0.0.1` — localhost only) |
 | `--no-web-open` | Don't auto-open the browser |
 | `--web-session-ttl SECONDS` | Evict sessions idle longer than `SECONDS` from memory (lazy TTL: dropped on access, reloaded from disk on demand; `0` disables — the default). Ignored with `--no-history` |
@@ -128,7 +128,15 @@ The server prints the URL it's listening on, then opens your default browser
 | `--no-tools` | Do not load tools (disables built-in, skill, plugin, MCP and server-side tools) |
 | `--no-tasks` | Do not load the tasks toolset (`StartTask`, `StopTask`, `WaitForTask`, `ListTasks`); all other tools stay enabled |
 | `-v, --verbose` | Verbose backend logging |
-| `--no-history` | Don't persist session history to disk (`./.janito/sessions/` is neither written nor read) |
+| `--no-history` | Don't persist session history to disk (`./.janito/sessions/`, or `JANITO_SESSIONS_DIR`, is neither written nor read) |
+
+### Environment variables
+
+| Variable | Effect |
+|---|---|
+| `JANITO_WEB_TOKEN` | Require sign-in or `Authorization: Bearer <token>` on the chat page, `/api` and API documentation |
+| `JANITO_WEB_PORT` | Default port for `--web` (overridden by `--web-port`; default `8080`) |
+| `JANITO_SESSIONS_DIR` | Directory used to store/restore session history instead of `./.janito/sessions` (expanded with `~`) |
 
 ---
 
@@ -148,7 +156,8 @@ The server prints the URL it's listening on, then opens your default browser
   send (first 60 characters, replacing the default "New conversation" label).
 - **Session persistence** — every conversation is stored to
   `./.janito/sessions/<session_id>/metadata.json` (single JSON object with
-  metadata plus `messages`, relative to the working directory) and restored when
+  metadata plus `messages`, relative to the working directory, or under
+  `JANITO_SESSIONS_DIR` when set) and restored when
   the server starts, so conversations **survive a restart**. When the page
   loads, the frontend triggers the load of *all* sessions and replays their
   stored history into the UI, so switching tabs is instant. Pass `--no-history`
@@ -276,7 +285,7 @@ janito/web/frontend/   (Alpine.js — no build step)
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET` | `/api/health` | Health check |
+| `GET` | `/health` | Health check (outside `/api`, so it stays public for probes) |
 | `POST` | `/api/chat/sessions` | Create a session |
 | `GET` | `/api/chat/sessions` | List sessions |
 | `GET` | `/api/chat/sessions/{id}` | Get session history |

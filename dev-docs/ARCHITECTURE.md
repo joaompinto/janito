@@ -556,13 +556,14 @@ interactive-shell command.
 `janito/web/backend/` (FastAPI + uvicorn, optional `[web]` extras):
 
 - **`app.py`** â€” app factory: mounts API routers (`/api/chat`, `/api/config`,
-  `/api/tools`, `/api/mcp`, `/api/images`, `/api/health`), session manager,
-  token-auth middleware and CORS, and serves the frontend via Jinja2
-  templates + static files.
+  `/api/tools`, `/api/mcp`, `/api/images`), session manager, token-auth
+  middleware and CORS, serves the frontend via Jinja2 templates + static
+  files, and exposes `GET /health` outside `/api` so health probes bypass
+  auth.
 - **`session.py` / `session_store.py`** â€” `SessionManager` with optional
   TTL-based expiry (`--web-session-ttl`, lazy reaping + disk reload; disabled
-  by default) and conversations persisted to `.janito/sessions/` so they
-  survive restarts.
+  by default) and conversations persisted to `.janito/sessions/` (or
+  `JANITO_SESSIONS_DIR` when set) so they survive restarts.
 - **`security.py`** â€” optional bearer-token auth (`JANITO_WEB_TOKEN`), signed
   HttpOnly browser sessions, same-origin checks and CORS. `WebAuthenticator`
   owns credential/session validation; the auth router renders login and
