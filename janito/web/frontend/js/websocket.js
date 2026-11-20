@@ -109,8 +109,8 @@ class ChatSocket {
         return false;
     }
 
-    sendPrompt(content) {
-        return this.send({ type: 'prompt', content });
+    sendPrompt(content, mode = 'send') {
+        return this.send({ type: 'prompt', content, mode });
     }
 
     // Answer an in-browser question raised by an interactive tool (the

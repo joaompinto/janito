@@ -11,6 +11,7 @@
 
 .input-area textarea {
     flex: 1;
+    min-width: 0;
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -24,6 +25,19 @@
     line-height: 1.5;
 }
 .input-area textarea:focus { outline: none; border-color: var(--accent); }
+
+.composer-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.composer-actions kbd { font: inherit; font-size: 11px; opacity: 0.7; }
+.composer-pending { max-width: 860px; margin: 0 auto 10px; max-height: 140px; overflow-y: auto; }
+.composer-pending-item { padding: 8px 12px; border-left: 2px solid var(--accent); background: var(--bg-tertiary); margin-bottom: 6px; border-radius: var(--radius); }
+.composer-pending-label { display: block; color: var(--accent); font-size: 11px; margin-bottom: 3px; }
+.composer-pending-text { display: block; color: var(--text-primary); font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+@media (max-width: 600px) {
+    .input-inner { flex-wrap: wrap; }
+    .input-area textarea { flex-basis: 100%; }
+    .composer-actions { margin-left: auto; }
+}
 
 /* Buttons */
 .btn {

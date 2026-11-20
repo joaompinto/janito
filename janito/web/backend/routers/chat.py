@@ -16,7 +16,7 @@ from janito.config_loaders import load_model_from_config
 from janito.providers.registry import get_provider
 
 from ..agent.loop import stream_prompt
-from ..events import event_to_dict
+from ..events import PromptStartedEvent, event_to_dict
 from ..prompts import PromptRegistry
 from ..session import ConversationSession, SessionManager
 from .chat_helpers import _read_client_message, _run_prompt_turn, _send_session_greeting
@@ -172,6 +172,7 @@ async def _process_prompt(
     turn_config.model = session.model
 
     _maybe_auto_title(sessions, session.session_id, session, content)
+    steering_prompts: list[str] = []
     await _run_prompt_turn(
         session,
         websocket,
@@ -184,9 +185,13 @@ async def _process_prompt(
         # here) so tests that monkeypatch ``chat.stream_prompt`` keep working
         # without an import cycle (issue #110).
         stream_fn=stream_prompt,
+        steering_prompts=steering_prompts,
     )
-    for extra in pending_prompts:
+    while steering_prompts or pending_prompts:
+        mode = "steer" if steering_prompts else "queue"
+        extra = (steering_prompts if steering_prompts else pending_prompts).pop(0)
         _maybe_auto_title(sessions, session.session_id, session, extra)
+        await websocket.send_json(PromptStartedEvent(content=extra, mode=mode).to_dict())
         await _run_prompt_turn(
             session,
             websocket,
@@ -196,6 +201,7 @@ async def _process_prompt(
             sessions,
             prompt_registry,
             stream_fn=stream_prompt,
+            steering_prompts=steering_prompts,
         )
 
 
@@ -234,6 +240,10 @@ async def _dispatch_client_message(
         return
 
     pending_prompts: list[str] = []
+    # A busy submission may reach the server just after the previous turn
+    # finished. It still needs an acknowledgement to start its browser row.
+    if msg.get("mode") in {"steer", "queue"}:
+        await websocket.send_json(PromptStartedEvent(content=content, mode=msg["mode"]).to_dict())
     await _process_prompt(
         session,
         websocket,

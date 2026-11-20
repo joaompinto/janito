@@ -41,25 +41,12 @@ window.ChatStoreMixin = {
         window.dispatchEvent(new CustomEvent('janito-connection', { detail: this.connection }));
     },
 
-    // Roll back the in-flight turn from the local UI: remove the streaming
-    // assistant message and the user message that started the turn. Used by
-    // cancelRequest() and by the server 'cancelled'/'error' events, which all
-    // mirror the server-side history rollback to before this turn.
-    //
-    // (Single implementation — previously this 12-line block was duplicated
-    //  three times across chat.js.)
+    // Roll back all rows in the active turn, including applied steering.
+    // Clearing the boundary makes repeated acknowledgements harmless.
     _rollbackTurn(store) {
-        if (store.current) {
-            const idx = store.messages.indexOf(store.current);
-            if (idx !== -1) store.messages.splice(idx, 1);
-        }
-        // Remove the last user message (the one that triggered this turn).
-        for (let i = store.messages.length - 1; i >= 0; i--) {
-            if (store.messages[i].role === 'user') {
-                store.messages.splice(i, 1);
-                break;
-            }
-        }
+        if (store.turnStartIndex === null) return;
+        store.messages.splice(store.turnStartIndex);
+        store.turnStartIndex = null;
         store.current = null;
     },
 

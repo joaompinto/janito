@@ -67,14 +67,13 @@ async def _await_cancel(
     websocket: WebSocket,
     pending_prompts: list[str],
     prompt_registry: PromptRegistry | None = None,
+    steering_prompts: list[str] | None = None,
 ) -> bool:
     """Wait for a ``{"type": "cancel"}`` message from the client.
 
-    Any ``{"type": "prompt"}`` message that arrives while a turn is in
-    flight is appended to ``pending_prompts`` instead of being silently
-    discarded, so the main loop can process it once the current turn ends.
-    This prevents a submission from being lost when the client sends a new
-    message while a response is still streaming or a tool is running.
+    Busy prompts with ``mode=steer`` enter the live steering inbox for the
+    next safe model boundary; other prompts enter the FIFO follow-up queue.
+    Neither action interrupts running tools.
 
     ``{"type": "prompt_answer", ...}`` messages answer an in-browser
     question raised by an interactive tool (the AskUser tool): they are
@@ -101,7 +100,10 @@ async def _await_cancel(
         if msg.get("type") == "prompt":
             content = (msg.get("content") or "").strip()
             if content:
-                pending_prompts.append(content)
+                if msg.get("mode") == "steer" and steering_prompts is not None:
+                    steering_prompts.append(content)
+                else:
+                    pending_prompts.append(content)
 
 
 def _rollback(session: ConversationSession) -> None:
@@ -123,6 +125,7 @@ async def _stream_to_websocket(
     prompt_registry: PromptRegistry | None = None,
     *,
     stream_fn: Callable[..., Any] | None = None,
+    steering_prompts: list[str] | None = None,
 ):
     """Run the stream function and forward every event to the client.
 
@@ -154,7 +157,12 @@ async def _stream_to_websocket(
         messages=messages,
         config=config,
         use_mcp=True,
+        steering_prompts=steering_prompts,
     ):
+        if event.type == "error":
+            # Agent errors are events, not exceptions. Route them through
+            # the same rollback/queue cleanup as transport and SDK failures.
+            raise RuntimeError(event.message)
         await websocket.send_json(event_to_dict(event))
 
 
@@ -167,6 +175,7 @@ async def _run_turn(
     prompt_registry: PromptRegistry | None = None,
     *,
     stream_fn: Callable[..., Any] | None = None,
+    steering_prompts: list[str] | None = None,
 ) -> None:
     """Stream one prompt, racing the client's cancel request.
 
@@ -188,9 +197,10 @@ async def _run_turn(
             config,
             prompt_registry,
             stream_fn=stream_fn,
+            steering_prompts=steering_prompts,
         )
     )
-    cancel_task = asyncio.ensure_future(_await_cancel(websocket, pending_prompts, prompt_registry))
+    cancel_task = asyncio.ensure_future(_await_cancel(websocket, pending_prompts, prompt_registry, steering_prompts))
     done, pending = await asyncio.wait(
         {stream_task, cancel_task},
         return_when=asyncio.FIRST_COMPLETED,
@@ -220,6 +230,9 @@ async def _run_turn(
     if cancel_task in done and not cancel_task.cancelled() and cancel_task.result():
         logger.info("[ws] client cancelled stream for session=%s", session.session_id)
         _rollback(session)
+        pending_prompts.clear()
+        if steering_prompts is not None:
+            steering_prompts.clear()
         await websocket.send_json({"type": "cancelled"})
         return
 
@@ -241,6 +254,7 @@ async def _run_prompt_turn(
     prompt_registry: PromptRegistry | None = None,
     *,
     stream_fn: Callable[..., Any] | None = None,
+    steering_prompts: list[str] | None = None,
 ) -> None:
     """Run one prompt turn with the shared error handling.
 
@@ -260,6 +274,7 @@ async def _run_prompt_turn(
             pending_prompts,
             prompt_registry,
             stream_fn=stream_fn,
+            steering_prompts=steering_prompts,
         )
         sessions.persist(session)
     except WebSocketDisconnect:
@@ -269,5 +284,8 @@ async def _run_prompt_turn(
         # Roll back to before the turn so a failed turn leaves the
         # conversation context clean for the next prompt.
         _rollback(session)
+        pending_prompts.clear()
+        if steering_prompts is not None:
+            steering_prompts.clear()
         sessions.persist(session)  # mirror the rolled-back history
         await websocket.send_json({"type": "error", "message": f"Server error: {e!s}"})

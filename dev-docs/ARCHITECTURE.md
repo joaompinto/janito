@@ -583,6 +583,14 @@ interactive-shell command.
 - **Frontend** (`janito/web/frontend/`): plain HTML/JS/CSS (Alpine.js) with
   WebSocket chat, session list, settings drawer, tool-call cards and a prompt
   modal.
+- **Mid-turn input**: the WebSocket reader routes `prompt` frames with
+  `mode=steer` to a per-turn live inbox, passed explicitly to `stream_prompt`.
+  The agent drains it only between complete model/tool rounds, never between
+  a tool call and its results. Other busy prompts enter a FIFO follow-up queue
+  drained by the chat router after `done`. `prompt_started` events synchronize
+  browser message rows; a per-session UI turn boundary makes cancellation
+  roll back all steering rows with the active turn. Cancel/errors clear both
+  inboxes; pending entries are connection-local, not persisted drafts.
 
 ---
 

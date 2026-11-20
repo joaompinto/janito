@@ -292,7 +292,7 @@ def test_run_turn_in_browser_prompt_round_trip(monkeypatch):
     from janito.web.backend.routers.chat_helpers import _run_turn
     from janito.web.backend.session import ConversationSession
 
-    async def fake_stream_prompt(prompt, messages, config, tools=None, use_mcp=True):
+    async def fake_stream_prompt(prompt, messages, config, tools=None, use_mcp=True, steering_prompts=None):
         from janito.tools.system.ask_user import AskUser
 
         # Mirror run_tool_turn/execute_tool: the tool runs in a worker
