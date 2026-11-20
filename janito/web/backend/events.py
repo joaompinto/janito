@@ -146,6 +146,19 @@ class ToolProgressEvent:
 
 
 @dataclass
+class PromptStartedEvent:
+    """A queued follow-up or steering instruction is entering the history."""
+
+    content: str
+    mode: str
+
+    type: ClassVar[str] = "prompt_started"
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"type": self.type, "content": self.content, "mode": self.mode}
+
+
+@dataclass
 class WaitingEvent:
     """The API is processing, no tokens yet."""
 
@@ -280,6 +293,7 @@ AgentEvent = (
     | ToolCallEvent
     | ToolResultEvent
     | WaitingEvent
+    | PromptStartedEvent
     | ToolProgressEvent
     | ImageEvent
     | WebSearchEvent

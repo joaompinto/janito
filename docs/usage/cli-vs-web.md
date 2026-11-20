@@ -66,7 +66,7 @@ Legend: ✅ available · — not available
 | `/ask`, `/compact`, `/history`, `/multi`, `/notools`, `/plugins`, `/priv`, `/price`, `/prompt`, `/provider`, `/model`, `/api_types`, `/read`, `/rewind`, `/rw`, `/rwx`, `/rx`, `/status`, `/thinking`, `/write` | ✅ | — |
 | `!<shell command>` (run a command directly) | ✅ | — |
 | Command autocomplete for `/`-commands | ✅ | — |
-| Enter to send, `Shift+Enter` for newline | — | ✅ |
+| Enter to send/steer, `Ctrl/Cmd+Enter` to queue, `Shift+Enter` for newline | — | ✅ |
 
 > The web chat only handles `/tools` on the client (rendered as a card panel).
 > Any other slash command typed into the web input box is sent to the model as

@@ -119,6 +119,8 @@ function chatComponent() {
                     loading: false,    // a history fetch is in flight
                     dirty: false,      // user already sent a message locally
                     titled: false,     // already named from its first message?
+                    pendingPrompts: [], // accepted locally, awaiting a safe boundary
+                    turnStartIndex: null, // UI rollback boundary (includes steering)
                 };
             }
             return this._sessions[id];
@@ -242,22 +244,13 @@ function chatComponent() {
         // Sending
         // ---------------------------------------------------------------
 
-        sendPrompt() {
+        pendingMessages() {
+            return this.sessionId ? this._store(this.sessionId).pendingPrompts : [];
+        },
+
+        sendPrompt(mode = 'steer') {
             const content = this.input.trim();
             if (!content) return;
-
-            // A request is already in flight (waiting for the first token,
-            // streaming, or running a tool). The in-flight turn owns the
-            // socket, so submitting now would be silently dropped by the
-            // server. Instead of swallowing the submission (which left the
-            // typed text in the box with no feedback), tell the user why and
-            // keep the text so it can be sent once the turn finishes.
-            if (this.status !== 'idle') {
-                this._notifySendBlocked(
-                    'A response is still in progress. Wait for it to finish, or press Ctrl+C to stop it.'
-                );
-                return;
-            }
 
             const id = this.sessionId;
             if (!id) {
@@ -271,9 +264,10 @@ function chatComponent() {
                 return;
             }
             const store = this._store(id);
+            const busy = store.status !== 'idle';
 
             // Intercept slash commands handled entirely on the client.
-            if (content.startsWith('/') && this._handleSlashCommand(content, store)) {
+            if (!busy && content.startsWith('/') && this._handleSlashCommand(content, store)) {
                 this.input = '';
                 this._autoResize();
                 return;
@@ -284,7 +278,7 @@ function chatComponent() {
             // input). If the socket is missing or closed, keep the typed text
             // so nothing is lost, and surface the failure.
             const socket = this._socket(id);
-            if (!socket || !socket.sendPrompt(content)) {
+            if (!socket || !socket.sendPrompt(content, busy ? mode : 'send')) {
                 console.error('[chat] sendPrompt FAILED -> "Not connected to server."');
                 store.error = 'Not connected to server.';
                 this.error = store.error;
@@ -297,6 +291,12 @@ function chatComponent() {
             store.error = null;
             this.error = null;
             store.dirty = true;   // protect the pending _loadHistory from clobbering
+            if (busy) {
+                store.pendingPrompts.push({ content, mode });
+                this.input = '';
+                this._autoResize();
+                return;
+            }
             window.dispatchEvent(new CustomEvent('janito-session-lock', {
                 detail: { sessionId: id, locked: true },
             }));
@@ -311,25 +311,39 @@ function chatComponent() {
                 this._autoTitle(id, content);
             }
 
-            // User message
-            store.messages.push(this._newMessage('user', content));
             this.input = '';
             this._autoResize();
-            this._forceScrollToBottom();
+            this._beginPrompt(store, content);
+        },
 
-            // Start the assistant message for this turn.
+        // Server-started follow-ups and local initial submissions share the
+        // same row creation. Steering preserves the whole turn's boundary.
+        _beginPrompt(store, content, steering = false) {
+            if (store.current) {
+                store.current.streaming = false;
+                store.current.done = true;
+                if (store.current.parts.length === 0) {
+                    const index = store.messages.indexOf(store.current);
+                    if (index !== -1) store.messages.splice(index, 1);
+                }
+            }
+            if (!steering || store.turnStartIndex === null) {
+                store.turnStartIndex = store.messages.length;
+            }
+            store.messages.push(this._newMessage('user', content));
             const assistant = this._newMessage('assistant', '');
             assistant.streaming = true;
             store.messages.push(assistant);
             store.current = assistant;
             this._setStatus(store, 'waiting');
-            this._current = store.current;   // proxied reference
-            this.status = 'waiting';
-
-            this._forceScrollToBottom();
+            if (store.id === this.sessionId) {
+                this._current = store.current;
+                this.status = 'waiting';
+                this._forceScrollToBottom();
+            }
         },
 
-        // Surface a blocked submission (busy, no session, not connected) so
+        // Surface a blocked submission (no session or not connected) so
         // the user never sees a silent no-op with the text stuck in the box.
         // Rendered as a transient toast by the root app component.
         _notifySendBlocked(text) {
@@ -419,9 +433,8 @@ function chatComponent() {
         // Abort the in-flight request for the active session.  Sends a
         // `{"type": "cancel"}` message to the server which stops the
         // agentic loop and rolls back the conversation history to the
-        // pre-turn state (removing the user message and any partial
-        // assistant response), then locally removes those messages from
-        // the UI to stay in sync with the server.
+        // pre-turn state. The acknowledgement performs the local rollback;
+        // don't open a new turn while the old one is still cancelling.
         cancelRequest() {
             const id = this.sessionId;
             if (!id) return;
@@ -438,18 +451,6 @@ function chatComponent() {
             // history to before this turn's user message.
             const socket = this._socket(id);
             if (socket) socket.sendCancel();
-
-            // Mirror the server-side rollback in the local UI.
-            this._rollbackTurn(store);
-
-            store.error = null;
-            this._setStatus(store, 'idle');
-            if (store.id === this.sessionId) {
-                this._current = null;
-                this.status = 'idle';
-                this.error = null;
-                this._scrollToBottom();
-            }
         },
 
         // ---------------------------------------------------------------
@@ -485,6 +486,8 @@ function chatComponent() {
 
             // Reset local UI immediately.
             store.messages.splice(0, store.messages.length);
+            store.pendingPrompts.splice(0);
+            store.turnStartIndex = null;
             store.current = null;
             store.dirty = false;
             store.loaded = true;   // no need to re-fetch empty history

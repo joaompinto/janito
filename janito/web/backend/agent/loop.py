@@ -46,6 +46,7 @@ from ..events import (
     AgentEvent,
     DoneEvent,
     ErrorEvent,
+    PromptStartedEvent,
     WaitingEvent,
     usage_event_from_usage,
 )
@@ -167,6 +168,12 @@ def _create_agent_client(runner, base_url, api_key):
     return runner.create_client(base_url, api_key)
 
 
+def _log_agent_config(config, base_url, model, api_type):
+    """Log the resolved backend only when verbose mode was requested."""
+    if config.verbose:
+        logger.info("Web agent: model=%s backend=%s api_type=%s", model, base_url or "api.openai.com", api_type)
+
+
 def _turn_call_kwargs_and_acc(
     runner,
     model,
@@ -234,12 +241,37 @@ def _record_web_turn(provider: str | None, model: str | None, turn_stats: TurnIn
     record_turn_accounting(turn_stats, provider, model)
 
 
+def _apply_steering(messages: list[dict], steering_prompts: list[str] | None):
+    """Drain the live inbox only at a complete model/tool boundary."""
+    while steering_prompts:
+        content = steering_prompts.pop(0)
+        messages.append({"role": "user", "content": content})
+        yield PromptStartedEvent(content=content, mode="steer")
+
+
+async def _record_round(acc, full_content, messages, mcp_enabled, allowed_tool_names):
+    """Commit the model response and all its tool results before steering."""
+    if acc.tool_calls_list():
+        async for event in run_tool_turn(
+            acc.tool_calls_list(),
+            full_content,
+            messages,
+            mcp_enabled,
+            thought_parts=getattr(acc, "thought_parts", None) or [],
+            allowed_tools=allowed_tool_names,
+        ):
+            yield event
+    else:
+        messages.append(_build_assistant_message(acc, full_content))
+
+
 async def stream_prompt(
     prompt: str,
     messages: list[dict],
     config: WebServerConfig,
     tools: list[dict] | None = None,
     use_mcp: bool = True,
+    steering_prompts: list[str] | None = None,
 ) -> AsyncGenerator[AgentEvent, None]:
     """Yield structured events instead of printing to terminal.
 
@@ -250,6 +282,7 @@ async def stream_prompt(
         tools: Optional explicit tool schemas. ``None`` = auto-discover
                (unless ``config.no_tools``).
         use_mcp: If True, load and use MCP tools.
+        steering_prompts: Live inbox consumed between model/tool rounds.
     """
     # Clear the in-process used-files tracker so per-prompt tracking only
     # reflects the files touched while handling the *current* prompt (best
@@ -286,9 +319,7 @@ async def stream_prompt(
         yield ErrorEvent(message=str(e))
         return
 
-    if config.verbose:
-        backend = base_url if base_url else "api.openai.com"
-        logger.info(f"Web agent: model={model} backend={backend} api_type={api_type}")
+    _log_agent_config(config, base_url, model, api_type)
 
     mcp_enabled = use_mcp
     tools_schemas = await resolve_tools(config, tools, use_mcp)
@@ -308,6 +339,10 @@ async def stream_prompt(
 
     first_turn = True
     while True:
+        # Never insert a user message between a tool call and its results.
+        # The socket reader owns appends; this task drains at safe boundaries.
+        for event in _apply_steering(messages, steering_prompts):
+            yield event
         call_kwargs, acc = _turn_call_kwargs_and_acc(
             runner,
             model,
@@ -338,21 +373,13 @@ async def stream_prompt(
         # discarded when the tool round below continues the loop).
         turn_stats = _fold_turn_usage(turn_stats, acc)
 
-        # --- Handle tool calls -> continue the loop for the final response ---
-        if acc.tool_calls_list():
-            async for ev in run_tool_turn(
-                acc.tool_calls_list(),
-                full_content,
-                messages,
-                mcp_enabled,
-                thought_parts=getattr(acc, "thought_parts", None) or [],
-                allowed_tools=allowed_tool_names,
-            ):
-                yield ev
-            continue
+        async for ev in _record_round(acc, full_content, messages, mcp_enabled, allowed_tool_names):
+            yield ev
 
-        # --- No tool calls: final response ---
-        messages.append(_build_assistant_message(acc, full_content))
+        # A steer received during the final text stream still gets a model
+        # round before the turn completes (and before queued follow-ups).
+        if acc.tool_calls_list() or steering_prompts:
+            continue
 
         usage_event = usage_event_from_usage(acc.usage_object(), max_tokens=max_output_tokens)
         if usage_event:

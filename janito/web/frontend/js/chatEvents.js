@@ -161,9 +161,13 @@ const CHAT_EVENT_HANDLERS = {
     done(c) {
         c.msg.streaming = false;
         c.msg.done = true;
-        c.comp._setStatus(c.store, 'idle');
+        c.store.turnStartIndex = null;
+        // Stay busy between queued turns so a new submission cannot jump
+        // ahead of pending messages in the local transcript.
+        const status = c.store.pendingPrompts.length ? 'waiting' : 'idle';
+        c.comp._setStatus(c.store, status);
         if (c.isActive) {
-            c.comp.status = 'idle';
+            c.comp.status = status;
             c.comp._scrollToBottom();
         }
         c.msg = null;
@@ -171,9 +175,10 @@ const CHAT_EVENT_HANDLERS = {
 
     cancelled(c) {
         // Server confirmed the abort and rolled the history back to before
-        // this turn. Remove the in-flight assistant message and the user
-        // message that started this turn to stay in sync with the server.
+        // this turn. Remove all its rows, including steering instructions,
+        // to stay in sync with the server.
         c.comp._rollbackTurn(c.store);
+        c.store.pendingPrompts.splice(0);
         c.comp._setStatus(c.store, 'idle');
         if (c.isActive) {
             c.comp.status = 'idle';
@@ -186,6 +191,7 @@ const CHAT_EVENT_HANDLERS = {
         c.store.error = c.event.message;
         // Server rolled the history back to before this turn on error.
         c.comp._rollbackTurn(c.store);
+        c.store.pendingPrompts.splice(0);
         c.comp._setStatus(c.store, 'idle');
         if (c.isActive) {
             c.comp.error = c.event.message;
@@ -209,6 +215,18 @@ window.ChatEventsMixin = {
     // the visible projection when that session is the active tab.
     _handleEvent(event, store) {
         const isActive = (store.id === this.sessionId);
+
+        if (event.type === 'prompt_started') {
+            const index = store.pendingPrompts.findIndex(
+                p => p.content === event.content && p.mode === event.mode
+            );
+            if (index !== -1) store.pendingPrompts.splice(index, 1);
+            this._beginPrompt(store, event.content, event.mode === 'steer');
+            return;
+        }
+
+        // F2 may already have removed the assistant row locally.
+        if (event.type === 'cancelled') store.pendingPrompts.splice(0);
 
         // Server greets us on connect with a tools summary. This arrives
         // before any assistant message exists, so handle it up front.

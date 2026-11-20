@@ -2,9 +2,12 @@
 // Folded into the Alpine component via Object.assign in chat.js.
 
 window.ChatScrollMixin = {
-    // Keyboard: Enter to send, Shift+Enter for newline, F2 to clear,
+    // Enter sends/steers, Ctrl/Cmd+Enter queues, Shift+Enter adds a newline,
+    // F2 clears,
     // Ctrl+C to cancel the current request.
     onKeydown(e) {
+        // IME confirmation and held keys must not submit messages.
+        if (e.isComposing || e.keyCode === 229 || e.repeat) return;
         if (e.key === 'F2') {
             e.preventDefault();
             this.restartSession();
@@ -21,9 +24,9 @@ window.ChatScrollMixin = {
             }
             return;
         }
-        if (e.key === 'Enter' && !e.shiftKey) {
+        if (e.key === 'Enter' && !e.shiftKey && !e.altKey) {
             e.preventDefault();
-            this.sendPrompt();
+            this.sendPrompt(e.ctrlKey || e.metaKey ? 'queue' : 'steer');
         }
     },
 

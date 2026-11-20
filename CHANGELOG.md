@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Changes since `v4.54.0` (2026-11-19).
 
+### Added
+
+- Web chat: Enter steers an active response at the next safe model step;
+  Ctrl/Cmd+Enter queues a follow-up after the response. The composer includes
+  Steer/Queue buttons with shortcut badges and a per-conversation pending-message list.
+
+### Fixed
+
+- Web chat shortcut discovery: keep Queue visible beside Send/Steer and display
+  shortcuts directly on the two buttons, without a separate help block.
+- Web chat cancellation and errors clear pending messages and roll back the
+  entire active turn, including steering instructions, without removing earlier turns.
+
 ## [v4.54.0](https://github.com/joaompinto/janito/compare/v4.53.0...v4.54.0) - 2026-11-19
 
 Changes since `v4.53.0` (2026-11-18).

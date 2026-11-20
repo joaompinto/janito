@@ -3,17 +3,36 @@
              a message to, so the box and Send button are hidden until the
              user selects or creates a conversation in the sidebar. -->
         <div class="input-area" x-show="sessionId">
+            <div class="composer-pending" x-show="pendingMessages().length" aria-live="polite">
+                <template x-for="(pending, index) in pendingMessages()" :key="index">
+                    <div class="composer-pending-item">
+                        <span class="composer-pending-label" x-text="pending.mode === 'steer' ? 'Steer · next model step' : 'Queued · after this response'"></span>
+                        <span class="composer-pending-text" x-text="pending.content"></span>
+                    </div>
+                </template>
+            </div>
             <div class="input-inner">
                 <textarea x-ref="input"
                           x-model="input"
                           @keydown="onKeydown($event)"
                           @input="_autoResize()"
                           rows="1"
-                          placeholder="Send a message… (Enter to send, Shift+Enter for newline, Ctrl+C to stop, F2 to clear)"></textarea>
-                <button class="btn btn-primary"
-                        @click="sendPrompt()"
-                        :disabled="!input.trim() || status !== 'idle'">
-                    Send
-                </button>
+                          aria-label="Message"
+                          :placeholder="status === 'idle' ? 'Send a message…' : 'Guide the current response or queue a follow-up…'"></textarea>
+                <div class="composer-actions">
+                    <button class="btn btn-primary"
+                            data-composer-action="steer"
+                            @click="sendPrompt('steer')"
+                            :disabled="!input.trim()"
+                            :title="status === 'idle' ? 'Send message (Enter)' : 'Steer at the next model step (Enter)'">
+                        <span x-text="status === 'idle' ? 'Send' : 'Steer'"></span><kbd>Enter</kbd>
+                    </button>
+                    <button class="btn" data-composer-action="queue"
+                            @click="sendPrompt('queue')"
+                            :disabled="!input.trim()"
+                            :title="status === 'idle' ? 'Send now — no response to queue behind (Ctrl+Enter or Cmd+Enter)' : 'Queue after the current response (Ctrl+Enter or Cmd+Enter)'">
+                        Queue <kbd>Ctrl+Enter</kbd>
+                    </button>
+                </div>
             </div>
         </div>

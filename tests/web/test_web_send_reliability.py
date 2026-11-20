@@ -120,3 +120,22 @@ def test_await_cancel_ignores_unknown_message_types():
 
     assert result is True
     assert pending == ["hello"]
+
+
+@requires_fastapi
+def test_await_cancel_routes_steering_separately_from_fifo_followups():
+    from janito.web.backend.routers.chat_helpers import _await_cancel
+
+    ws = _FakeWebSocket(
+        [
+            json.dumps({"type": "prompt", "mode": "queue", "content": "later"}),
+            json.dumps({"type": "prompt", "mode": "steer", "content": "  next step  "}),
+            json.dumps({"type": "prompt", "mode": "steer", "content": " "}),
+            json.dumps({"type": "prompt", "content": "another followup"}),
+            json.dumps({"type": "cancel"}),
+        ]
+    )
+    pending, steering = [], []
+    assert asyncio.run(_await_cancel(ws, pending, steering_prompts=steering)) is True
+    assert pending == ["later", "another followup"]
+    assert steering == ["next step"]

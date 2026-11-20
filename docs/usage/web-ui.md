@@ -190,7 +190,20 @@ The server prints the URL it's listening on, then opens your default browser
   card-based listing of every loaded tool (built-in tools with their permission
   badges, collapsible skipped tools with reasons, and connected MCP tools),
   plus a totals footer. Handled entirely on the client — no tokens spent.
-- **Keyboard shortcuts** — Enter to send, Shift+Enter for newline
+- **Steer and queue** — keep typing while a response streams or tools run.
+  **Enter / Steer** adds your instruction at the next safe model step, after
+  the current model response and any running tool calls finish. It does not
+  interrupt or undo tools. **Ctrl+Enter / Queue** (also **Cmd+Enter** on Mac)
+  saves a separate follow-up until the current response, including steering,
+  completes. Follow-ups run in submission order. Pending messages are shown
+  above the input for their own conversation; they are not persisted until
+  they start, so keep the page open. Stop or an error clears pending messages.
+- **Keyboard shortcuts** — Enter sends when idle and steers while busy;
+  Ctrl/Cmd+Enter queues while busy (sends normally when idle); Shift+Enter
+  inserts a newline. Ctrl+C stops the active turn; F2 clears the conversation.
+  Shortcuts appear directly on the two buttons: **Send / Steer — Enter** and
+  **Queue — Ctrl+Enter**, without a separate help block. Queue stays visible
+  when idle; its tooltip explains that it sends immediately if nothing is running.
 
 ---
 
@@ -316,6 +329,13 @@ Server → Client:  {"type": "usage", "total": 1234, "input": 1000, "output": 23
 Server → Client:  {"type": "done", "content": "Here are the files..."}
 Server → Client:  {"type": "error", "message": "API key invalid"}
 ```
+
+While a response is running, send `{"type": "prompt", "mode": "steer", "content": "focus on tests"}`
+to steer the next model step, or use `"mode": "queue"` for a separate follow-up.
+The server emits `{"type": "prompt_started", "mode": "steer"|"queue", "content": "..."}`
+when the instruction enters the conversation. A queued turn starts only after
+the preceding `done` event. A steering instruction is part of the active turn,
+so cancellation rolls it back together with that turn.
 
 ---
 
