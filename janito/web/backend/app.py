@@ -94,7 +94,10 @@ def create_app(config: WebServerConfig) -> FastAPI:
     app.include_router(mcp_router.router, prefix="/api/mcp", tags=["mcp"])
     app.include_router(images_router.router, prefix="/api/images", tags=["images"])
 
-    @app.get("/api/health")
+    # Health check lives outside ``/api`` so the auth middleware does not
+    # protect it: container orchestrators (and the Docker HEALTHCHECK) must
+    # be able to probe it without a bearer token or browser session.
+    @app.get("/health", include_in_schema=False)
     async def health():
         return {"status": "ok", "model": config.model}
 

@@ -30,11 +30,11 @@ def test_api_uses_cookie_credentials_and_redirects_on_expiry():
         };
     """, """
         (async () => {
-            await Api.get('/api/health');
+            await Api.get('/api/config');
             assert.equal(calls[0].options.credentials, 'same-origin');
             assert.equal(calls[0].options.headers.Authorization, undefined);
             status = 401;
-            await assert.rejects(Api.get('/api/health'));
+            await assert.rejects(Api.get('/api/config'));
             assert.deepEqual(redirects, ['/login']);
         })().catch(error => { console.error(error); process.exitCode = 1; });
     """)

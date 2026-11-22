@@ -14,16 +14,54 @@ docker run --rm -p 9090:9090 ghcr.io/joaompinto/janito:latest
 Available tags per release: full version (`4.49.1`), `major.minor`
 (`4.49`), and `latest`.
 
+The container listens on port **9090** by default. Set `JANITO_WEB_PORT` to
+use another port, and publish that same port:
+
+```bash
+docker run --rm -e JANITO_WEB_PORT=8080 -p 8080:8080 \
+  ghcr.io/joaompinto/janito:latest
+```
+
+`JANITO_WEB_PORT` is read by the `janito --web` CLI itself (the default is
+8080 outside the image), so it can also be used without overriding the
+command. The container's `HEALTHCHECK` probes `/health` on the same port.
+
 ## Configuration
 
-Config, auth and web sessions live in `~/.janito` inside the container
-(`/home/appuser/.janito`). Persist them with a named volume:
+Config and auth live in `~/.janito` inside the container
+(`/home/appuser/.janito`). Chat history is stored separately in the
+directory named by `JANITO_SESSIONS_DIR`, which the image sets to
+`/home/appuser/.janito/sessions` (inside the same volume). Both must be
+persisted together so conversations and credentials survive container
+recreation:
 
 ```bash
 docker run --rm -p 9090:9090 \
   -v janito-config:/home/appuser/.janito \
   ghcr.io/joaompinto/janito:latest
 ```
+
+To keep session history on the host instead (or in a different volume),
+point `JANITO_SESSIONS_DIR` at a mounted directory. The path is used as-is
+by the server, so it must be writable by `appuser` (uid 1000):
+
+```bash
+mkdir -p janito-sessions
+# A bind mount keeps the host directory's ownership: make it writable by
+# the container user (uid 1000) so the server can create session files.
+sudo chown 1000:1000 janito-sessions
+
+docker run --rm -p 9090:9090 \
+  -v janito-config:/home/appuser/.janito \
+  -v "$PWD/janito-sessions:/sessions" \
+  -e JANITO_SESSIONS_DIR=/sessions \
+  ghcr.io/joaompinto/janito:latest
+```
+
+Mounting the whole `~/.janito` volume already covers history; use the
+separate mapping only when you want sessions somewhere else (for example a
+bind mount you can back up or inspect). With `--no-history` nothing is
+written or restored.
 
 ### First run: configure a provider
 
